@@ -27,6 +27,7 @@ Web aplikasi statis untuk menampilkan jadwal dokter jaga di Instalasi Gawat Daru
 ### Aturan Keamanan Firebase (Security Rules)
 
 **Firestore Rules:**
+
 ```javascript
 rules_version = '2';
 service cloud.firestore {
@@ -42,6 +43,7 @@ service cloud.firestore {
 ```
 
 **Storage Rules:**
+
 ```javascript
 rules_version = '2';
 service firebase.storage {
@@ -60,17 +62,21 @@ service firebase.storage {
 
 1. **Clone repository ini**
 2. **Install Dependensi:**
+
    ```bash
    npm install
    ```
+
 3. **Konfigurasi Environment Variables:**
    - Ubah nama `.env.example` menjadi `.env`
    - Isi nilai dari konfigurasi Firebase Project Anda.
 
 4. **Jalankan Aplikasi Lokal:**
+
    ```bash
    npm run dev
    ```
+
    Aplikasi Display TV akan berjalan di `http://localhost:5173/` dan Admin Panel di `http://localhost:5173/admin`
 
 ## Panduan Deployment (GitHub Pages)
@@ -79,9 +85,11 @@ Aplikasi ini sudah dikonfigurasi untuk berjalan sebagai static site yang kompati
 
 1. Sesuaikan path URL repositori Anda pada file `vite.config.ts`. Ubah nilai `base: './'` menjadi nama repository jika menggunakan struktur standar GitHub, contoh: `base: '/nama-repo/'`.
 2. Lakukan build production:
+
    ```bash
    npm run build
    ```
+
 3. Deploy folder `dist` yang dihasilkan ke branch `gh-pages` di repository Anda, atau gunakan GitHub Actions untuk proses deploy otomatis.
 
 ## Troubleshooting
