@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import * as XLSX from 'xlsx';
-import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, doc } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { OnCallSchedule, Specialist, MonthlyScheduleItem } from '../types';
 import { addOnCallSchedule, updateOnCallSchedule, deleteOnCallSchedule, addSpecialist, updateSpecialist, deleteSpecialist, saveMonthlySchedules } from '../services/db';
@@ -12,11 +12,11 @@ const AdminOnCall = () => {
   const [schedules, setSchedules] = useState<OnCallSchedule[]>([]);
   const [specialists, setSpecialists] = useState<Specialist[]>([]);
   
-  const [selectedSchedules, setSelectedSchedules] = useState<string[]>([]);
   const [selectedSpecialists, setSelectedSpecialists] = useState<string[]>([]);
 
   const [activeTab, setActiveTab] = useState<'schedule' | 'specialist' | 'monthly'>('schedule');
   const [monthlyPreview, setMonthlyPreview] = useState<MonthlyScheduleItem[]>([]);
+  const [todayMonthlySchedule, setTodayMonthlySchedule] = useState<MonthlyScheduleItem | null>(null);
 
   // Modal states
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
@@ -27,7 +27,6 @@ const AdminOnCall = () => {
   
   const [loading, setLoading] = useState(false);
   
-  const fileInputScheduleRef = useRef<HTMLInputElement>(null);
   const fileInputSpecialistRef = useRef<HTMLInputElement>(null);
   const fileInputMonthlyRef = useRef<HTMLInputElement>(null);
 
@@ -58,9 +57,24 @@ const AdminOnCall = () => {
       setSpecialists(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Specialist)));
     });
 
+    // Fetch Today's Monthly Schedule
+    const yyyy = new Date().getFullYear();
+    const mm = String(new Date().getMonth() + 1).padStart(2, '0');
+    const dd = String(new Date().getDate()).padStart(2, '0');
+    const todayStr = `${yyyy}-${mm}-${dd}`;
+    
+    const unsubMonthly = onSnapshot(doc(db, 'monthlySchedules', todayStr), (docSnap) => {
+      if (docSnap.exists()) {
+        setTodayMonthlySchedule(docSnap.data() as MonthlyScheduleItem);
+      } else {
+        setTodayMonthlySchedule(null);
+      }
+    });
+
     return () => {
       unsubSchedule();
       unsubSpecialist();
+      unsubMonthly();
     };
   }, []);
 
@@ -69,72 +83,23 @@ const AdminOnCall = () => {
     // Preview will only show the most recently uploaded data in this session.
   }, []);
 
-  const downloadTemplateSchedule = () => {
-    const data = [
-      { Department: 'Penyakit Dalam', DepartmentEn: 'Internal Medicine', DoctorName: 'dr. Andi, Sp.PD', Order: 1 },
-      { Department: 'Anak', DepartmentEn: 'Pediatric', DoctorName: 'dr. Budi, Sp.A', Order: 2 }
-    ];
-    const ws = XLSX.utils.json_to_sheet(data);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Jadwal On Call");
-    XLSX.writeFile(wb, "Template_Jadwal_OnCall.xlsx");
-  };
-
-  const handleFileUploadSchedule = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setLoading(true);
-    const reader = new FileReader();
-    reader.onload = async (evt) => {
-      try {
-        const bstr = evt.target?.result;
-        const wb = XLSX.read(bstr, { type: 'binary' });
-        const wsname = wb.SheetNames[0];
-        const ws = wb.Sheets[wsname];
-        const data = XLSX.utils.sheet_to_json(ws) as any[];
-
-        let addedCount = 0;
-        for (const row of data) {
-          if (row.Department) {
-            await addOnCallSchedule({
-              department: row.Department || '',
-              departmentEn: row.DepartmentEn || '',
-              doctorName: row.DoctorName || '',
-              order: parseInt(row.Order) || (schedules.length + addedCount + 1)
-            });
-            addedCount++;
-          }
-        }
-        toast.success(`${addedCount} Jadwal Departemen berhasil diimport!`);
-      } catch (error) {
-        console.error(error);
-        toast.error('Gagal mengimport data. Pastikan format Excel sesuai template.');
-      } finally {
-        setLoading(false);
-        if (fileInputScheduleRef.current) fileInputScheduleRef.current.value = '';
-      }
-    };
-    reader.readAsBinaryString(file);
-  };
-
   // --- Schedule Handlers ---
-  const handleOpenScheduleModal = (schedule?: OnCallSchedule) => {
-    if (schedule) {
-      setEditingSchedule(schedule);
+  const handleOpenScheduleModal = (departmentName: string, existingOverride?: OnCallSchedule) => {
+    if (existingOverride) {
+      setEditingSchedule(existingOverride);
       setScheduleData({
-        department: schedule.department,
-        departmentEn: schedule.departmentEn,
-        doctorName: schedule.doctorName,
-        order: schedule.order
+        department: existingOverride.department,
+        departmentEn: existingOverride.departmentEn,
+        doctorName: existingOverride.doctorName,
+        order: existingOverride.order
       });
     } else {
       setEditingSchedule(null);
       setScheduleData({
-        department: '',
+        department: departmentName,
         departmentEn: '',
         doctorName: '',
-        order: schedules.length > 0 ? Math.max(...schedules.map(s => s.order)) + 1 : 1
+        order: DEPARTMENTS.indexOf(departmentName) + 1
       });
     }
     setIsScheduleModalOpen(true);
@@ -161,31 +126,13 @@ const AdminOnCall = () => {
   };
 
   const handleDeleteSchedule = async (schedule: OnCallSchedule) => {
-    if (window.confirm(`Apakah Anda yakin ingin menghapus departemen ${schedule.department}?`)) {
+    if (window.confirm(`Apakah Anda yakin ingin menghapus override untuk departemen ${schedule.department}? Jadwal akan kembali mengikuti jadwal bulanan.`)) {
       try {
         await deleteOnCallSchedule(schedule.id);
-        toast.success('Departemen dihapus');
-        setSelectedSchedules(prev => prev.filter(id => id !== schedule.id));
+        toast.success('Override dihapus');
       } catch (error) {
         console.error(error);
-        toast.error('Gagal menghapus data');
-      }
-    }
-  };
-
-  const handleBulkDeleteSchedules = async () => {
-    if (selectedSchedules.length === 0) return;
-    if (window.confirm(`Apakah Anda yakin ingin menghapus ${selectedSchedules.length} departemen terpilih?`)) {
-      setLoading(true);
-      try {
-        await Promise.all(selectedSchedules.map(id => deleteOnCallSchedule(id)));
-        setSelectedSchedules([]);
-        toast.success(`${selectedSchedules.length} departemen berhasil dihapus`);
-      } catch (error) {
-        console.error(error);
-        toast.error('Gagal menghapus data bulk');
-      } finally {
-        setLoading(false);
+        toast.error('Gagal menghapus override');
       }
     }
   };
@@ -467,7 +414,7 @@ const AdminOnCall = () => {
             activeTab === 'schedule' ? 'bg-primary text-white' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
           }`}
         >
-          <FaHospitalAlt /> Jadwal Departemen
+          <FaHospitalAlt /> Jadwal Hari Ini
         </button>
         <button
           onClick={() => setActiveTab('specialist')}
@@ -491,48 +438,13 @@ const AdminOnCall = () => {
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="p-4 sm:p-6 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
-              <h2 className="text-xl font-bold text-gray-800">Penugasan Dokter On-Call</h2>
-              <p className="text-sm text-gray-500 mt-1">Atur dokter mana yang sedang bertugas di masing-masing departemen.</p>
+              <h2 className="text-xl font-bold text-gray-800">Dashboard Jadwal Hari Ini</h2>
+              <p className="text-sm text-gray-500 mt-1">Lihat jadwal yang sedang tampil di layar TV. Anda bisa melakukan perubahan mendadak (override) dari sini.</p>
             </div>
             <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-              <button 
-                onClick={downloadTemplateSchedule}
-                className="w-full sm:w-auto justify-center bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors shadow-sm text-sm"
-              >
-                <FaDownload /> Template
-              </button>
-              
-              <input 
-                type="file" 
-                accept=".xlsx, .xls" 
-                className="hidden" 
-                ref={fileInputScheduleRef}
-                onChange={handleFileUploadSchedule}
-              />
-              <button 
-                onClick={() => fileInputScheduleRef.current?.click()}
-                disabled={loading}
-                className="w-full sm:w-auto justify-center bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors shadow-sm text-sm disabled:opacity-50"
-              >
-                <FaFileExcel /> Import Excel
-              </button>
-              
-              {selectedSchedules.length > 0 && (
-                <button 
-                  onClick={handleBulkDeleteSchedules}
-                  disabled={loading}
-                  className="w-full sm:w-auto justify-center bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors shadow-sm text-sm disabled:opacity-50"
-                >
-                  <FaTrash /> Hapus ({selectedSchedules.length})
-                </button>
-              )}
-
-              <button 
-                onClick={() => handleOpenScheduleModal()}
-                className="w-full sm:w-auto justify-center bg-primary hover:bg-blue-800 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors shadow-sm"
-              >
-                <FaPlus /> Tambah Penugasan
-              </button>
+              <span className="bg-blue-50 text-blue-700 px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2">
+                <FaHospitalAlt /> {new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+              </span>
             </div>
           </div>
           
@@ -540,75 +452,73 @@ const AdminOnCall = () => {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-gray-50 text-gray-600 text-sm border-b border-gray-100">
-                  <th className="py-3 px-4 w-12 text-center">
-                    <input 
-                      type="checkbox" 
-                      className="rounded border-gray-300 text-primary focus:ring-primary cursor-pointer w-4 h-4"
-                      checked={schedules.length > 0 && selectedSchedules.length === schedules.length}
-                      onChange={(e) => {
-                        if (e.target.checked) setSelectedSchedules(schedules.map(s => s.id));
-                        else setSelectedSchedules([]);
-                      }}
-                    />
-                  </th>
-                  <th className="py-3 px-6 font-semibold w-16 text-center">Urutan</th>
+                  <th className="py-3 px-6 font-semibold w-16 text-center">No</th>
                   <th className="py-3 px-6 font-semibold">Departemen</th>
                   <th className="py-3 px-6 font-semibold">Dokter Bertugas</th>
+                  <th className="py-3 px-6 font-semibold text-center">Status</th>
                   <th className="py-3 px-6 font-semibold text-right">Aksi</th>
                 </tr>
               </thead>
               <tbody>
-                {schedules.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="py-8 text-center text-gray-500">
-                      Belum ada data departemen. Anda dapat men-generate data awal dari halaman Pengaturan.
-                    </td>
-                  </tr>
-                ) : (
-                  schedules.map((schedule) => (
-                    <tr key={schedule.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
-                      <td className="py-3 px-4 text-center">
-                        <input 
-                          type="checkbox" 
-                          className="rounded border-gray-300 text-primary focus:ring-primary cursor-pointer w-4 h-4"
-                          checked={selectedSchedules.includes(schedule.id)}
-                          onChange={(e) => {
-                            if (e.target.checked) setSelectedSchedules([...selectedSchedules, schedule.id]);
-                            else setSelectedSchedules(selectedSchedules.filter(id => id !== schedule.id));
-                          }}
-                        />
-                      </td>
-                      <td className="py-3 px-6 text-center text-gray-500">{schedule.order}</td>
+                {DEPARTMENTS.map((dep, index) => {
+                  const overrideSched = schedules.find(s => s.department === dep);
+                  const monthlySched = todayMonthlySchedule?.schedules?.find(s => s.department === dep);
+                  
+                  const activeDoctor = overrideSched?.doctorName || monthlySched?.doctorName || '';
+                  const activeDepEn = overrideSched?.departmentEn || monthlySched?.departmentEn || '';
+                  
+                  const isOverride = !!overrideSched;
+
+                  return (
+                    <tr key={dep} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
+                      <td className="py-3 px-6 text-center text-gray-500">{index + 1}</td>
                       <td className="py-3 px-6">
-                        <p className="font-bold text-gray-800">{schedule.department}</p>
-                        <p className="text-sm text-gray-500 italic">{schedule.departmentEn}</p>
+                        <p className="font-bold text-gray-800">{dep}</p>
+                        {activeDepEn && <p className="text-sm text-gray-500 italic">{activeDepEn}</p>}
                       </td>
                       <td className="py-3 px-6">
-                        {schedule.doctorName ? (
-                          <span className="font-semibold text-primary">{schedule.doctorName}</span>
+                        {activeDoctor ? (
+                          <span className="font-semibold text-primary">{activeDoctor}</span>
                         ) : (
-                          <span className="text-gray-400 italic">-- Belum ada yang bertugas --</span>
+                          <span className="text-gray-400 italic">-- Kosong --</span>
+                        )}
+                      </td>
+                      <td className="py-3 px-6 text-center">
+                        {isOverride ? (
+                          <span className="px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-bold uppercase tracking-wider">
+                            Override
+                          </span>
+                        ) : monthlySched ? (
+                          <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold uppercase tracking-wider">
+                            Jadwal Bulanan
+                          </span>
+                        ) : (
+                          <span className="px-3 py-1 bg-gray-100 text-gray-500 rounded-full text-xs font-bold uppercase tracking-wider">
+                            Tidak Ada
+                          </span>
                         )}
                       </td>
                       <td className="py-3 px-6 text-right space-x-2 whitespace-nowrap">
                         <button 
-                          onClick={() => handleOpenScheduleModal(schedule)}
+                          onClick={() => handleOpenScheduleModal(dep, overrideSched)}
                           className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                          title="Tugaskan Dokter"
+                          title="Ubah Dokter (Override)"
                         >
                           <FaEdit />
                         </button>
-                        <button 
-                          onClick={() => handleDeleteSchedule(schedule)}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                          title="Hapus Departemen"
-                        >
-                          <FaTrash />
-                        </button>
+                        {isOverride && (
+                          <button 
+                            onClick={() => handleDeleteSchedule(overrideSched)}
+                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Hapus Override (Kembali ke Jadwal Bulanan)"
+                          >
+                            <FaTrash />
+                          </button>
+                        )}
                       </td>
                     </tr>
-                  ))
-                )}
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -814,7 +724,7 @@ const AdminOnCall = () => {
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
             <div className="p-4 sm:p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
               <h3 className="text-xl font-bold text-gray-800">
-                {editingSchedule ? 'Edit Penugasan' : 'Tambah Departemen'}
+                Ubah Dokter (Override)
               </h3>
               <button onClick={() => setIsScheduleModalOpen(false)} className="text-gray-400 hover:text-gray-600">
                 <FaTimes size={24} />
@@ -823,19 +733,17 @@ const AdminOnCall = () => {
             
             <form onSubmit={handleScheduleSubmit} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nama Departemen (Indonesia)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nama Departemen</label>
                 <input 
                   type="text" 
-                  required
+                  readOnly
                   value={scheduleData.department}
-                  onChange={e => setScheduleData({...scheduleData, department: e.target.value})}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"
-                  placeholder="Penyakit Dalam"
+                  className="w-full px-4 py-2 border border-gray-200 bg-gray-50 rounded-lg text-gray-500 cursor-not-allowed outline-none font-medium"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nama Departemen (English)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nama Departemen (English) <span className="text-xs text-gray-400 font-normal">(Opsional)</span></label>
                 <input 
                   type="text" 
                   value={scheduleData.departmentEn}
@@ -900,15 +808,7 @@ const AdminOnCall = () => {
                 <p className="text-xs text-gray-500 mt-1">Pilih dari Master Data Dokter. Jika belum ada, tambahkan di tab sebelah.</p>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Urutan Tampil</label>
-                <input 
-                  type="number" 
-                  value={scheduleData.order}
-                  onChange={e => setScheduleData({...scheduleData, order: parseInt(e.target.value) || 0})}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"
-                />
-              </div>
+
 
               <div className="mt-8 pt-4 border-t border-gray-100 flex flex-col sm:flex-row justify-end gap-3">
                 <button
