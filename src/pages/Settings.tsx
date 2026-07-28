@@ -63,7 +63,7 @@ const Settings = () => {
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
       <div className="p-4 sm:p-6 border-b border-gray-100">
         <h2 className="text-xl font-bold text-gray-800">Pengaturan Layar Display</h2>
-        <p className="text-sm text-gray-500 mt-1">Ubah identitas rumah sakit dan pengaturan visual layar display IGD.</p>
+        <p className="text-sm text-gray-500 mt-1">Ubah identitas rumah sakit dan pengaturan visual Layar Display.</p>
       </div>
       
 
@@ -145,7 +145,7 @@ const Settings = () => {
             
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Tema Tampilan IGD</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Tema Layar Display</label>
               <select 
                 value={formData.theme}
                 onChange={e => setFormData({...formData, theme: e.target.value as 'classic' | 'modern'})}

@@ -241,7 +241,7 @@ const Doctors = () => {
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="p-4 sm:p-6 border-b border-gray-100 bg-blue-50/50">
           <h2 className="text-xl font-bold text-gray-800">Tampilan Saat Ini (Layar Display)</h2>
-          <p className="text-sm text-gray-500 mt-1">Pilih dokter yang akan ditampilkan di masing-masing posisi pada layar IGD.</p>
+          <p className="text-sm text-gray-500 mt-1">Pilih dokter yang akan ditampilkan di masing-masing posisi pada Layar Display.</p>
         </div>
         
         <div className="p-4 sm:p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
