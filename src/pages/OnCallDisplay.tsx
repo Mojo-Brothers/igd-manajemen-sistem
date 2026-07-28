@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { collection, onSnapshot, query, orderBy, doc } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { OnCallSchedule } from '../types';
@@ -22,11 +22,14 @@ const OnCallDisplay = () => {
     return () => unsubscribe();
   }, []);
 
-  useEffect(() => {
+  const todayStr = useMemo(() => {
     const yyyy = currentTime.getFullYear();
     const mm = String(currentTime.getMonth() + 1).padStart(2, '0');
     const dd = String(currentTime.getDate()).padStart(2, '0');
-    const todayStr = `${yyyy}-${mm}-${dd}`;
+    return `${yyyy}-${mm}-${dd}`;
+  }, [currentTime.getDate(), currentTime.getMonth(), currentTime.getFullYear()]);
+
+  useEffect(() => {
 
     const unsubscribe = onSnapshot(doc(db, 'monthlySchedules', todayStr), (docSnap) => {
       if (docSnap.exists()) {
@@ -50,7 +53,7 @@ const OnCallDisplay = () => {
     });
 
     return () => unsubscribe();
-  }, [currentTime]);
+  }, [todayStr]);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000 * 60); // update every minute
