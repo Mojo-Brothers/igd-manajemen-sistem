@@ -19,11 +19,11 @@ const DoctorCard = ({ title, doctor }: DoctorCardProps) => {
       }}
     >
       {/* Left Accent Border */}
-      <div className="absolute top-0 left-0 w-3 h-full bg-gradient-to-b from-primary to-blue-400"></div>
+      <div className="absolute top-0 left-0 w-3 h-full bg-primary"></div>
 
       {/* Title Section (Left) */}
       <div className="w-1/4 h-full flex flex-col justify-center border-r-2 border-gray-100 pl-6 pr-6">
-        <h2 className="text-2xl xl:text-3xl font-black text-gray-400 uppercase tracking-widest leading-tight">{title}</h2>
+        <h2 className="text-2xl xl:text-3xl font-black text-primary uppercase tracking-widest leading-tight">{title}</h2>
       </div>
       
       {/* Name and Role (Center) */}
