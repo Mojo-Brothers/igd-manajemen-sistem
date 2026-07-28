@@ -52,15 +52,15 @@ const OnCallDisplay = () => {
   );
 
   const renderScheduleRow = (schedule: OnCallSchedule) => (
-    <div key={schedule.id} className="flex gap-2 mb-2 flex-1">
-      <div className="w-1/2 bg-[#17596b] text-white px-4 py-2 flex flex-col justify-center rounded shadow-sm relative overflow-hidden">
+    <div key={schedule.id} className="flex gap-2 mb-1.5 flex-1 min-h-0">
+      <div className="w-1/2 bg-[#17596b] text-white px-3 py-1.5 flex flex-col justify-center rounded shadow-sm relative overflow-hidden">
         {/* Glossy effect to mimic acrylic */}
         <div className="absolute top-0 left-0 right-0 h-1/3 bg-gradient-to-b from-white/10 to-transparent"></div>
-        <div className="font-bold text-[17px] leading-tight z-10">{schedule.department}</div>
-        <div className="text-[11px] text-blue-100 italic z-10">{schedule.departmentEn}</div>
+        <div className="font-bold text-[14px] xl:text-[16px] leading-tight z-10">{schedule.department}</div>
+        <div className="text-[10px] xl:text-[11px] text-blue-100 italic z-10">{schedule.departmentEn}</div>
       </div>
-      <div className="w-1/2 bg-white text-[#333] px-4 py-2 flex items-center rounded shadow-md border border-gray-200 h-full">
-        <div className="font-bold text-[18px]">
+      <div className="w-1/2 bg-white text-[#333] px-3 py-1.5 flex items-center rounded shadow-md border border-gray-200 h-full overflow-hidden">
+        <div className="font-bold text-[14px] xl:text-[16px] leading-tight">
           {schedule.doctorName}
         </div>
       </div>
