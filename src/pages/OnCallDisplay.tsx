@@ -163,7 +163,7 @@ const OnCallDisplay = () => {
             animate={{ left: ["100%", "-200%"] }}
             transition={{
               repeat: Infinity,
-              duration: settings?.runningTextSpeed ? (100 / settings.runningTextSpeed) * 30 : 30,
+              duration: 30,
               ease: "linear",
             }}
           >
