@@ -1,6 +1,5 @@
 import { Doctor } from '../types';
 import { motion } from 'framer-motion';
-import { FaUserMd } from 'react-icons/fa';
 
 interface DoctorCardProps {
   title: string;
@@ -10,55 +9,48 @@ interface DoctorCardProps {
 const DoctorCard = ({ title, doctor }: DoctorCardProps) => {
   return (
     <motion.div 
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.5 }}
-      className="glass rounded-3xl p-6 flex flex-col h-full overflow-hidden relative group"
+      className="rounded-[2.5rem] p-8 flex flex-col h-full relative overflow-hidden shadow-2xl border border-white/40"
+      style={{
+        background: 'linear-gradient(145deg, rgba(255,255,255,0.95) 0%, rgba(240,248,255,0.85) 100%)',
+        backdropFilter: 'blur(20px)'
+      }}
     >
-      <div className="bg-primary text-white text-center py-3 px-6 -mx-6 -mt-6 rounded-t-3xl mb-6 shadow-md">
-        <h2 className="text-2xl font-bold uppercase tracking-wide">{title}</h2>
+      {/* Top Gradient Accent */}
+      <div className="absolute top-0 left-0 w-full h-4 bg-gradient-to-r from-primary to-blue-400"></div>
+
+      {/* Title */}
+      <div className="text-center mb-auto pt-6">
+        <h2 className="text-2xl xl:text-3xl font-black text-gray-400 uppercase tracking-[0.2em] mb-4">{title}</h2>
+        <div className="h-1.5 w-24 bg-primary mx-auto rounded-full opacity-70"></div>
       </div>
       
-      <div className="flex-1 flex flex-col items-center justify-center text-center">
+      {/* Large Name Text */}
+      <div className="flex-1 flex flex-col items-center justify-center text-center px-2 py-4">
         {doctor ? (
-          <>
-            <div className="w-48 h-48 rounded-full overflow-hidden border-4 border-primary shadow-xl mb-6 relative">
-              {doctor.imageUrl ? (
-                <img 
-                  src={doctor.imageUrl} 
-                  alt={doctor.name} 
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(doctor.name) + '&background=015c80&color=fff&size=256';
-                  }}
-                />
-              ) : (
-                <div className="w-full h-full bg-gray-200 flex items-center justify-center text-primary">
-                  <FaUserMd size={64} />
-                </div>
-              )}
-            </div>
-            
-            <h3 className="text-3xl font-bold text-gray-800 mb-2 truncate w-full px-4">{doctor.name}</h3>
-            <p className="text-xl text-primary font-semibold mb-4">{doctor.role}</p>
-            
-            <div className={`mt-auto px-6 py-2 rounded-full text-lg font-bold shadow-sm ${
-              doctor.status.toLowerCase().includes('bertugas') || doctor.status.toLowerCase().includes('jaga')
-                ? 'bg-green-100 text-green-700 border border-green-300'
-                : 'bg-yellow-100 text-yellow-700 border border-yellow-300'
-            }`}>
-              {doctor.status}
-            </div>
-          </>
+          <div className="w-full flex flex-col items-center justify-center">
+            <h3 
+              className="font-black text-primary leading-[1.1] drop-shadow-sm w-full break-words"
+              style={{ fontSize: 'clamp(2.5rem, 4vw, 4.5rem)' }}
+            >
+              {doctor.name}
+            </h3>
+            {doctor.role && (
+               <p className="text-xl xl:text-2xl text-blue-600/80 font-bold mt-6 tracking-wide uppercase">{doctor.role}</p>
+            )}
+          </div>
         ) : (
-          <div className="flex flex-col items-center justify-center opacity-50">
-             <div className="w-48 h-48 rounded-full border-4 border-dashed border-gray-400 mb-6 flex items-center justify-center">
-                <FaUserMd size={64} className="text-gray-400" />
-             </div>
-             <h3 className="text-2xl font-medium text-gray-500">Tidak Ada Jadwal</h3>
+          <div className="w-full opacity-40">
+             <h3 className="text-4xl xl:text-5xl font-bold text-gray-500">Tidak Ada<br/>Jadwal</h3>
           </div>
         )}
       </div>
+
+      {/* Decorative Corner Accents */}
+      <div className="absolute -bottom-16 -right-16 w-48 h-48 bg-primary opacity-5 rounded-full blur-2xl"></div>
+      <div className="absolute -top-16 -left-16 w-48 h-48 bg-blue-400 opacity-5 rounded-full blur-2xl"></div>
     </motion.div>
   );
 };
