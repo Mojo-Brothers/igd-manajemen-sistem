@@ -1,8 +1,43 @@
 import { useState, useEffect } from 'react';
 import { useSettings } from '../contexts/SettingsContext';
-import { updateSettings } from '../services/db';
+import { updateSettings, addOnCallSchedule } from '../services/db';
+import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
+import { db } from '../firebase/config';
 import toast from 'react-hot-toast';
-import { FaSave } from 'react-icons/fa';
+import { FaSave, FaRedo } from 'react-icons/fa';
+
+const DEFAULT_DEPARTMENTS = [
+  { dept: 'Penyakit Dalam', en: 'Internal Medicine' },
+  { dept: 'Anak', en: 'Pediatric' },
+  { dept: 'Paru', en: 'Pulmonology' },
+  { dept: 'Mata', en: 'Ophthalmology (Eye)' },
+  { dept: 'THT', en: 'ENT (Ear - Nose - Throat)' },
+  { dept: 'Kulit dan Kelamin', en: 'Dermatology & Venereology' },
+  { dept: 'Urologi', en: 'Urology' },
+  { dept: 'Saraf', en: 'Neurology' },
+  { dept: 'Anestesi', en: 'Anesthesiology' },
+  { dept: 'Kebidanan dan Kandungan', en: 'Obstetrics and Gynecology' },
+  { dept: 'Jantung dan Pembuluh Darah', en: 'Heart and Vascular' },
+  { dept: 'Konsultan Hematologi Onkologi Medik', en: 'Hematology & Oncology Consultant' },
+  { dept: 'Konsultan Endokrin, Metabolik & Diabetes', en: 'Endocrin, Metabolism & Diabetes Consultant' },
+  { dept: 'Bedah Vaskuler', en: 'Vascular Surgery' },
+  { dept: 'Bedah Digestif', en: 'Digestive Surgery' },
+  { dept: 'Bedah Anak', en: 'Pediatric Surgery' },
+  { dept: 'Bedah Umum', en: 'General Surgery' },
+  { dept: 'Bedah Tulang', en: 'Orthopedic Surgery' },
+  { dept: 'Bedah Saraf', en: 'Neuro Surgery' },
+  { dept: 'Bedah Plastik Rekonstruksi dan Estetika', en: 'Plastic, Reconstructive & Aesthetic Surgery' },
+  { dept: 'Bedah Onkologi', en: 'Oncology Surgery' },
+  { dept: 'Bedah Mulut', en: 'Oral & Maxillo Facial Surgery' },
+  { dept: 'Bedah Thoraks dan Kardiovaskuler', en: 'Thorax & Cardiovascular Surgery' },
+  { dept: 'Konsultan (Ginjal Hipertensi)', en: 'Nephrology Consultant' },
+  { dept: 'Konsultan (Gastroenterologi)', en: 'Gastroenterology Consultant' },
+  { dept: 'Konsultan (Bedah Tulang Belakang)', en: 'Spine Surgery Consultant' },
+  { dept: 'Ortopedi - Konsultan Hip & Knee', en: 'Orthopedics Hip & Knee Consultant' },
+  { dept: 'Radiologi', en: 'Radiology' },
+  { dept: 'Obstetri Ginekologi - Konsultan Onkologi Ginekologi', en: 'Obstetrics Gynecology - Gynecology Oncology Consultant' },
+  { dept: 'Jantung Pembuluh Darah Konsultan Aritmia', en: 'Cardiology Arrhythmia Consultant' }
+];
 
 const Settings = () => {
   const { settings, loading: contextLoading } = useSettings();
@@ -18,6 +53,7 @@ const Settings = () => {
   });
   
   const [loading, setLoading] = useState(false);
+  const [resetting, setResetting] = useState(false);
 
   useEffect(() => {
     if (settings) {
@@ -54,6 +90,36 @@ const Settings = () => {
     }
   };
 
+  const handleResetOnCall = async () => {
+    if (!window.confirm('PERINGATAN: Ini akan menghapus semua jadwal departemen On-Call saat ini dan mengembalikannya ke daftar bawaan sistem (30 departemen kosong). Anda yakin?')) return;
+    
+    setResetting(true);
+    toast.loading('Menghapus data lama...', { id: 'reset' });
+    try {
+      // 1. Delete all existing
+      const snap = await getDocs(collection(db, 'onCallSchedules'));
+      const deletePromises = snap.docs.map(d => deleteDoc(doc(db, 'onCallSchedules', d.id)));
+      await Promise.all(deletePromises);
+      
+      toast.loading('Memasukkan data bawaan...', { id: 'reset' });
+      // 2. Add defaults
+      for (let i = 0; i < DEFAULT_DEPARTMENTS.length; i++) {
+        await addOnCallSchedule({
+          department: DEFAULT_DEPARTMENTS[i].dept,
+          departmentEn: DEFAULT_DEPARTMENTS[i].en,
+          doctorName: '', // empty by default
+          order: i + 1
+        });
+      }
+      toast.success('Berhasil di-reset ke daftar bawaan!', { id: 'reset' });
+    } catch (error) {
+      console.error(error);
+      toast.error('Gagal me-reset jadwal on-call.', { id: 'reset' });
+    } finally {
+      setResetting(false);
+    }
+  };
+
   if (contextLoading) return <div className="p-8 text-center">Memuat pengaturan...</div>;
 
   return (
@@ -63,6 +129,21 @@ const Settings = () => {
         <p className="text-sm text-gray-500 mt-1">Ubah identitas rumah sakit dan pengaturan visual layar display IGD.</p>
       </div>
       
+      <div className="p-4 sm:p-6 bg-red-50 border-b border-red-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div>
+          <h3 className="font-bold text-red-800">Reset Data On-Call</h3>
+          <p className="text-sm text-red-600">Tekan tombol ini untuk men-generate 30 departemen bawaan untuk Layar On-Call.</p>
+        </div>
+        <button 
+          onClick={handleResetOnCall}
+          disabled={resetting}
+          className="w-full sm:w-auto px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
+        >
+          {resetting ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : <FaRedo />}
+          Reset ke Bawaan
+        </button>
+      </div>
+
       <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 sm:space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-4">

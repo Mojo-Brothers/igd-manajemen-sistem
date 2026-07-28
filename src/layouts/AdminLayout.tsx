@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { FaHome, FaUserMd, FaCog, FaSignOutAlt, FaHospitalAlt, FaBars, FaTimes } from 'react-icons/fa';
+import { FaHome, FaUserMd, FaCog, FaSignOutAlt, FaHospitalAlt, FaBars, FaTimes, FaCalendarAlt } from 'react-icons/fa';
 
 const AdminLayout = () => {
   const { logout, currentUser } = useAuth();
@@ -20,7 +20,8 @@ const AdminLayout = () => {
 
   const menuItems = [
     { path: '/admin', icon: <FaHome size={20} />, label: 'Dashboard' },
-    { path: '/admin/doctors', icon: <FaUserMd size={20} />, label: 'Jadwal Dokter' },
+    { path: '/admin/doctors', icon: <FaUserMd size={20} />, label: 'Jadwal Dokter IGD' },
+    { path: '/admin/on-call', icon: <FaCalendarAlt size={20} />, label: 'Jadwal On Call' },
     { path: '/admin/settings', icon: <FaCog size={20} />, label: 'Pengaturan' },
   ];
 

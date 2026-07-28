@@ -6,10 +6,11 @@ import {
   updateDoc, 
   deleteDoc, 
   query, 
-  orderBy 
+  orderBy,
+  addDoc
 } from 'firebase/firestore';
 import { db } from '../firebase/config';
-import { Doctor, AppSettings } from '../types';
+import { Doctor, AppSettings, OnCallSchedule, Specialist } from '../types';
 
 // DOCTORS
 export const getDoctors = async (): Promise<Doctor[]> => {
@@ -44,4 +45,38 @@ export const updateDoctorSlot = async (slotId: string, doctorId: string | null):
 export const updateSettings = async (settings: Partial<AppSettings>): Promise<void> => {
   const docRef = doc(db, 'settings', 'global');
   await setDoc(docRef, settings, { merge: true });
+};
+
+// ON-CALL SCHEDULES
+export const addOnCallSchedule = async (schedule: Omit<OnCallSchedule, 'id'>) => {
+  const docRef = await addDoc(collection(db, 'onCallSchedules'), schedule);
+  return docRef.id;
+};
+
+export const updateOnCallSchedule = async (id: string, data: Partial<OnCallSchedule>) => {
+  const docRef = doc(db, 'onCallSchedules', id);
+  await updateDoc(docRef, data);
+};
+
+export const deleteOnCallSchedule = async (id: string) => {
+  const docRef = doc(db, 'onCallSchedules', id);
+  await deleteDoc(docRef);
+};
+
+// ==========================================
+// SPECIALISTS (Master Dokter On-Call)
+// ==========================================
+export const addSpecialist = async (specialist: Omit<Specialist, 'id'>) => {
+  const docRef = await addDoc(collection(db, 'specialists'), specialist);
+  return docRef.id;
+};
+
+export const updateSpecialist = async (id: string, data: Partial<Specialist>) => {
+  const docRef = doc(db, 'specialists', id);
+  await updateDoc(docRef, data);
+};
+
+export const deleteSpecialist = async (id: string) => {
+  const docRef = doc(db, 'specialists', id);
+  await deleteDoc(docRef);
 };

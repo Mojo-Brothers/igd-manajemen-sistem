@@ -4,8 +4,8 @@ import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './contexts/AuthContext';
 import { SettingsProvider } from './contexts/SettingsContext';
 
-// Pages & Layouts (Eager load main display)
 import Display from './pages/Display';
+import OnCallDisplay from './pages/OnCallDisplay';
 import ProtectedRoute from './components/ProtectedRoute';
 
 // Lazy loaded Admin Pages
@@ -14,6 +14,7 @@ const Login = lazy(() => import('./pages/Login'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Doctors = lazy(() => import('./pages/Doctors'));
 const Settings = lazy(() => import('./pages/Settings'));
+const AdminOnCall = lazy(() => import('./pages/AdminOnCall'));
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
             <Routes>
             {/* Public TV Display Route */}
             <Route path="/" element={<Display />} />
+            <Route path="/on-call" element={<OnCallDisplay />} />
             
             {/* Admin Login */}
             <Route path="/login" element={<Login />} />
@@ -34,6 +36,7 @@ function App() {
               <Route element={<AdminLayout />}>
                 <Route index element={<Dashboard />} />
                 <Route path="doctors" element={<Doctors />} />
+                <Route path="on-call" element={<AdminOnCall />} />
                 <Route path="settings" element={<Settings />} />
               </Route>
             </Route>
