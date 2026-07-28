@@ -107,7 +107,11 @@ const AdminLayout = () => {
               {menuItems.find(m => m.path === location.pathname)?.label || 'Admin Panel'}
             </h1>
           </div>
-          <Link to="/" target="_blank" className="text-xs md:text-sm text-primary hover:underline font-medium whitespace-nowrap">
+          <Link 
+            to={location.pathname.includes('on-call') ? '/on-call' : '/'} 
+            target="_blank" 
+            className="text-xs md:text-sm text-primary hover:underline font-medium whitespace-nowrap"
+          >
             Lihat Layar ↗
           </Link>
         </header>
