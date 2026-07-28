@@ -183,7 +183,12 @@ const OnCallDisplay = () => {
             }}
           >
             {settings?.runningText 
-              ? settings.runningText.split('\n').filter(t => t.trim() !== '').join('   ✦   ')
+              ? settings.runningText.split('\n').filter(t => t.trim() !== '').map((text, i, arr) => (
+                  <span key={i}>
+                    {text}
+                    {i < arr.length - 1 && <span className="inline-block w-[25vw] text-center text-blue-300">✦</span>}
+                  </span>
+                ))
               : 'Selamat Datang di Instalasi Gawat Darurat Primaya Hospital'}
           </motion.div>
         </div>
