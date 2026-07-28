@@ -58,12 +58,12 @@ const Settings = () => {
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-      <div className="p-6 border-b border-gray-100">
+      <div className="p-4 sm:p-6 border-b border-gray-100">
         <h2 className="text-xl font-bold text-gray-800">Pengaturan Tampilan TV</h2>
         <p className="text-sm text-gray-500 mt-1">Ubah identitas rumah sakit dan pengaturan visual layar display IGD.</p>
       </div>
       
-      <form onSubmit={handleSubmit} className="p-6 space-y-6">
+      <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 sm:space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-4">
             <div>
@@ -167,7 +167,7 @@ const Settings = () => {
           <button
             type="submit"
             disabled={loading}
-            className="flex items-center gap-2 bg-primary hover:bg-blue-800 text-white px-6 py-2.5 rounded-lg font-medium transition-colors disabled:opacity-50"
+            className="w-full sm:w-auto justify-center flex items-center gap-2 bg-primary hover:bg-blue-800 text-white px-6 py-2.5 rounded-lg font-medium transition-colors disabled:opacity-50"
           >
             {loading ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : <FaSave />}
             <span>Simpan Pengaturan</span>
