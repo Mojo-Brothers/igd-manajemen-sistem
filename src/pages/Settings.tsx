@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useSettings } from '../contexts/SettingsContext';
 import { updateSettings } from '../services/db';
-import { uploadDoctorImage } from '../services/storage'; // Reusing for logo
 import toast from 'react-hot-toast';
-import { FaSave, FaImage } from 'react-icons/fa';
+import { FaSave } from 'react-icons/fa';
 
 const Settings = () => {
   const { settings, loading: contextLoading } = useSettings();
