@@ -77,7 +77,7 @@ service firebase.storage {
    npm run dev
    ```
 
-   Aplikasi Display TV akan berjalan di `http://localhost:5173/` dan Admin Panel di `http://localhost:5173/admin`
+   Aplikasi Display TV akan berjalan di `http://localhost:5173/` dan Admin Panel di `http://localhost:5173/#/login` (Jika sudah deploy di GitHub Pages: `https://[username].github.io/[repo-name]/#/login`)
 
 ## Panduan Deployment (GitHub Pages)
 
