@@ -3,7 +3,7 @@ import { format } from 'date-fns';
 
 const DigitalClock = () => {
   const [time, setTime] = useState(new Date());
-  const [weather, setWeather] = useState<{ temp: number; code: number } | null>(null);
+  const [weather, setWeather] = useState<{ temp: number; code: number; location: string } | null>(null);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -17,12 +17,30 @@ const DigitalClock = () => {
     // Fetch weather data for Jakarta (can be updated to dynamic location later if needed)
     const fetchWeather = async () => {
       try {
-        const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=-6.2088&longitude=106.8456&current=temperature_2m,weather_code&timezone=Asia%2FJakarta');
+        let lat = -6.2088;
+        let lon = 106.8456;
+        let locName = 'Jakarta';
+        
+        try {
+          const locRes = await fetch('https://ipinfo.io/json');
+          const locData = await locRes.json();
+          if (locData && locData.loc) {
+            const [latStr, lonStr] = locData.loc.split(',');
+            lat = parseFloat(latStr);
+            lon = parseFloat(lonStr);
+            locName = locData.city || 'Jakarta';
+          }
+        } catch (e) {
+          console.log("Using default location");
+        }
+
+        const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code&timezone=auto`);
         const data = await res.json();
         if (data && data.current) {
           setWeather({
             temp: Math.round(data.current.temperature_2m),
-            code: data.current.weather_code
+            code: data.current.weather_code,
+            location: locName
           });
         }
       } catch (err) {
@@ -58,6 +76,7 @@ const DigitalClock = () => {
         <div className="text-xl font-bold mt-1 bg-white/70 px-3 py-1 rounded-full shadow-sm border border-gray-200 flex items-center gap-2">
           <span>{getWeatherIcon(weather.code)}</span>
           <span>{weather.temp}°C</span>
+          <span className="text-sm font-semibold text-gray-500 ml-1 border-l-2 border-gray-300 pl-2">{weather.location}</span>
         </div>
       )}
     </div>
