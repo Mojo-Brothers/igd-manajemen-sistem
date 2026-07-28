@@ -309,10 +309,28 @@ const AdminOnCall = () => {
 
   // --- Monthly Schedule Handlers ---
   const DEPARTMENTS = [
-    'Kebidanan dan Kandungan', 'Anak', 'Penyakit Dalam', 'Gastroenterologi & Hepatologi',
-    'Endokrin, Metabolik & Diabetes', 'Jantung', 'THT', 'Paru', 'Saraf', 'Mata', 'Urologi',
-    'Bedah Umum', 'Bedah Digestif', 'Ortopedi', 'Bedah Saraf', 'Bedah Vaskular dan Endovaskular',
-    'Rehabilitasi Medik', 'Kulit dan Kelamin', 'Bedah Onkologi', 'Radiologi', 'Bedah Toraks Kardiovaskular'
+    'Obstetri dan Ginekologi',
+    'Ilmu Kesehatan Anak',
+    'Ilmu Penyakit Dalam',
+    'Penyakit Dalam (Konsultan Gastroentero-Hepatologi)',
+    'Penyakit Dalam (Konsultan Endokrin, Metabolik, dan Diabetes)',
+    'Jantung dan Pembuluh Darah',
+    'Telinga Hidung Tenggorok - Bedah Kepala Leher',
+    'Pulmonologi dan Kedokteran Respirasi',
+    'Neurologi',
+    'Ilmu Kesehatan Mata',
+    'Urologi',
+    'Bedah Umum',
+    'Bedah Digestif',
+    'Orthopaedi dan Traumatologi',
+    'Bedah Saraf',
+    'Bedah Vaskular dan Endovaskular',
+    'Orthopaedi (Konsultan Tulang Belakang)',
+    'Kedokteran Fisik dan Rehabilitasi',
+    'Dermatologi dan Venereologi',
+    'Bedah Onkologi',
+    'Radiologi',
+    'Bedah Toraks Kardiak dan Vaskular'
   ];
 
   const downloadTemplateMonthly = () => {
