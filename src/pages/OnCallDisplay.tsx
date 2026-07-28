@@ -8,17 +8,47 @@ import DigitalClock from '../components/DigitalClock';
 
 const OnCallDisplay = () => {
   const { settings, loading: settingsLoading } = useSettings();
-  const [schedules, setSchedules] = useState<OnCallSchedule[]>([]);
+  const [manualSchedules, setManualSchedules] = useState<OnCallSchedule[]>([]);
+  const [monthlySchedules, setMonthlySchedules] = useState<OnCallSchedule[]>([]);
   const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
     const q = query(collection(db, 'onCallSchedules'), orderBy('order', 'asc'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as OnCallSchedule));
-      setSchedules(data);
+      setManualSchedules(data);
     });
     return () => unsubscribe();
   }, []);
+
+  useEffect(() => {
+    const yyyy = currentTime.getFullYear();
+    const mm = String(currentTime.getMonth() + 1).padStart(2, '0');
+    const dd = String(currentTime.getDate()).padStart(2, '0');
+    const todayStr = `${yyyy}-${mm}-${dd}`;
+
+    const stored = localStorage.getItem('monthly_oncall_schedule');
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        const todaySchedule = parsed.find((p: any) => p.date === todayStr);
+        if (todaySchedule && todaySchedule.schedules) {
+          const mapped = todaySchedule.schedules.map((s: any, idx: number) => ({
+            id: `monthly-${idx}`,
+            department: s.department,
+            departmentEn: s.departmentEn,
+            doctorName: s.doctorName,
+            order: idx
+          }));
+          setMonthlySchedules(mapped);
+        } else {
+          setMonthlySchedules([]);
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  }, [currentTime]);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000 * 60); // update every minute
@@ -35,9 +65,20 @@ const OnCallDisplay = () => {
     return `${d}-${m}-${y}`;
   };
 
+  // Combine logic: Manual override wins
+  const finalSchedules = [...monthlySchedules];
+  manualSchedules.forEach(manual => {
+    const existingIndex = finalSchedules.findIndex(s => s.department === manual.department);
+    if (existingIndex >= 0) {
+      finalSchedules[existingIndex] = { ...finalSchedules[existingIndex], doctorName: manual.doctorName };
+    } else {
+      finalSchedules.push(manual);
+    }
+  });
+
   // Actually, we'll just split equally based on array length.
-  const col1 = schedules.slice(0, Math.ceil(schedules.length / 2));
-  const col2 = schedules.slice(Math.ceil(schedules.length / 2));
+  const col1 = finalSchedules.slice(0, Math.ceil(finalSchedules.length / 2));
+  const col2 = finalSchedules.slice(Math.ceil(finalSchedules.length / 2));
 
   const renderColumnHeader = () => (
     <div className="flex gap-2 mb-2">

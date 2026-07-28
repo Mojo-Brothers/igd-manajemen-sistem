@@ -37,3 +37,13 @@ export interface DoctorSlot {
   slotId: 'doctor1' | 'doctor2' | 'coordinator' | 'pic';
   doctorId: string | null;
 }
+
+export interface MonthlyScheduleItem {
+  date: string; // YYYY-MM-DD
+  schedules: {
+    department: string;
+    departmentEn: string;
+    doctorName: string;
+    specialistId: string;
+  }[];
+}

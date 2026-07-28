@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import * as XLSX from 'xlsx';
 import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
 import { db } from '../firebase/config';
-import { OnCallSchedule, Specialist } from '../types';
+import { OnCallSchedule, Specialist, MonthlyScheduleItem } from '../types';
 import { addOnCallSchedule, updateOnCallSchedule, deleteOnCallSchedule, addSpecialist, updateSpecialist, deleteSpecialist } from '../services/db';
 import toast from 'react-hot-toast';
 import { FaPlus, FaEdit, FaTrash, FaSave, FaTimes, FaUserMd, FaHospitalAlt, FaFileExcel, FaDownload } from 'react-icons/fa';
@@ -15,7 +15,8 @@ const AdminOnCall = () => {
   const [selectedSchedules, setSelectedSchedules] = useState<string[]>([]);
   const [selectedSpecialists, setSelectedSpecialists] = useState<string[]>([]);
 
-  const [activeTab, setActiveTab] = useState<'schedule' | 'specialist'>('schedule');
+  const [activeTab, setActiveTab] = useState<'schedule' | 'specialist' | 'monthly'>('schedule');
+  const [monthlyPreview, setMonthlyPreview] = useState<MonthlyScheduleItem[]>([]);
 
   // Modal states
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
@@ -28,6 +29,7 @@ const AdminOnCall = () => {
   
   const fileInputScheduleRef = useRef<HTMLInputElement>(null);
   const fileInputSpecialistRef = useRef<HTMLInputElement>(null);
+  const fileInputMonthlyRef = useRef<HTMLInputElement>(null);
 
   // Form Data
   const [scheduleData, setScheduleData] = useState({
@@ -60,6 +62,18 @@ const AdminOnCall = () => {
       unsubSchedule();
       unsubSpecialist();
     };
+  }, []);
+
+  useEffect(() => {
+    // Load monthly schedule from local storage
+    const stored = localStorage.getItem('monthly_oncall_schedule');
+    if (stored) {
+      try {
+        setMonthlyPreview(JSON.parse(stored));
+      } catch (e) {
+        console.error(e);
+      }
+    }
   }, []);
 
   const downloadTemplateSchedule = () => {
@@ -300,6 +314,133 @@ const AdminOnCall = () => {
     }
   };
 
+  // --- Monthly Schedule Handlers ---
+  const DEPARTMENTS = [
+    'Kebidanan dan Kandungan', 'Anak', 'Penyakit Dalam', 'Gastroenterologi & Hepatologi',
+    'Endokrin, Metabolik & Diabetes', 'Jantung', 'THT', 'Paru', 'Saraf', 'Mata', 'Urologi',
+    'Bedah Umum', 'Bedah Digestif', 'Ortopedi', 'Bedah Saraf', 'Bedah Vaskular dan Endovaskular',
+    'Rehabilitasi Medik', 'Kulit dan Kelamin', 'Bedah Onkologi', 'Radiologi', 'Bedah Toraks Kardiovaskular'
+  ];
+
+  const downloadTemplateMonthly = () => {
+    const data: Record<string, string>[] = [];
+    const dummyObj: Record<string, string> = { Tanggal: '2026-08-01' };
+    DEPARTMENTS.forEach(dep => {
+      dummyObj[dep] = '';
+    });
+    data.push(dummyObj);
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Jadwal Bulanan");
+    XLSX.writeFile(wb, "Template_Jadwal_Bulanan.xlsx");
+  };
+
+  const parseDateFromExcel = (excelDate: any): string => {
+    if (!excelDate) return '';
+    if (typeof excelDate === 'number') {
+      const date = new Date(Math.round((excelDate - 25569) * 86400 * 1000));
+      return date.toISOString().split('T')[0];
+    }
+    return String(excelDate);
+  };
+
+  const handleFileUploadMonthly = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setLoading(true);
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const bstr = evt.target?.result;
+        const wb = XLSX.read(bstr, { type: 'binary', cellDates: true });
+        const wsname = wb.SheetNames[0];
+        const ws = wb.Sheets[wsname];
+        const data = XLSX.utils.sheet_to_json(ws, { raw: false, dateNF: 'yyyy-mm-dd' }) as any[];
+
+        if (data.length === 0) {
+          toast.error('File kosong.');
+          setLoading(false);
+          return;
+        }
+
+        // Validate Headers
+        const firstRow = data[0];
+        const headers = Object.keys(firstRow);
+        if (!headers.includes('Tanggal')) {
+          toast.error('Gagal: Kolom "Tanggal" tidak ditemukan.');
+          setLoading(false);
+          return;
+        }
+        for (const dep of DEPARTMENTS) {
+          if (!headers.includes(dep)) {
+            toast.error(`Gagal: Kolom departemen "${dep}" tidak ditemukan di file Excel.`);
+            setLoading(false);
+            return;
+          }
+        }
+
+        const newMonthlySchedules: MonthlyScheduleItem[] = [];
+
+        // Parse each row
+        for (let i = 0; i < data.length; i++) {
+          const row = data[i];
+          const rawDate = row['Tanggal'];
+          const dateStr = parseDateFromExcel(rawDate);
+          
+          if (!dateStr) continue;
+
+          const daySchedules = [];
+          for (const dep of DEPARTMENTS) {
+            const doctorName = row[dep] ? String(row[dep]).trim() : '';
+            if (doctorName) {
+              const matchedSpecialist = specialists.find(s => s.name.toLowerCase() === doctorName.toLowerCase());
+              if (!matchedSpecialist) {
+                toast.error(`Baris ${i + 2}, Kolom ${dep}, Nama Dokter: "${doctorName}" tidak ditemukan pada Master Dokter. Import dibatalkan.`);
+                setLoading(false);
+                if (fileInputMonthlyRef.current) fileInputMonthlyRef.current.value = '';
+                return;
+              }
+              daySchedules.push({
+                department: matchedSpecialist.department || dep,
+                departmentEn: matchedSpecialist.departmentEn || '',
+                doctorName: matchedSpecialist.name,
+                specialistId: matchedSpecialist.id
+              });
+            }
+          }
+          newMonthlySchedules.push({
+            date: dateStr,
+            schedules: daySchedules
+          });
+        }
+
+        const proceedSave = () => {
+          localStorage.setItem('monthly_oncall_schedule', JSON.stringify(newMonthlySchedules));
+          setMonthlyPreview(newMonthlySchedules);
+          toast.success('Jadwal Bulanan berhasil disimpan ke Local Storage.');
+        };
+
+        if (monthlyPreview.length > 0) {
+          if (window.confirm('Jadwal bulan ini sudah ada. Replace existing schedule? (Ya/Tidak)')) {
+            proceedSave();
+          }
+        } else {
+          proceedSave();
+        }
+
+      } catch (error) {
+        console.error(error);
+        toast.error('Terjadi kesalahan saat membaca file Excel.');
+      } finally {
+        setLoading(false);
+        if (fileInputMonthlyRef.current) fileInputMonthlyRef.current.value = '';
+      }
+    };
+    reader.readAsBinaryString(file);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex bg-white rounded-xl shadow-sm border border-gray-100 p-1 w-fit">
@@ -318,6 +459,14 @@ const AdminOnCall = () => {
           }`}
         >
           <FaUserMd /> Master Data Dokter
+        </button>
+        <button
+          onClick={() => setActiveTab('monthly')}
+          className={`flex items-center gap-2 px-6 py-2.5 rounded-lg font-medium transition-colors ${
+            activeTab === 'monthly' ? 'bg-primary text-white' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+          }`}
+        >
+          <FaFileExcel /> Jadwal Bulanan
         </button>
       </div>
 
@@ -565,6 +714,79 @@ const AdminOnCall = () => {
                 )}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'monthly' && (
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="p-4 sm:p-6 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <h2 className="text-xl font-bold text-gray-800">Jadwal Bulanan</h2>
+              <p className="text-sm text-gray-500 mt-1">Upload jadwal sebulan sekaligus dari Excel. Akan otomatis tampil sesuai tanggal.</p>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+              <button 
+                onClick={downloadTemplateMonthly}
+                className="w-full sm:w-auto justify-center bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors shadow-sm text-sm"
+              >
+                <FaDownload /> Export Template XLSX
+              </button>
+              
+              <input 
+                type="file" 
+                accept=".xlsx, .xls" 
+                className="hidden" 
+                ref={fileInputMonthlyRef}
+                onChange={handleFileUploadMonthly}
+              />
+              <button 
+                onClick={() => fileInputMonthlyRef.current?.click()}
+                disabled={loading}
+                className="w-full sm:w-auto justify-center bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors shadow-sm text-sm disabled:opacity-50"
+              >
+                <FaFileExcel /> Import Jadwal Bulanan
+              </button>
+            </div>
+          </div>
+          
+          <div className="p-4 sm:p-6">
+            <h3 className="font-semibold text-gray-700 mb-4">Preview Jadwal Tersimpan ({monthlyPreview.length} hari)</h3>
+            <div className="overflow-x-auto border border-gray-100 rounded-lg max-h-96">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-gray-50 text-gray-600 text-sm border-b border-gray-100 sticky top-0 z-10">
+                    <th className="py-3 px-6 font-semibold whitespace-nowrap bg-gray-50">Tanggal</th>
+                    {DEPARTMENTS.map(dep => (
+                      <th key={dep} className="py-3 px-6 font-semibold whitespace-nowrap bg-gray-50">{dep}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {monthlyPreview.length === 0 ? (
+                    <tr>
+                      <td colSpan={DEPARTMENTS.length + 1} className="py-8 text-center text-gray-500">
+                        Belum ada jadwal bulanan tersimpan di Local Storage.
+                      </td>
+                    </tr>
+                  ) : (
+                    monthlyPreview.map((item, idx) => (
+                      <tr key={idx} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors text-sm">
+                        <td className="py-2 px-6 font-medium text-gray-800">{item.date}</td>
+                        {DEPARTMENTS.map(dep => {
+                          const sched = item.schedules.find(s => s.department === dep);
+                          return (
+                            <td key={dep} className="py-2 px-6 text-gray-600">
+                              {sched ? sched.doctorName : '-'}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}
