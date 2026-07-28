@@ -793,11 +793,10 @@ const AdminOnCall = () => {
                   onChange={(selectedOption) => {
                     const selectedName = selectedOption ? selectedOption.value : '';
                     const selectedSpecialist = specialists.find(sp => sp.name === selectedName);
-                    if (selectedSpecialist && selectedSpecialist.department) {
+                    if (selectedSpecialist) {
                       setScheduleData({
                         ...scheduleData, 
                         doctorName: selectedName,
-                        department: selectedSpecialist.department || scheduleData.department,
                         departmentEn: selectedSpecialist.departmentEn || scheduleData.departmentEn
                       });
                     } else {
