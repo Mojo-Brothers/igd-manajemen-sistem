@@ -85,9 +85,9 @@ const Display = () => {
           {settings?.logoUrl ? (
             <img src={settings.logoUrl} alt="Hospital Logo" className="h-20 object-contain" />
           ) : (
-            <div className="h-20 w-20 bg-primary rounded-xl flex items-center justify-center text-white font-bold text-2xl">
-              PH
-            </div>
+            <img src={`${import.meta.env.BASE_URL}logo.png`} alt="Hospital Logo" className="h-20 object-contain" onError={(e) => {
+              (e.target as HTMLImageElement).style.display = 'none';
+            }} />
           )}
           <h1 className="text-4xl font-black text-primary tracking-tight max-w-3xl leading-tight uppercase">
             {settings?.hospitalName || 'PRIMAYA HOSPITAL'}<br/>

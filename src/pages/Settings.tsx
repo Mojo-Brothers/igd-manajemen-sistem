@@ -139,8 +139,8 @@ const Settings = () => {
                     ) : (
                       <>
                         <FaImage size={32} className="text-gray-400 mb-2" />
-                        <p className="mb-2 text-sm text-gray-500"><span className="font-semibold">Klik untuk upload</span></p>
-                        <p className="text-xs text-gray-500">PNG, JPG (Disarankan transparansi/PNG)</p>
+                        <p className="mb-2 text-sm text-gray-500"><span className="font-semibold">Klik untuk upload (Opsional)</span></p>
+                        <p className="text-xs text-gray-500 text-center px-4">Jika dikosongkan, aplikasi akan menggunakan file <b>logo.png</b> dari folder public/github.</p>
                       </>
                     )}
                   </div>
