@@ -21,6 +21,8 @@ export interface AppSettings {
 export interface Specialist {
   id: string;
   name: string;
+  department?: string;
+  departmentEn?: string;
 }
 
 export interface OnCallSchedule {

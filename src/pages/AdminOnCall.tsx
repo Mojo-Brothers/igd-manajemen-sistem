@@ -34,7 +34,9 @@ const AdminOnCall = () => {
   });
 
   const [specialistData, setSpecialistData] = useState({
-    name: ''
+    name: '',
+    department: '',
+    departmentEn: ''
   });
 
   useEffect(() => {
@@ -161,8 +163,8 @@ const AdminOnCall = () => {
 
   const downloadTemplateSpecialist = () => {
     const data = [
-      { Name: 'dr. Budi Santoso, Sp.PD' },
-      { Name: 'dr. Siti Aminah, Sp.A' }
+      { Departemen: 'Penyakit Dalam', 'Departemen (English)': 'Internal Medicine', 'Nama Dokter': 'dr. Budi Santoso, Sp.PD' },
+      { Departemen: 'Anak', 'Departemen (English)': 'Pediatrician', 'Nama Dokter': 'dr. Siti Aminah, Sp.A' }
     ];
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
@@ -186,9 +188,11 @@ const AdminOnCall = () => {
 
         let addedCount = 0;
         for (const row of data) {
-          if (row.Name) {
+          if (row['Nama Dokter']) {
             await addSpecialist({
-              name: row.Name
+              name: row['Nama Dokter'],
+              department: row['Departemen'] || '',
+              departmentEn: row['Departemen (English)'] || ''
             });
             addedCount++;
           }
@@ -209,10 +213,14 @@ const AdminOnCall = () => {
   const handleOpenSpecialistModal = (specialist?: Specialist) => {
     if (specialist) {
       setEditingSpecialist(specialist);
-      setSpecialistData({ name: specialist.name });
+      setSpecialistData({ 
+        name: specialist.name,
+        department: specialist.department || '',
+        departmentEn: specialist.departmentEn || ''
+      });
     } else {
       setEditingSpecialist(null);
-      setSpecialistData({ name: '' });
+      setSpecialistData({ name: '', department: '', departmentEn: '' });
     }
     setIsSpecialistModalOpen(true);
   };
@@ -413,6 +421,7 @@ const AdminOnCall = () => {
               <thead>
                 <tr className="bg-gray-50 text-gray-600 text-sm border-b border-gray-100">
                   <th className="py-3 px-6 font-semibold">Nama Lengkap & Gelar</th>
+                  <th className="py-3 px-6 font-semibold">Departemen</th>
                   <th className="py-3 px-6 font-semibold text-right">Aksi</th>
                 </tr>
               </thead>
@@ -427,6 +436,10 @@ const AdminOnCall = () => {
                   specialists.map((specialist) => (
                     <tr key={specialist.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
                       <td className="py-3 px-6 font-medium text-gray-800">{specialist.name}</td>
+                      <td className="py-3 px-6">
+                        <p className="text-gray-800">{specialist.department || '-'}</p>
+                        <p className="text-xs text-gray-500 italic">{specialist.departmentEn}</p>
+                      </td>
                       <td className="py-3 px-6 text-right space-x-2 whitespace-nowrap">
                         <button 
                           onClick={() => handleOpenSpecialistModal(specialist)}
@@ -493,7 +506,20 @@ const AdminOnCall = () => {
                 <label className="block text-sm font-bold text-primary mb-1">Dokter Bertugas</label>
                 <select 
                   value={scheduleData.doctorName}
-                  onChange={e => setScheduleData({...scheduleData, doctorName: e.target.value})}
+                  onChange={e => {
+                    const selectedName = e.target.value;
+                    const selectedSpecialist = specialists.find(sp => sp.name === selectedName);
+                    if (selectedSpecialist && selectedSpecialist.department) {
+                      setScheduleData({
+                        ...scheduleData, 
+                        doctorName: selectedName,
+                        department: selectedSpecialist.department || scheduleData.department,
+                        departmentEn: selectedSpecialist.departmentEn || scheduleData.departmentEn
+                      });
+                    } else {
+                      setScheduleData({...scheduleData, doctorName: selectedName});
+                    }
+                  }}
                   className="w-full px-4 py-3 border-2 border-primary/20 bg-blue-50/50 rounded-lg focus:ring-2 focus:ring-primary outline-none text-gray-800 font-medium cursor-pointer"
                 >
                   <option value="">-- Kosong --</option>
@@ -556,9 +582,31 @@ const AdminOnCall = () => {
                   type="text" 
                   required
                   value={specialistData.name}
-                  onChange={e => setSpecialistData({ name: e.target.value })}
+                  onChange={e => setSpecialistData({ ...specialistData, name: e.target.value })}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"
                   placeholder="Contoh: dr. Budi Santoso, Sp.PD"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Departemen (Indonesia)</label>
+                <input 
+                  type="text" 
+                  value={specialistData.department}
+                  onChange={e => setSpecialistData({ ...specialistData, department: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"
+                  placeholder="Contoh: Penyakit Dalam"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Departemen (English)</label>
+                <input 
+                  type="text" 
+                  value={specialistData.departmentEn}
+                  onChange={e => setSpecialistData({ ...specialistData, departmentEn: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"
+                  placeholder="Contoh: Internist"
                 />
               </div>
 
