@@ -182,7 +182,7 @@ const OnCallDisplay = () => {
           </div>
           <div className="text-center">
             <h1 className="text-[#17596b] font-black text-6xl tracking-wider mb-1" style={{ fontFamily: 'Arial, sans-serif' }}>
-              JADWAL PANGGILAN
+              JADWAL ON-CALL
             </h1>
             <h2 className="text-[#17596b] font-medium text-3xl italic tracking-widest">
               Schedule On Call
