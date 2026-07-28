@@ -414,7 +414,7 @@ const AdminOnCall = () => {
                 return;
               }
               daySchedules.push({
-                department: matchedSpecialist.department || dep,
+                department: dep,
                 departmentEn: matchedSpecialist.departmentEn || '',
                 doctorName: matchedSpecialist.name,
                 specialistId: matchedSpecialist.id
