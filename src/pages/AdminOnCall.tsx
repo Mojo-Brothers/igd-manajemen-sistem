@@ -468,7 +468,7 @@ const AdminOnCall = () => {
           <div className="p-4 sm:p-6 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
               <h2 className="text-xl font-bold text-gray-800">Dashboard Jadwal Hari Ini</h2>
-              <p className="text-sm text-gray-500 mt-1">Lihat jadwal yang sedang tampil di layar TV. Anda bisa melakukan perubahan mendadak (override) dari sini.</p>
+              <p className="text-sm text-gray-500 mt-1">Lihat jadwal yang sedang tampil di layar Display. Anda bisa melakukan perubahan mendadak (override) dari sini.</p>
             </div>
             <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
               <span className="bg-blue-50 text-blue-700 px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2">
@@ -862,7 +862,7 @@ const AdminOnCall = () => {
                   <option value="Izin" />
                   <option value="Tugas Luar" />
                 </datalist>
-                <p className="text-xs text-gray-500 mt-1">Akan ditampilkan di bawah nama dokter pada layar TV.</p>
+                <p className="text-xs text-gray-500 mt-1">Akan ditampilkan di bawah nama dokter pada layar Display.</p>
               </div>
 
               <div>

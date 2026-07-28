@@ -68,7 +68,7 @@ const Dashboard = () => {
         <ul className="space-y-3 text-gray-600 list-disc pl-5">
           <li>Menu <strong>Jadwal Dokter</strong> digunakan untuk menambah daftar dokter dan mengatur siapa yang tampil di layar IGD.</li>
           <li>Menu <strong>Pengaturan</strong> digunakan untuk mengubah nama rumah sakit, logo, dan running text (teks berjalan) di bagian bawah layar.</li>
-          <li>Semua perubahan yang Anda simpan akan secara otomatis (real-time) tampil di layar TV tanpa perlu me-refresh halaman TV.</li>
+          <li>Semua perubahan yang Anda simpan akan secara otomatis (real-time) tampil di layar Display tanpa perlu me-refresh halaman Display.</li>
         </ul>
       </div>
     </div>
