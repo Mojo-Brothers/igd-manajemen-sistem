@@ -18,7 +18,6 @@ const Settings = () => {
     copyright: ''
   });
   
-  const [logoFile, setLogoFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -41,12 +40,6 @@ const Settings = () => {
     
     try {
       let finalLogoUrl = formData.logoUrl;
-      
-      if (logoFile) {
-        toast.loading('Mengunggah logo...', { id: 'upload' });
-        finalLogoUrl = await uploadDoctorImage(logoFile);
-        toast.dismiss('upload');
-      }
 
       await updateSettings({
         ...formData,
@@ -128,35 +121,22 @@ const Settings = () => {
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Logo Rumah Sakit</label>
-              <div className="flex items-center justify-center w-full">
-                <label className="flex flex-col items-center justify-center w-full h-48 border-2 border-gray-300 border-dashed rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
-                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                    {logoFile ? (
-                      <div className="text-primary font-medium text-sm flex flex-col items-center">
-                        <FaImage size={32} className="mb-2" />
-                        File dipilih: {logoFile.name}
-                      </div>
-                    ) : formData.logoUrl ? (
-                      <img src={formData.logoUrl} alt="Current Logo" className="h-24 object-contain mb-2" />
-                    ) : (
-                      <>
-                        <FaImage size={32} className="text-gray-400 mb-2" />
-                        <p className="mb-2 text-sm text-gray-500"><span className="font-semibold">Klik untuk upload (Opsional)</span></p>
-                        <p className="text-xs text-gray-500 text-center px-4">Jika dikosongkan, aplikasi akan menggunakan file <b>logo.png</b> dari folder public/github.</p>
-                      </>
-                    )}
+              <div className="space-y-3">
+                <input 
+                  type="text" 
+                  placeholder="https://... (URL Gambar Logo)"
+                  value={formData.logoUrl}
+                  onChange={e => setFormData({...formData, logoUrl: e.target.value})}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+                />
+                <p className="text-xs text-gray-500">
+                  Kosongkan jika Anda ingin menggunakan file <b>logo.png</b> bawaan dari sistem. Jika Anda meng-host gambar di tempat lain (misal: GitHub/Imgur), masukkan URL-nya di atas.
+                </p>
+                {formData.logoUrl && (
+                  <div className="mt-2 p-2 border border-gray-100 rounded-lg inline-block bg-gray-50">
+                    <img src={formData.logoUrl} alt="Preview" className="h-16 object-contain" />
                   </div>
-                  <input 
-                    type="file" 
-                    className="hidden" 
-                    accept="image/*"
-                    onChange={e => {
-                      if (e.target.files && e.target.files[0]) {
-                        setLogoFile(e.target.files[0]);
-                      }
-                    }}
-                  />
-                </label>
+                )}
               </div>
             </div>
             
