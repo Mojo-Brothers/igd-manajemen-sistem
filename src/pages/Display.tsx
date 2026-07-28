@@ -143,7 +143,9 @@ const Display = () => {
               ease: "linear",
             }}
           >
-            {settings?.runningText || 'Selamat Datang di Instalasi Gawat Darurat Primaya Hospital'}
+            {settings?.runningText 
+              ? settings.runningText.split('\n').filter(t => t.trim() !== '').join('   ✦   ')
+              : 'Selamat Datang di Instalasi Gawat Darurat Primaya Hospital'}
           </motion.div>
         </div>
       </footer>
