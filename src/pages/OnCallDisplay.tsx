@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, doc } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { OnCallSchedule } from '../types';
 import { useSettings } from '../contexts/SettingsContext';
@@ -27,11 +27,9 @@ const OnCallDisplay = () => {
     const dd = String(currentTime.getDate()).padStart(2, '0');
     const todayStr = `${yyyy}-${mm}-${dd}`;
 
-    const stored = localStorage.getItem('monthly_oncall_schedule');
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        const todaySchedule = parsed.find((p: any) => p.date === todayStr);
+    const unsubscribe = onSnapshot(doc(db, 'monthlySchedules', todayStr), (docSnap) => {
+      if (docSnap.exists()) {
+        const todaySchedule = docSnap.data();
         if (todaySchedule && todaySchedule.schedules) {
           const mapped = todaySchedule.schedules.map((s: any, idx: number) => ({
             id: `monthly-${idx}`,
@@ -44,10 +42,12 @@ const OnCallDisplay = () => {
         } else {
           setMonthlySchedules([]);
         }
-      } catch (e) {
-        console.error(e);
+      } else {
+        setMonthlySchedules([]);
       }
-    }
+    });
+
+    return () => unsubscribe();
   }, [currentTime]);
 
   useEffect(() => {

@@ -10,7 +10,8 @@ import {
   addDoc
 } from 'firebase/firestore';
 import { db } from '../firebase/config';
-import { Doctor, AppSettings, OnCallSchedule, Specialist } from '../types';
+import { Doctor, AppSettings, OnCallSchedule, Specialist, MonthlyScheduleItem } from '../types';
+import { writeBatch } from 'firebase/firestore';
 
 // DOCTORS
 export const getDoctors = async (): Promise<Doctor[]> => {
@@ -79,4 +80,20 @@ export const updateSpecialist = async (id: string, data: Partial<Specialist>) =>
 export const deleteSpecialist = async (id: string) => {
   const docRef = doc(db, 'specialists', id);
   await deleteDoc(docRef);
+};
+
+// ==========================================
+// MONTHLY SCHEDULES
+// ==========================================
+export const saveMonthlySchedules = async (schedules: MonthlyScheduleItem[]) => {
+  // We use batch to write all daily schedules at once
+  const batch = writeBatch(db);
+  
+  for (const schedule of schedules) {
+    // Document ID is the date string e.g., '2026-08-01'
+    const docRef = doc(db, 'monthlySchedules', schedule.date);
+    batch.set(docRef, schedule);
+  }
+  
+  await batch.commit();
 };

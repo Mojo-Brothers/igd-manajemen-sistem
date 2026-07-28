@@ -3,7 +3,7 @@ import * as XLSX from 'xlsx';
 import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { OnCallSchedule, Specialist, MonthlyScheduleItem } from '../types';
-import { addOnCallSchedule, updateOnCallSchedule, deleteOnCallSchedule, addSpecialist, updateSpecialist, deleteSpecialist } from '../services/db';
+import { addOnCallSchedule, updateOnCallSchedule, deleteOnCallSchedule, addSpecialist, updateSpecialist, deleteSpecialist, saveMonthlySchedules } from '../services/db';
 import toast from 'react-hot-toast';
 import { FaPlus, FaEdit, FaTrash, FaSave, FaTimes, FaUserMd, FaHospitalAlt, FaFileExcel, FaDownload } from 'react-icons/fa';
 import Select from 'react-select';
@@ -65,15 +65,8 @@ const AdminOnCall = () => {
   }, []);
 
   useEffect(() => {
-    // Load monthly schedule from local storage
-    const stored = localStorage.getItem('monthly_oncall_schedule');
-    if (stored) {
-      try {
-        setMonthlyPreview(JSON.parse(stored));
-      } catch (e) {
-        console.error(e);
-      }
-    }
+    // We no longer read from local storage on load.
+    // Preview will only show the most recently uploaded data in this session.
   }, []);
 
   const downloadTemplateSchedule = () => {
@@ -416,18 +409,24 @@ const AdminOnCall = () => {
           });
         }
 
-        const proceedSave = () => {
-          localStorage.setItem('monthly_oncall_schedule', JSON.stringify(newMonthlySchedules));
-          setMonthlyPreview(newMonthlySchedules);
-          toast.success('Jadwal Bulanan berhasil disimpan ke Local Storage.');
+        const proceedSave = async () => {
+          try {
+            await saveMonthlySchedules(newMonthlySchedules);
+            setMonthlyPreview(newMonthlySchedules);
+            toast.success('Jadwal Bulanan berhasil disimpan ke Firebase Firestore.');
+          } catch (e) {
+            console.error(e);
+            toast.error('Gagal menyimpan jadwal ke server.');
+          }
         };
 
-        if (monthlyPreview.length > 0) {
-          if (window.confirm('Jadwal bulan ini sudah ada. Replace existing schedule? (Ya/Tidak)')) {
-            proceedSave();
-          }
-        } else {
+        // We can just proceed save without checking local preview since we save to Firestore.
+        // Or if we want to confirm, we could ask every time.
+        if (window.confirm(`Apakah Anda yakin ingin mengimport ${newMonthlySchedules.length} hari jadwal ke sistem? Ini akan menimpa jadwal sebelumnya pada tanggal yang sama.`)) {
           proceedSave();
+        } else {
+          setLoading(false);
+          if (fileInputMonthlyRef.current) fileInputMonthlyRef.current.value = '';
         }
 
       } catch (error) {
@@ -751,7 +750,7 @@ const AdminOnCall = () => {
           </div>
           
           <div className="p-4 sm:p-6">
-            <h3 className="font-semibold text-gray-700 mb-4">Preview Jadwal Tersimpan ({monthlyPreview.length} hari)</h3>
+            <h3 className="font-semibold text-gray-700 mb-4">Preview Upload Terakhir ({monthlyPreview.length} hari)</h3>
             <div className="overflow-x-auto border border-gray-100 rounded-lg max-h-96">
               <table className="w-full text-left border-collapse">
                 <thead>
@@ -766,7 +765,7 @@ const AdminOnCall = () => {
                   {monthlyPreview.length === 0 ? (
                     <tr>
                       <td colSpan={DEPARTMENTS.length + 1} className="py-8 text-center text-gray-500">
-                        Belum ada jadwal bulanan tersimpan di Local Storage.
+                        Belum ada preview. Silakan import Excel untuk melihat jadwal yang baru di-upload.
                       </td>
                     </tr>
                   ) : (
