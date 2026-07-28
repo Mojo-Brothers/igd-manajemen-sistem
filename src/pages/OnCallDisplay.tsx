@@ -31,9 +31,6 @@ const OnCallDisplay = () => {
     return `${d}-${m}-${y}`;
   };
 
-  // Split into two columns for the layout
-  const midPoint = Math.ceil(schedules.length / 2);
-  const leftColumn = schedules.slice(0, 14); // the photo has 14 rows on left, 16 on right approx. Wait, 30 total, so 15 and 15 is better.
   // Actually, we'll just split equally based on array length.
   const col1 = schedules.slice(0, Math.ceil(schedules.length / 2));
   const col2 = schedules.slice(Math.ceil(schedules.length / 2));
