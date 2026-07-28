@@ -81,8 +81,8 @@ const Display = () => {
       } as React.CSSProperties}
     >
       {/* Header */}
-      <header className="h-32 bg-white shadow-md flex items-center justify-between px-10 shrink-0 relative z-10">
-        <div className="flex items-center gap-6">
+      <header className="h-32 bg-white shadow-md flex items-center px-10 shrink-0 relative z-10">
+        <div className="flex-1 flex items-center justify-start">
           {settings?.logoUrl ? (
             <img src={settings.logoUrl} alt="Hospital Logo" className="h-20 object-contain" />
           ) : (
@@ -90,12 +90,17 @@ const Display = () => {
               (e.target as HTMLImageElement).style.display = 'none';
             }} />
           )}
-          <h1 className="text-4xl font-black text-primary tracking-tight max-w-3xl leading-tight uppercase">
-            {settings?.hospitalName || 'PRIMAYA HOSPITAL'}<br/>
-            <span className="text-3xl font-bold text-gray-600">IGD DOCTOR SCHEDULE</span>
+        </div>
+        
+        <div className="flex-1 flex items-center justify-center">
+          <h1 className="text-5xl font-black text-primary tracking-wide uppercase whitespace-nowrap drop-shadow-sm">
+            IGD DOCTOR SCHEDULE
           </h1>
         </div>
-        <Clock />
+
+        <div className="flex-1 flex justify-end">
+          <Clock />
+        </div>
       </header>
 
       {/* Main Content */}
