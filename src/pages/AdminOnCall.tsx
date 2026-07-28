@@ -310,15 +310,15 @@ const AdminOnCall = () => {
   // --- Monthly Schedule Handlers ---
   const DEPARTMENTS = [
     'Obstetri dan Ginekologi',
-    'Ilmu Kesehatan Anak',
-    'Ilmu Penyakit Dalam',
+    'Anak',
+    'Penyakit Dalam',
     'Penyakit Dalam (Konsultan Gastroentero-Hepatologi)',
     'Penyakit Dalam (Konsultan Endokrin, Metabolik, dan Diabetes)',
     'Jantung dan Pembuluh Darah',
     'Telinga Hidung Tenggorok - Bedah Kepala Leher',
     'Pulmonologi dan Kedokteran Respirasi',
     'Neurologi',
-    'Ilmu Kesehatan Mata',
+    'Mata',
     'Urologi',
     'Bedah Umum',
     'Bedah Digestif',
