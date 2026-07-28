@@ -5,6 +5,7 @@ import { Doctor } from '../types';
 import { useSettings } from '../contexts/SettingsContext';
 import Clock from '../components/Clock';
 import DoctorCard from '../components/DoctorCard';
+import DoctorCardClassic from '../components/DoctorCardClassic';
 import { motion } from 'framer-motion';
 
 const Display = () => {
@@ -103,11 +104,22 @@ const Display = () => {
         <div className="absolute top-0 right-0 w-96 h-96 bg-primary opacity-5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
         <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-400 opacity-5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
 
-        <div className="grid grid-cols-4 gap-10 px-4 h-full">
-          <DoctorCard title="Dokter Jaga 1" doctor={getDoctorForSlot('doctor1')} />
-          <DoctorCard title="Dokter Jaga 2" doctor={getDoctorForSlot('doctor2')} />
-          <DoctorCard title="Koordinator IGD" doctor={getDoctorForSlot('coordinator')} />
-          <DoctorCard title="Penanggung Jawab" doctor={getDoctorForSlot('pic')} />
+        <div className={`grid grid-cols-4 h-full ${settings?.theme === 'classic' ? 'gap-8' : 'gap-10 px-4'}`}>
+          {settings?.theme === 'classic' ? (
+            <>
+              <DoctorCardClassic title="Dokter Jaga 1" doctor={getDoctorForSlot('doctor1')} />
+              <DoctorCardClassic title="Dokter Jaga 2" doctor={getDoctorForSlot('doctor2')} />
+              <DoctorCardClassic title="Koordinator IGD" doctor={getDoctorForSlot('coordinator')} />
+              <DoctorCardClassic title="Penanggung Jawab" doctor={getDoctorForSlot('pic')} />
+            </>
+          ) : (
+            <>
+              <DoctorCard title="Dokter Jaga 1" doctor={getDoctorForSlot('doctor1')} />
+              <DoctorCard title="Dokter Jaga 2" doctor={getDoctorForSlot('doctor2')} />
+              <DoctorCard title="Koordinator IGD" doctor={getDoctorForSlot('coordinator')} />
+              <DoctorCard title="Penanggung Jawab" doctor={getDoctorForSlot('pic')} />
+            </>
+          )}
         </div>
       </main>
 

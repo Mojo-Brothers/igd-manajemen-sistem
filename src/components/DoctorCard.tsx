@@ -40,6 +40,14 @@ const DoctorCard = ({ title, doctor }: DoctorCardProps) => {
             {doctor.role && (
                <p className="text-xl xl:text-2xl text-blue-600/80 font-bold mt-6 tracking-wide uppercase">{doctor.role}</p>
             )}
+            
+            <div className={`mt-8 px-8 py-3 rounded-full text-xl font-bold shadow-sm ${
+              doctor.status.toLowerCase().includes('bertugas') || doctor.status.toLowerCase().includes('jaga')
+                ? 'bg-green-100 text-green-700 border border-green-300'
+                : 'bg-yellow-100 text-yellow-700 border border-yellow-300'
+            }`}>
+              {doctor.status}
+            </div>
           </div>
         ) : (
           <div className="w-full opacity-40">

@@ -14,6 +14,7 @@ export interface AppSettings {
   themeColor: string;
   secondaryColor: string;
   logoUrl: string;
+  theme?: 'classic' | 'modern';
   copyright: string;
 }
 

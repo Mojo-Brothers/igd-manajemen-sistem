@@ -14,6 +14,7 @@ const Settings = () => {
     themeColor: '',
     secondaryColor: '',
     logoUrl: '',
+    theme: 'modern' as 'classic' | 'modern',
     copyright: ''
   });
   
@@ -28,6 +29,7 @@ const Settings = () => {
         themeColor: settings.themeColor || '#015c80',
         secondaryColor: settings.secondaryColor || '#F5F8FA',
         logoUrl: settings.logoUrl || '',
+        theme: settings.theme || 'modern',
         copyright: settings.copyright || ''
       });
     }
@@ -166,6 +168,18 @@ const Settings = () => {
                 onChange={e => setFormData({...formData, copyright: e.target.value})}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none"
               />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Tema Tampilan IGD</label>
+              <select 
+                value={formData.theme}
+                onChange={e => setFormData({...formData, theme: e.target.value as 'classic' | 'modern'})}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none bg-white"
+              >
+                <option value="modern">Tema Modern (Teks Besar & Minimalis)</option>
+                <option value="classic">Tema Klasik (Lengkap dengan Foto)</option>
+              </select>
             </div>
           </div>
         </div>
