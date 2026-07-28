@@ -11,6 +11,9 @@ const AdminOnCall = () => {
   const [schedules, setSchedules] = useState<OnCallSchedule[]>([]);
   const [specialists, setSpecialists] = useState<Specialist[]>([]);
   
+  const [selectedSchedules, setSelectedSchedules] = useState<string[]>([]);
+  const [selectedSpecialists, setSelectedSpecialists] = useState<string[]>([]);
+
   const [activeTab, setActiveTab] = useState<'schedule' | 'specialist'>('schedule');
 
   // Modal states
@@ -154,9 +157,27 @@ const AdminOnCall = () => {
       try {
         await deleteOnCallSchedule(schedule.id);
         toast.success('Departemen dihapus');
+        setSelectedSchedules(prev => prev.filter(id => id !== schedule.id));
       } catch (error) {
         console.error(error);
         toast.error('Gagal menghapus data');
+      }
+    }
+  };
+
+  const handleBulkDeleteSchedules = async () => {
+    if (selectedSchedules.length === 0) return;
+    if (window.confirm(`Apakah Anda yakin ingin menghapus ${selectedSchedules.length} departemen terpilih?`)) {
+      setLoading(true);
+      try {
+        await Promise.all(selectedSchedules.map(id => deleteOnCallSchedule(id)));
+        setSelectedSchedules([]);
+        toast.success(`${selectedSchedules.length} departemen berhasil dihapus`);
+      } catch (error) {
+        console.error(error);
+        toast.error('Gagal menghapus data bulk');
+      } finally {
+        setLoading(false);
       }
     }
   };
@@ -253,9 +274,27 @@ const AdminOnCall = () => {
       try {
         await deleteSpecialist(specialist.id);
         toast.success('Data dokter dihapus');
+        setSelectedSpecialists(prev => prev.filter(id => id !== specialist.id));
       } catch (error) {
         console.error(error);
         toast.error('Gagal menghapus data');
+      }
+    }
+  };
+
+  const handleBulkDeleteSpecialists = async () => {
+    if (selectedSpecialists.length === 0) return;
+    if (window.confirm(`Apakah Anda yakin ingin menghapus ${selectedSpecialists.length} dokter terpilih?`)) {
+      setLoading(true);
+      try {
+        await Promise.all(selectedSpecialists.map(id => deleteSpecialist(id)));
+        setSelectedSpecialists([]);
+        toast.success(`${selectedSpecialists.length} dokter berhasil dihapus`);
+      } catch (error) {
+        console.error(error);
+        toast.error('Gagal menghapus data bulk');
+      } finally {
+        setLoading(false);
       }
     }
   };
@@ -311,6 +350,16 @@ const AdminOnCall = () => {
                 <FaFileExcel /> Import Excel
               </button>
               
+              {selectedSchedules.length > 0 && (
+                <button 
+                  onClick={handleBulkDeleteSchedules}
+                  disabled={loading}
+                  className="w-full sm:w-auto justify-center bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors shadow-sm text-sm disabled:opacity-50"
+                >
+                  <FaTrash /> Hapus ({selectedSchedules.length})
+                </button>
+              )}
+
               <button 
                 onClick={() => handleOpenScheduleModal()}
                 className="w-full sm:w-auto justify-center bg-primary hover:bg-blue-800 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors shadow-sm"
@@ -324,6 +373,17 @@ const AdminOnCall = () => {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-gray-50 text-gray-600 text-sm border-b border-gray-100">
+                  <th className="py-3 px-4 w-12 text-center">
+                    <input 
+                      type="checkbox" 
+                      className="rounded border-gray-300 text-primary focus:ring-primary cursor-pointer w-4 h-4"
+                      checked={schedules.length > 0 && selectedSchedules.length === schedules.length}
+                      onChange={(e) => {
+                        if (e.target.checked) setSelectedSchedules(schedules.map(s => s.id));
+                        else setSelectedSchedules([]);
+                      }}
+                    />
+                  </th>
                   <th className="py-3 px-6 font-semibold w-16 text-center">Urutan</th>
                   <th className="py-3 px-6 font-semibold">Departemen</th>
                   <th className="py-3 px-6 font-semibold">Dokter Bertugas</th>
@@ -333,13 +393,24 @@ const AdminOnCall = () => {
               <tbody>
                 {schedules.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="py-8 text-center text-gray-500">
+                    <td colSpan={5} className="py-8 text-center text-gray-500">
                       Belum ada data departemen. Anda dapat men-generate data awal dari halaman Pengaturan.
                     </td>
                   </tr>
                 ) : (
                   schedules.map((schedule) => (
                     <tr key={schedule.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
+                      <td className="py-3 px-4 text-center">
+                        <input 
+                          type="checkbox" 
+                          className="rounded border-gray-300 text-primary focus:ring-primary cursor-pointer w-4 h-4"
+                          checked={selectedSchedules.includes(schedule.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) setSelectedSchedules([...selectedSchedules, schedule.id]);
+                            else setSelectedSchedules(selectedSchedules.filter(id => id !== schedule.id));
+                          }}
+                        />
+                      </td>
                       <td className="py-3 px-6 text-center text-gray-500">{schedule.order}</td>
                       <td className="py-3 px-6">
                         <p className="font-bold text-gray-800">{schedule.department}</p>
@@ -407,6 +478,16 @@ const AdminOnCall = () => {
                 <FaFileExcel /> Import Excel
               </button>
               
+              {selectedSpecialists.length > 0 && (
+                <button 
+                  onClick={handleBulkDeleteSpecialists}
+                  disabled={loading}
+                  className="w-full sm:w-auto justify-center bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors shadow-sm text-sm disabled:opacity-50"
+                >
+                  <FaTrash /> Hapus ({selectedSpecialists.length})
+                </button>
+              )}
+
               <button 
                 onClick={() => handleOpenSpecialistModal()}
                 className="w-full sm:w-auto justify-center bg-primary hover:bg-blue-800 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors shadow-sm"
@@ -420,6 +501,17 @@ const AdminOnCall = () => {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-gray-50 text-gray-600 text-sm border-b border-gray-100">
+                  <th className="py-3 px-4 w-12 text-center">
+                    <input 
+                      type="checkbox" 
+                      className="rounded border-gray-300 text-primary focus:ring-primary cursor-pointer w-4 h-4"
+                      checked={specialists.length > 0 && selectedSpecialists.length === specialists.length}
+                      onChange={(e) => {
+                        if (e.target.checked) setSelectedSpecialists(specialists.map(s => s.id));
+                        else setSelectedSpecialists([]);
+                      }}
+                    />
+                  </th>
                   <th className="py-3 px-6 font-semibold">Nama Lengkap & Gelar</th>
                   <th className="py-3 px-6 font-semibold">Departemen</th>
                   <th className="py-3 px-6 font-semibold text-right">Aksi</th>
@@ -428,13 +520,24 @@ const AdminOnCall = () => {
               <tbody>
                 {specialists.length === 0 ? (
                   <tr>
-                    <td colSpan={2} className="py-8 text-center text-gray-500">
+                    <td colSpan={4} className="py-8 text-center text-gray-500">
                       Belum ada master data dokter. Silakan tambah data baru.
                     </td>
                   </tr>
                 ) : (
                   specialists.map((specialist) => (
                     <tr key={specialist.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
+                      <td className="py-3 px-4 text-center">
+                        <input 
+                          type="checkbox" 
+                          className="rounded border-gray-300 text-primary focus:ring-primary cursor-pointer w-4 h-4"
+                          checked={selectedSpecialists.includes(specialist.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) setSelectedSpecialists([...selectedSpecialists, specialist.id]);
+                            else setSelectedSpecialists(selectedSpecialists.filter(id => id !== specialist.id));
+                          }}
+                        />
+                      </td>
                       <td className="py-3 px-6 font-medium text-gray-800">{specialist.name}</td>
                       <td className="py-3 px-6">
                         <p className="text-gray-800">{specialist.department || '-'}</p>
