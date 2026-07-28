@@ -71,7 +71,13 @@ const OnCallDisplay = () => {
   manualSchedules.forEach(manual => {
     const existingIndex = finalSchedules.findIndex(s => s.department === manual.department);
     if (existingIndex >= 0) {
-      finalSchedules[existingIndex] = { ...finalSchedules[existingIndex], doctorName: manual.doctorName, status: manual.status };
+      finalSchedules[existingIndex] = { 
+        ...finalSchedules[existingIndex], 
+        doctorName: manual.doctorName, 
+        status: manual.status,
+        overrideReason: manual.overrideReason,
+        originalDoctorName: manual.originalDoctorName
+      };
     } else {
       finalSchedules.push(manual);
     }
@@ -111,10 +117,17 @@ const OnCallDisplay = () => {
           <div className="text-[10px] xl:text-[11px] text-blue-100 italic z-10">{schedule.departmentEn}</div>
         </div>
         <div className="w-1/2 bg-white text-[#333] pl-3 pr-2 py-1.5 flex items-center justify-between rounded shadow-md border border-gray-200 h-full overflow-hidden gap-2">
-          <div className="font-bold text-[14px] xl:text-[16px] leading-tight truncate flex-1">
-            {schedule.doctorName}
+          <div className="flex flex-col flex-1 truncate justify-center">
+            <div className="font-bold text-[14px] xl:text-[16px] leading-tight truncate">
+              {schedule.doctorName}
+            </div>
+            {schedule.originalDoctorName && schedule.originalDoctorName !== schedule.doctorName && (
+              <div className="text-[9px] xl:text-[10px] text-gray-500 italic truncate mt-0.5 font-normal">
+                Menggantikan: {schedule.originalDoctorName} {schedule.overrideReason ? `(${schedule.overrideReason})` : ''}
+              </div>
+            )}
           </div>
-          <div className={`${statusColor} text-white text-[9px] xl:text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full whitespace-nowrap shadow-sm`}>
+          <div className={`${statusColor} text-white text-[9px] xl:text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full whitespace-nowrap shadow-sm self-center`}>
             {status}
           </div>
         </div>

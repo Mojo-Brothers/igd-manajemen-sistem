@@ -31,6 +31,8 @@ export interface OnCallSchedule {
   departmentEn: string;
   doctorName: string;
   status?: string;
+  overrideReason?: string;
+  originalDoctorName?: string;
   order: number;
 }
 

@@ -36,6 +36,8 @@ const AdminOnCall = () => {
     departmentEn: '',
     doctorName: '',
     status: 'Sedang Bertugas',
+    overrideReason: '',
+    originalDoctorName: '',
     order: 0
   });
 
@@ -86,6 +88,9 @@ const AdminOnCall = () => {
 
   // --- Schedule Handlers ---
   const handleOpenScheduleModal = (departmentName: string, existingOverride?: OnCallSchedule) => {
+    const monthlySched = todayMonthlySchedule?.schedules?.find(s => s.department === departmentName);
+    const originalDoc = monthlySched?.doctorName || '';
+
     if (existingOverride) {
       setEditingSchedule(existingOverride);
       setScheduleData({
@@ -93,6 +98,8 @@ const AdminOnCall = () => {
         departmentEn: existingOverride.departmentEn,
         doctorName: existingOverride.doctorName,
         status: existingOverride.status || 'Sedang Bertugas',
+        overrideReason: existingOverride.overrideReason || '',
+        originalDoctorName: existingOverride.originalDoctorName || originalDoc,
         order: existingOverride.order
       });
     } else {
@@ -102,6 +109,8 @@ const AdminOnCall = () => {
         departmentEn: '',
         doctorName: '',
         status: 'Sedang Bertugas',
+        overrideReason: '',
+        originalDoctorName: originalDoc,
         order: DEPARTMENTS.indexOf(departmentName) + 1
       });
     }
@@ -833,6 +842,25 @@ const AdminOnCall = () => {
                   className="text-gray-800 font-medium"
                 />
                 <p className="text-xs text-gray-500 mt-1">Pilih dari Master Data Dokter. Jika belum ada, tambahkan di tab sebelah.</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Alasan Pergantian (Opsional)</label>
+                <input 
+                  type="text" 
+                  value={scheduleData.overrideReason || ''}
+                  onChange={e => setScheduleData({...scheduleData, overrideReason: e.target.value})}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"
+                  placeholder="Contoh: Cuti, Sakit, Tugas Luar..."
+                  list="reason-options"
+                />
+                <datalist id="reason-options">
+                  <option value="Cuti" />
+                  <option value="Sakit" />
+                  <option value="Izin" />
+                  <option value="Tugas Luar" />
+                </datalist>
+                <p className="text-xs text-gray-500 mt-1">Akan ditampilkan di bawah nama dokter pada layar TV.</p>
               </div>
 
               <div>
