@@ -8,6 +8,31 @@ import toast from 'react-hot-toast';
 import { FaPlus, FaEdit, FaTrash, FaSave, FaTimes, FaUserMd, FaHospitalAlt, FaFileExcel, FaDownload } from 'react-icons/fa';
 import Select from 'react-select';
 
+export const DEPARTMENTS = [
+  'Obstetri dan Ginekologi',
+  'Anak',
+  'Penyakit Dalam',
+  'Penyakit Dalam (Konsultan Gastroentero-Hepatologi)',
+  'Penyakit Dalam (Konsultan Endokrin, Metabolik, dan Diabetes)',
+  'Jantung dan Pembuluh Darah',
+  'Telinga Hidung Tenggorok - Bedah Kepala Leher',
+  'Pulmonologi dan Kedokteran Respirasi',
+  'Neurologi',
+  'Mata',
+  'Urologi',
+  'Bedah Umum',
+  'Bedah Digestif',
+  'Orthopaedi dan Traumatologi',
+  'Bedah Saraf',
+  'Bedah Vaskular dan Endovaskular',
+  'Orthopaedi (Konsultan Tulang Belakang)',
+  'Kedokteran Fisik dan Rehabilitasi',
+  'Dermatologi dan Venereologi',
+  'Bedah Onkologi',
+  'Radiologi',
+  'Bedah Toraks Kardiak dan Vaskular'
+];
+
 const AdminOnCall = () => {
   const [schedules, setSchedules] = useState<OnCallSchedule[]>([]);
   const [specialists, setSpecialists] = useState<Specialist[]>([]);
@@ -267,30 +292,7 @@ const AdminOnCall = () => {
   };
 
   // --- Monthly Schedule Handlers ---
-  const DEPARTMENTS = [
-    'Obstetri dan Ginekologi',
-    'Anak',
-    'Penyakit Dalam',
-    'Penyakit Dalam (Konsultan Gastroentero-Hepatologi)',
-    'Penyakit Dalam (Konsultan Endokrin, Metabolik, dan Diabetes)',
-    'Jantung dan Pembuluh Darah',
-    'Telinga Hidung Tenggorok - Bedah Kepala Leher',
-    'Pulmonologi dan Kedokteran Respirasi',
-    'Neurologi',
-    'Mata',
-    'Urologi',
-    'Bedah Umum',
-    'Bedah Digestif',
-    'Orthopaedi dan Traumatologi',
-    'Bedah Saraf',
-    'Bedah Vaskular dan Endovaskular',
-    'Orthopaedi (Konsultan Tulang Belakang)',
-    'Kedokteran Fisik dan Rehabilitasi',
-    'Dermatologi dan Venereologi',
-    'Bedah Onkologi',
-    'Radiologi',
-    'Bedah Toraks Kardiak dan Vaskular'
-  ];
+
 
   const downloadTemplateMonthly = () => {
     const data: Record<string, string>[] = [];

@@ -5,6 +5,7 @@ import { OnCallSchedule } from '../types';
 import { useSettings } from '../contexts/SettingsContext';
 import { motion } from 'framer-motion';
 import DigitalClock from '../components/DigitalClock';
+import { DEPARTMENTS } from './AdminOnCall';
 
 const OnCallDisplay = () => {
   const { settings, loading: settingsLoading } = useSettings();
@@ -79,7 +80,9 @@ const OnCallDisplay = () => {
         originalDoctorName: manual.originalDoctorName
       };
     } else {
-      finalSchedules.push(manual);
+      if (DEPARTMENTS.includes(manual.department)) {
+        finalSchedules.push(manual);
+      }
     }
   });
 
