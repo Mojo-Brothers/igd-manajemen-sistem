@@ -42,7 +42,7 @@ const AdminLayout = () => {
             <FaHospitalAlt size={28} />
             <div>
               <h2 className="font-bold text-lg leading-tight">Admin Panel</h2>
-              <p className="text-xs text-blue-200">IGD Display</p>
+              <p className="text-xs text-blue-200">Doctor Schedule Display</p>
             </div>
           </div>
           <button 
