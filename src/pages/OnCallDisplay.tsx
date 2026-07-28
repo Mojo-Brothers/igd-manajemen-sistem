@@ -94,24 +94,24 @@ const OnCallDisplay = () => {
         </div>
 
         {/* Date Section */}
-        <div className="w-full max-w-4xl mx-auto border-[3px] border-[#17596b] rounded-lg p-2 mb-8 flex justify-between items-center bg-white shadow-sm">
-          <div className="flex items-center gap-4 w-1/2 justify-center border-r-2 border-[#17596b]/20">
-            <div className="flex flex-col items-end">
-              <span className="text-[#17596b] font-bold text-xl">Hari :</span>
-              <span className="text-[#17596b] text-sm italic">Day</span>
+        <div className="w-full max-w-5xl mx-auto border-[3px] border-[#17596b] rounded-lg p-2 mb-8 flex justify-between items-center bg-white shadow-sm">
+          <div className="flex items-center gap-4 w-1/2 justify-center border-r-2 border-[#17596b]/20 px-2">
+            <div className="flex flex-col items-end pr-2">
+              <span className="text-[#17596b] font-bold text-xl whitespace-nowrap">Hari :</span>
+              <span className="text-[#17596b] text-sm italic pr-4">Day</span>
             </div>
-            <div className="bg-white border-2 border-gray-200 px-8 py-1 rounded shadow-inner min-w-[200px] text-center">
+            <div className="bg-white border-2 border-gray-200 px-6 py-1 rounded shadow-inner min-w-[180px] text-center">
               <span className="text-2xl font-bold text-gray-800 uppercase tracking-widest">{currentDay}</span>
             </div>
           </div>
-          <div className="flex items-center gap-4 w-1/2 justify-center">
-            <div className="flex flex-col items-end">
-              <span className="text-[#17596b] font-bold text-xl">Tanggal :</span>
-              <span className="text-[#17596b] text-sm italic">Date</span>
+          <div className="flex items-center gap-4 w-1/2 justify-center px-2">
+            <div className="flex flex-col items-end pr-2">
+              <span className="text-[#17596b] font-bold text-xl whitespace-nowrap">Tanggal :</span>
+              <span className="text-[#17596b] text-sm italic pr-4">Date</span>
             </div>
-            <div className="bg-white border-2 border-gray-200 px-6 py-1 rounded shadow-inner flex gap-2">
+            <div className="bg-white border-2 border-gray-200 px-3 py-1 rounded shadow-inner flex gap-1 items-center justify-center">
               {formatDate(currentTime).split('').map((char, i) => (
-                <span key={i} className={`text-2xl font-bold text-gray-800 ${char === '-' ? 'text-gray-400' : 'bg-gray-100 px-2 rounded border border-gray-200'}`}>
+                <span key={i} className={`text-2xl font-bold text-gray-800 text-center ${char === '-' ? 'text-gray-400 px-1' : 'bg-gray-100 w-9 py-0.5 rounded border border-gray-200 shadow-sm'}`}>
                   {char}
                 </span>
               ))}
