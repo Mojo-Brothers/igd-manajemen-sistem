@@ -364,7 +364,7 @@ const AdminOnCall = () => {
                 onClick={() => handleOpenScheduleModal()}
                 className="w-full sm:w-auto justify-center bg-primary hover:bg-blue-800 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors shadow-sm"
               >
-                <FaPlus /> Tambah Departemen
+                <FaPlus /> Tambah Penugasan
               </button>
             </div>
           </div>
