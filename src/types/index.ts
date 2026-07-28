@@ -30,6 +30,7 @@ export interface OnCallSchedule {
   department: string;
   departmentEn: string;
   doctorName: string;
+  status?: string;
   order: number;
 }
 
@@ -45,5 +46,6 @@ export interface MonthlyScheduleItem {
     departmentEn: string;
     doctorName: string;
     specialistId: string;
+    status?: string;
   }[];
 }

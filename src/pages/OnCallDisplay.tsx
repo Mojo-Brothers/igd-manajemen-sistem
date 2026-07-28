@@ -36,6 +36,7 @@ const OnCallDisplay = () => {
             department: s.department,
             departmentEn: s.departmentEn,
             doctorName: s.doctorName,
+            status: s.status,
             order: idx
           }));
           setMonthlySchedules(mapped);
@@ -70,7 +71,7 @@ const OnCallDisplay = () => {
   manualSchedules.forEach(manual => {
     const existingIndex = finalSchedules.findIndex(s => s.department === manual.department);
     if (existingIndex >= 0) {
-      finalSchedules[existingIndex] = { ...finalSchedules[existingIndex], doctorName: manual.doctorName };
+      finalSchedules[existingIndex] = { ...finalSchedules[existingIndex], doctorName: manual.doctorName, status: manual.status };
     } else {
       finalSchedules.push(manual);
     }
@@ -93,21 +94,33 @@ const OnCallDisplay = () => {
     </div>
   );
 
-  const renderScheduleRow = (schedule: OnCallSchedule) => (
-    <div key={schedule.id} className="flex gap-2 mb-1.5 flex-1 min-h-0">
-      <div className="w-1/2 bg-[#17596b] text-white px-3 py-1.5 flex flex-col justify-center rounded shadow-sm relative overflow-hidden">
-        {/* Glossy effect to mimic acrylic */}
-        <div className="absolute top-0 left-0 right-0 h-1/3 bg-gradient-to-b from-white/10 to-transparent"></div>
-        <div className="font-bold text-[14px] xl:text-[16px] leading-tight z-10">{schedule.department}</div>
-        <div className="text-[10px] xl:text-[11px] text-blue-100 italic z-10">{schedule.departmentEn}</div>
-      </div>
-      <div className="w-1/2 bg-white text-[#333] px-3 py-1.5 flex items-center rounded shadow-md border border-gray-200 h-full overflow-hidden">
-        <div className="font-bold text-[14px] xl:text-[16px] leading-tight">
-          {schedule.doctorName}
+  const renderScheduleRow = (schedule: OnCallSchedule) => {
+    const status = schedule.status || 'Sedang Bertugas';
+    const statusColor = 
+      status === 'Sedang Operasi' ? 'bg-red-500' :
+      status === 'Visite Ruangan' ? 'bg-blue-500' :
+      status === 'Sedang Istirahat' ? 'bg-amber-500' :
+      'bg-green-500';
+
+    return (
+      <div key={schedule.id} className="flex gap-2 mb-1.5 flex-1 min-h-0">
+        <div className="w-1/2 bg-[#17596b] text-white px-3 py-1.5 flex flex-col justify-center rounded shadow-sm relative overflow-hidden">
+          {/* Glossy effect to mimic acrylic */}
+          <div className="absolute top-0 left-0 right-0 h-1/3 bg-gradient-to-b from-white/10 to-transparent"></div>
+          <div className="font-bold text-[14px] xl:text-[16px] leading-tight z-10">{schedule.department}</div>
+          <div className="text-[10px] xl:text-[11px] text-blue-100 italic z-10">{schedule.departmentEn}</div>
+        </div>
+        <div className="w-1/2 bg-white text-[#333] pl-3 pr-2 py-1.5 flex items-center justify-between rounded shadow-md border border-gray-200 h-full overflow-hidden gap-2">
+          <div className="font-bold text-[14px] xl:text-[16px] leading-tight truncate flex-1">
+            {schedule.doctorName}
+          </div>
+          <div className={`${statusColor} text-white text-[9px] xl:text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full whitespace-nowrap shadow-sm`}>
+            {status}
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   if (settingsLoading) {
     return (

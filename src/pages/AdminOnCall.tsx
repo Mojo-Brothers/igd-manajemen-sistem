@@ -35,6 +35,7 @@ const AdminOnCall = () => {
     department: '',
     departmentEn: '',
     doctorName: '',
+    status: 'Sedang Bertugas',
     order: 0
   });
 
@@ -91,6 +92,7 @@ const AdminOnCall = () => {
         department: existingOverride.department,
         departmentEn: existingOverride.departmentEn,
         doctorName: existingOverride.doctorName,
+        status: existingOverride.status || 'Sedang Bertugas',
         order: existingOverride.order
       });
     } else {
@@ -99,6 +101,7 @@ const AdminOnCall = () => {
         department: departmentName,
         departmentEn: '',
         doctorName: '',
+        status: 'Sedang Bertugas',
         order: DEPARTMENTS.indexOf(departmentName) + 1
       });
     }
@@ -478,7 +481,17 @@ const AdminOnCall = () => {
                       </td>
                       <td className="py-3 px-6">
                         {activeDoctor ? (
-                          <span className="font-semibold text-primary">{activeDoctor}</span>
+                          <div>
+                            <span className="font-semibold text-primary block">{activeDoctor}</span>
+                            <span className={`inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
+                              (isOverride ? overrideSched?.status : monthlySched?.status) === 'Sedang Bertugas' || !(isOverride ? overrideSched?.status : monthlySched?.status) ? 'bg-green-100 text-green-700' : 
+                              (isOverride ? overrideSched?.status : monthlySched?.status) === 'Sedang Operasi' ? 'bg-red-100 text-red-700' :
+                              (isOverride ? overrideSched?.status : monthlySched?.status) === 'Visite Ruangan' ? 'bg-blue-100 text-blue-700' :
+                              'bg-amber-100 text-amber-700'
+                            }`}>
+                              {(isOverride ? overrideSched?.status : monthlySched?.status) || 'Sedang Bertugas'}
+                            </span>
+                          </div>
                         ) : (
                           <span className="text-gray-400 italic">-- Kosong --</span>
                         )}
@@ -808,7 +821,19 @@ const AdminOnCall = () => {
                 <p className="text-xs text-gray-500 mt-1">Pilih dari Master Data Dokter. Jika belum ada, tambahkan di tab sebelah.</p>
               </div>
 
-
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Status Dokter</label>
+                <select 
+                  value={scheduleData.status}
+                  onChange={e => setScheduleData({...scheduleData, status: e.target.value})}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"
+                >
+                  <option value="Sedang Bertugas">Sedang Bertugas</option>
+                  <option value="Sedang Operasi">Sedang Operasi</option>
+                  <option value="Visite Ruangan">Visite Ruangan</option>
+                  <option value="Sedang Istirahat">Sedang Istirahat</option>
+                </select>
+              </div>
 
               <div className="mt-8 pt-4 border-t border-gray-100 flex flex-col sm:flex-row justify-end gap-3">
                 <button
