@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import * as XLSX from 'xlsx';
 import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { OnCallSchedule, Specialist } from '../types';
 import { addOnCallSchedule, updateOnCallSchedule, deleteOnCallSchedule, addSpecialist, updateSpecialist, deleteSpecialist } from '../services/db';
 import toast from 'react-hot-toast';
-import { FaPlus, FaEdit, FaTrash, FaSave, FaTimes, FaUserMd, FaHospitalAlt } from 'react-icons/fa';
+import { FaPlus, FaEdit, FaTrash, FaSave, FaTimes, FaUserMd, FaHospitalAlt, FaFileExcel, FaDownload } from 'react-icons/fa';
 
 const AdminOnCall = () => {
   const [schedules, setSchedules] = useState<OnCallSchedule[]>([]);
@@ -20,6 +21,9 @@ const AdminOnCall = () => {
   const [editingSpecialist, setEditingSpecialist] = useState<Specialist | null>(null);
   
   const [loading, setLoading] = useState(false);
+  
+  const fileInputScheduleRef = useRef<HTMLInputElement>(null);
+  const fileInputSpecialistRef = useRef<HTMLInputElement>(null);
 
   // Form Data
   const [scheduleData, setScheduleData] = useState({
@@ -51,6 +55,55 @@ const AdminOnCall = () => {
       unsubSpecialist();
     };
   }, []);
+
+  const downloadTemplateSchedule = () => {
+    const data = [
+      { Department: 'Penyakit Dalam', DepartmentEn: 'Internal Medicine', DoctorName: 'dr. Andi, Sp.PD', Order: 1 },
+      { Department: 'Anak', DepartmentEn: 'Pediatric', DoctorName: 'dr. Budi, Sp.A', Order: 2 }
+    ];
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Jadwal On Call");
+    XLSX.writeFile(wb, "Template_Jadwal_OnCall.xlsx");
+  };
+
+  const handleFileUploadSchedule = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setLoading(true);
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      try {
+        const bstr = evt.target?.result;
+        const wb = XLSX.read(bstr, { type: 'binary' });
+        const wsname = wb.SheetNames[0];
+        const ws = wb.Sheets[wsname];
+        const data = XLSX.utils.sheet_to_json(ws) as any[];
+
+        let addedCount = 0;
+        for (const row of data) {
+          if (row.Department) {
+            await addOnCallSchedule({
+              department: row.Department || '',
+              departmentEn: row.DepartmentEn || '',
+              doctorName: row.DoctorName || '',
+              order: parseInt(row.Order) || (schedules.length + addedCount + 1)
+            });
+            addedCount++;
+          }
+        }
+        toast.success(`${addedCount} Jadwal Departemen berhasil diimport!`);
+      } catch (error) {
+        console.error(error);
+        toast.error('Gagal mengimport data. Pastikan format Excel sesuai template.');
+      } finally {
+        setLoading(false);
+        if (fileInputScheduleRef.current) fileInputScheduleRef.current.value = '';
+      }
+    };
+    reader.readAsBinaryString(file);
+  };
 
   // --- Schedule Handlers ---
   const handleOpenScheduleModal = (schedule?: OnCallSchedule) => {
@@ -104,6 +157,52 @@ const AdminOnCall = () => {
         toast.error('Gagal menghapus data');
       }
     }
+  };
+
+  const downloadTemplateSpecialist = () => {
+    const data = [
+      { Name: 'dr. Budi Santoso, Sp.PD' },
+      { Name: 'dr. Siti Aminah, Sp.A' }
+    ];
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Master Dokter");
+    XLSX.writeFile(wb, "Template_Dokter_Spesialis.xlsx");
+  };
+
+  const handleFileUploadSpecialist = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setLoading(true);
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      try {
+        const bstr = evt.target?.result;
+        const wb = XLSX.read(bstr, { type: 'binary' });
+        const wsname = wb.SheetNames[0];
+        const ws = wb.Sheets[wsname];
+        const data = XLSX.utils.sheet_to_json(ws) as any[];
+
+        let addedCount = 0;
+        for (const row of data) {
+          if (row.Name) {
+            await addSpecialist({
+              name: row.Name
+            });
+            addedCount++;
+          }
+        }
+        toast.success(`${addedCount} Master Dokter berhasil diimport!`);
+      } catch (error) {
+        console.error(error);
+        toast.error('Gagal mengimport data. Pastikan format Excel sesuai template.');
+      } finally {
+        setLoading(false);
+        if (fileInputSpecialistRef.current) fileInputSpecialistRef.current.value = '';
+      }
+    };
+    reader.readAsBinaryString(file);
   };
 
   // --- Specialist Handlers ---
@@ -181,12 +280,36 @@ const AdminOnCall = () => {
               <h2 className="text-xl font-bold text-gray-800">Penugasan Dokter On-Call</h2>
               <p className="text-sm text-gray-500 mt-1">Atur dokter mana yang sedang bertugas di masing-masing departemen.</p>
             </div>
-            <button 
-              onClick={() => handleOpenScheduleModal()}
-              className="w-full sm:w-auto justify-center bg-primary hover:bg-blue-800 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors shadow-sm"
-            >
-              <FaPlus /> Tambah Departemen
-            </button>
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+              <button 
+                onClick={downloadTemplateSchedule}
+                className="w-full sm:w-auto justify-center bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors shadow-sm text-sm"
+              >
+                <FaDownload /> Template
+              </button>
+              
+              <input 
+                type="file" 
+                accept=".xlsx, .xls" 
+                className="hidden" 
+                ref={fileInputScheduleRef}
+                onChange={handleFileUploadSchedule}
+              />
+              <button 
+                onClick={() => fileInputScheduleRef.current?.click()}
+                disabled={loading}
+                className="w-full sm:w-auto justify-center bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors shadow-sm text-sm disabled:opacity-50"
+              >
+                <FaFileExcel /> Import Excel
+              </button>
+              
+              <button 
+                onClick={() => handleOpenScheduleModal()}
+                className="w-full sm:w-auto justify-center bg-primary hover:bg-blue-800 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors shadow-sm"
+              >
+                <FaPlus /> Tambah Departemen
+              </button>
+            </div>
           </div>
           
           <div className="overflow-x-auto">
@@ -253,12 +376,36 @@ const AdminOnCall = () => {
               <h2 className="text-xl font-bold text-gray-800">Master Data Dokter Spesialis</h2>
               <p className="text-sm text-gray-500 mt-1">Daftarkan nama-nama dokter yang bisa dipilih untuk jadwal on-call.</p>
             </div>
-            <button 
-              onClick={() => handleOpenSpecialistModal()}
-              className="w-full sm:w-auto justify-center bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors shadow-sm"
-            >
-              <FaPlus /> Tambah Dokter
-            </button>
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+              <button 
+                onClick={downloadTemplateSpecialist}
+                className="w-full sm:w-auto justify-center bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors shadow-sm text-sm"
+              >
+                <FaDownload /> Template
+              </button>
+              
+              <input 
+                type="file" 
+                accept=".xlsx, .xls" 
+                className="hidden" 
+                ref={fileInputSpecialistRef}
+                onChange={handleFileUploadSpecialist}
+              />
+              <button 
+                onClick={() => fileInputSpecialistRef.current?.click()}
+                disabled={loading}
+                className="w-full sm:w-auto justify-center bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors shadow-sm text-sm disabled:opacity-50"
+              >
+                <FaFileExcel /> Import Excel
+              </button>
+              
+              <button 
+                onClick={() => handleOpenSpecialistModal()}
+                className="w-full sm:w-auto justify-center bg-primary hover:bg-blue-800 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors shadow-sm"
+              >
+                <FaPlus /> Tambah Dokter
+              </button>
+            </div>
           </div>
           
           <div className="overflow-x-auto">
