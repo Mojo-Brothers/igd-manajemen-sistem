@@ -96,13 +96,24 @@ const OnCallDisplay = () => {
       <div className="w-full max-w-[1800px] h-full bg-white/80 backdrop-blur-sm rounded-xl shadow-2xl border border-white/50 p-6 flex flex-col">
         
         {/* Header Section */}
-        <div className="text-center mb-6">
-          <h1 className="text-[#17596b] font-black text-6xl tracking-wider mb-1" style={{ fontFamily: 'Arial, sans-serif' }}>
-            JADWAL PANGGILAN
-          </h1>
-          <h2 className="text-[#17596b] font-medium text-3xl italic tracking-widest">
-            Schedule On Call
-          </h2>
+        <div className="relative flex justify-center items-center mb-6 min-h-[100px]">
+          <div className="absolute left-0">
+            {settings?.logoUrl ? (
+              <img src={settings.logoUrl} alt="Hospital Logo" className="h-20 object-contain" />
+            ) : (
+              <img src={`${import.meta.env.BASE_URL}logo.png`} alt="Hospital Logo" className="h-20 object-contain" onError={(e) => {
+                (e.target as HTMLImageElement).style.display = 'none';
+              }} />
+            )}
+          </div>
+          <div className="text-center">
+            <h1 className="text-[#17596b] font-black text-6xl tracking-wider mb-1" style={{ fontFamily: 'Arial, sans-serif' }}>
+              JADWAL PANGGILAN
+            </h1>
+            <h2 className="text-[#17596b] font-medium text-3xl italic tracking-widest">
+              Schedule On Call
+            </h2>
+          </div>
         </div>
 
         {/* Date Section */}
