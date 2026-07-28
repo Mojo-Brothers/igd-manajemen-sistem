@@ -6,6 +6,7 @@ import { OnCallSchedule, Specialist } from '../types';
 import { addOnCallSchedule, updateOnCallSchedule, deleteOnCallSchedule, addSpecialist, updateSpecialist, deleteSpecialist } from '../services/db';
 import toast from 'react-hot-toast';
 import { FaPlus, FaEdit, FaTrash, FaSave, FaTimes, FaUserMd, FaHospitalAlt, FaFileExcel, FaDownload } from 'react-icons/fa';
+import Select from 'react-select';
 
 const AdminOnCall = () => {
   const [schedules, setSchedules] = useState<OnCallSchedule[]>([]);
@@ -607,10 +608,15 @@ const AdminOnCall = () => {
 
               <div className="pt-2">
                 <label className="block text-sm font-bold text-primary mb-1">Dokter Bertugas</label>
-                <select 
-                  value={scheduleData.doctorName}
-                  onChange={e => {
-                    const selectedName = e.target.value;
+                <Select 
+                  options={specialists.map(sp => ({ value: sp.name, label: sp.name }))}
+                  value={
+                    scheduleData.doctorName 
+                      ? { value: scheduleData.doctorName, label: scheduleData.doctorName }
+                      : null
+                  }
+                  onChange={(selectedOption) => {
+                    const selectedName = selectedOption ? selectedOption.value : '';
                     const selectedSpecialist = specialists.find(sp => sp.name === selectedName);
                     if (selectedSpecialist && selectedSpecialist.department) {
                       setScheduleData({
@@ -623,13 +629,35 @@ const AdminOnCall = () => {
                       setScheduleData({...scheduleData, doctorName: selectedName});
                     }
                   }}
-                  className="w-full px-4 py-3 border-2 border-primary/20 bg-blue-50/50 rounded-lg focus:ring-2 focus:ring-primary outline-none text-gray-800 font-medium cursor-pointer"
-                >
-                  <option value="">-- Kosong --</option>
-                  {specialists.map(sp => (
-                    <option key={sp.id} value={sp.name}>{sp.name}</option>
-                  ))}
-                </select>
+                  placeholder="-- Ketik nama untuk mencari --"
+                  isClearable
+                  menuPortalTarget={document.body}
+                  styles={{ 
+                    menuPortal: base => ({ ...base, zIndex: 9999 }),
+                    control: (base, state) => ({
+                      ...base,
+                      padding: '4px',
+                      borderRadius: '0.5rem',
+                      borderColor: state.isFocused ? '#17596b' : 'rgba(23, 89, 107, 0.2)',
+                      backgroundColor: 'rgba(239, 246, 255, 0.5)',
+                      boxShadow: state.isFocused ? '0 0 0 2px #17596b' : 'none',
+                      '&:hover': {
+                        borderColor: 'rgba(23, 89, 107, 0.4)'
+                      }
+                    }),
+                    option: (base, state) => ({
+                      ...base,
+                      backgroundColor: state.isSelected ? '#17596b' : state.isFocused ? 'rgba(23, 89, 107, 0.1)' : 'white',
+                      color: state.isSelected ? 'white' : '#1f2937',
+                      cursor: 'pointer',
+                      '&:active': {
+                        backgroundColor: '#17596b',
+                        color: 'white'
+                      }
+                    })
+                  }}
+                  className="text-gray-800 font-medium"
+                />
                 <p className="text-xs text-gray-500 mt-1">Pilih dari Master Data Dokter. Jika belum ada, tambahkan di tab sebelah.</p>
               </div>
 
