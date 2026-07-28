@@ -22,26 +22,26 @@ const DoctorCard = ({ title, doctor }: DoctorCardProps) => {
       <div className="absolute top-0 left-0 w-full h-4 bg-gradient-to-r from-primary to-blue-400"></div>
 
       {/* Title */}
-      <div className="text-center mb-auto pt-6">
-        <h2 className="text-2xl xl:text-3xl font-black text-gray-400 uppercase tracking-[0.2em] mb-4">{title}</h2>
-        <div className="h-1.5 w-24 bg-primary mx-auto rounded-full opacity-70"></div>
+      <div className="text-center pt-2">
+        <h2 className="text-3xl xl:text-4xl 2xl:text-5xl font-black text-gray-400 uppercase tracking-[0.1em] mb-4 leading-tight">{title}</h2>
+        <div className="h-2 w-32 bg-primary mx-auto rounded-full opacity-70"></div>
       </div>
       
       {/* Large Name Text */}
-      <div className="flex-1 flex flex-col items-center justify-center text-center px-2 py-4">
+      <div className="flex-1 flex flex-col items-center justify-center text-center px-2">
         {doctor ? (
-          <div className="w-full flex flex-col items-center justify-center">
+          <div className="w-full flex flex-col items-center justify-center h-full gap-4">
             <h3 
-              className="font-black text-primary leading-[1.1] drop-shadow-sm w-full break-words"
-              style={{ fontSize: 'clamp(2.5rem, 4vw, 4.5rem)' }}
+              className="font-black text-primary leading-tight drop-shadow-sm w-full break-words"
+              style={{ fontSize: 'clamp(3.5rem, 5.5vw, 6.5rem)' }}
             >
               {doctor.name}
             </h3>
             {doctor.role && (
-               <p className="text-xl xl:text-2xl text-blue-600/80 font-bold mt-6 tracking-wide uppercase">{doctor.role}</p>
+               <p className="text-2xl xl:text-3xl text-blue-600/80 font-bold tracking-wide uppercase">{doctor.role}</p>
             )}
             
-            <div className={`mt-8 px-8 py-3 rounded-full text-xl font-bold shadow-sm ${
+            <div className={`mt-2 px-10 py-4 rounded-full text-2xl font-bold shadow-sm ${
               doctor.status.toLowerCase().includes('bertugas') || doctor.status.toLowerCase().includes('jaga')
                 ? 'bg-green-100 text-green-700 border border-green-300'
                 : 'bg-yellow-100 text-yellow-700 border border-yellow-300'
@@ -51,7 +51,7 @@ const DoctorCard = ({ title, doctor }: DoctorCardProps) => {
           </div>
         ) : (
           <div className="w-full opacity-40">
-             <h3 className="text-4xl xl:text-5xl font-bold text-gray-500">Tidak Ada<br/>Jadwal</h3>
+             <h3 className="text-5xl xl:text-6xl font-bold text-gray-500">Tidak Ada<br/>Jadwal</h3>
           </div>
         )}
       </div>
