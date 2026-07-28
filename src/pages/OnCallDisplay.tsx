@@ -2,8 +2,11 @@ import { useState, useEffect } from 'react';
 import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { OnCallSchedule } from '../types';
+import { useSettings } from '../contexts/SettingsContext';
+import { motion } from 'framer-motion';
 
 const OnCallDisplay = () => {
+  const { settings, loading: settingsLoading } = useSettings();
   const [schedules, setSchedules] = useState<OnCallSchedule[]>([]);
   const [currentTime, setCurrentTime] = useState(new Date());
 
@@ -64,9 +67,18 @@ const OnCallDisplay = () => {
     </div>
   );
 
+  if (settingsLoading) {
+    return (
+      <div className="min-h-screen bg-[#e8eced] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-4 border-[#17596b]"></div>
+      </div>
+    );
+  }
+
   return (
-    <div className="w-screen h-screen overflow-hidden bg-[#e8eced] flex flex-col items-center py-6 px-12 font-sans relative">
-      {/* Screw mockups in corners to mimic acrylic board */}
+    <div className="w-screen h-screen overflow-hidden flex flex-col font-sans">
+      <div className="flex-1 w-full bg-[#e8eced] flex flex-col items-center py-6 px-12 relative overflow-hidden">
+        {/* Screw mockups in corners to mimic acrylic board */}
       <div className="absolute top-4 left-4 w-6 h-6 rounded-full bg-gray-300 shadow-inner border-2 border-gray-400 flex items-center justify-center">
         <div className="w-3 h-3 rounded-full bg-gray-400"></div>
       </div>
@@ -138,6 +150,27 @@ const OnCallDisplay = () => {
           </div>
         </div>
       </div>
+      </div>
+
+      {/* Footer / Running Text */}
+      <footer className="h-16 bg-[#17596b] text-white flex items-center overflow-hidden shrink-0 shadow-[0_-4px_10px_rgba(0,0,0,0.1)] relative z-10">
+        <div className="bg-blue-900 h-full px-6 flex items-center font-bold text-xl whitespace-nowrap z-20 shadow-xl">
+          INFORMASI
+        </div>
+        <div className="flex-1 overflow-hidden h-full flex items-center relative">
+          <motion.div 
+            className="whitespace-nowrap text-2xl font-medium tracking-wide absolute left-full"
+            animate={{ left: ["100%", "-200%"] }}
+            transition={{
+              repeat: Infinity,
+              duration: settings?.runningTextSpeed ? (100 / settings.runningTextSpeed) * 30 : 30,
+              ease: "linear",
+            }}
+          >
+            {settings?.runningText || 'Selamat Datang di Instalasi Gawat Darurat Primaya Hospital'}
+          </motion.div>
+        </div>
+      </footer>
     </div>
   );
 };
