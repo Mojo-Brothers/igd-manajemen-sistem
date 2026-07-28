@@ -90,6 +90,10 @@ const AdminLayout = () => {
             <FaSignOutAlt size={20} />
             <span>Logout</span>
           </button>
+          
+          <div className="mt-4 pt-4 border-t border-white/5 text-center">
+            <p className="text-[10px] text-white/30 tracking-wider">Created by Roby Viori Fansya</p>
+          </div>
         </div>
       </aside>
 
