@@ -4,6 +4,7 @@ import { db } from '../firebase/config';
 import { OnCallSchedule } from '../types';
 import { useSettings } from '../contexts/SettingsContext';
 import { motion } from 'framer-motion';
+import DigitalClock from '../components/DigitalClock';
 
 const OnCallDisplay = () => {
   const { settings, loading: settingsLoading } = useSettings();
@@ -113,6 +114,9 @@ const OnCallDisplay = () => {
             <h2 className="text-[#17596b] font-medium text-3xl italic tracking-widest">
               Schedule On Call
             </h2>
+          </div>
+          <div className="absolute right-0">
+            <DigitalClock />
           </div>
         </div>
 
