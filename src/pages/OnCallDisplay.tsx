@@ -266,7 +266,7 @@ const OnCallDisplay = () => {
           </motion.div>
         </div>
         <div className="absolute bottom-1 right-2 z-30 text-[10px] text-white/50 tracking-wide pointer-events-none">
-          {settings?.copyright || `© ${new Date().getFullYear()} Primaya Hospital. All Rights Reserved.`}
+          &copy; {new Date().getFullYear()} Roby Viori Fansya
         </div>
       </footer>
     </div>
