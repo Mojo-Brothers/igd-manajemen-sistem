@@ -241,11 +241,11 @@ const OnCallDisplay = () => {
         </div>
         <div className="flex-1 overflow-hidden h-full flex items-center relative">
           <motion.div 
-            className="whitespace-nowrap text-2xl font-medium tracking-wide absolute left-full"
-            animate={{ left: ["100%", "-200%"] }}
+            className="whitespace-nowrap text-2xl font-medium tracking-wide absolute"
+            animate={{ x: ["100vw", "-100%"] }}
             transition={{
               repeat: Infinity,
-              duration: 30,
+              duration: Math.max(25, (settings?.runningText?.length || 50) * 0.15),
               ease: "linear",
             }}
           >
