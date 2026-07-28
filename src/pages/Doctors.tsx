@@ -5,7 +5,8 @@ import { Doctor } from '../types';
 import { addDoctor, updateDoctor, deleteDoctor, updateDoctorSlot } from '../services/db';
 import { uploadDoctorImage, deleteDoctorImage } from '../services/storage';
 import toast from 'react-hot-toast';
-import { FaPlus, FaEdit, FaTrash, FaSave, FaTimes, FaImage } from 'react-icons/fa';
+import { FaPlus, FaEdit, FaTrash, FaSave, FaTimes, FaImage, FaFileExcel, FaDownload, FaUpload } from 'react-icons/fa';
+import * as XLSX from 'xlsx';
 
 const Doctors = () => {
   const [doctors, setDoctors] = useState<Doctor[]>([]);
@@ -17,6 +18,7 @@ const Doctors = () => {
   });
   
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [editingDoctor, setEditingDoctor] = useState<Doctor | null>(null);
   const [loading, setLoading] = useState(false);
   
@@ -158,6 +160,81 @@ const Doctors = () => {
     }
   };
 
+  const handleDownloadTemplate = () => {
+    const ws = XLSX.utils.aoa_to_sheet([
+      ['Nama Lengkap', 'Jabatan', 'Status', 'Aktif'],
+      ['dr. Contoh Name', 'Dokter Umum', 'Sedang Bertugas', 'Ya'],
+      ['dr. Budi Setiawan', 'Koordinator IGD', 'Standby On Call', 'Ya'],
+      ['dr. Siti Aminah', 'Penanggung Jawab', 'Cuti', 'Tidak']
+    ]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Template Dokter");
+    XLSX.writeFile(wb, "Template_Import_Dokter.xlsx");
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setLoading(true);
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const data = new Uint8Array(event.target?.result as ArrayBuffer);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        
+        const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
+        const dataRows = rows.slice(1); // skip header
+        
+        let successCount = 0;
+        let skipCount = 0;
+        let currentMaxOrder = doctors.length;
+
+        for (const row of dataRows) {
+          if (!row[0]) continue; // skip empty rows
+
+          const name = String(row[0] || '').trim();
+          const role = String(row[1] || 'Dokter Umum').trim();
+          const status = String(row[2] || 'Sedang Bertugas').trim();
+          const isActiveRaw = String(row[3] || 'Ya').toLowerCase().trim();
+          
+          const isActive = isActiveRaw === 'ya' || isActiveRaw === 'y' || isActiveRaw === 'true' || isActiveRaw === '1' || isActiveRaw === 'yes';
+
+          const isDuplicate = doctors.some(d => d.name.toLowerCase() === name.toLowerCase());
+          
+          if (isDuplicate) {
+            skipCount++;
+            continue;
+          }
+
+          const newDoctor = {
+            name,
+            role,
+            status,
+            isActive,
+            order: currentMaxOrder++,
+            imageUrl: ''
+          };
+
+          await addDoctor(newDoctor);
+          successCount++;
+        }
+
+        toast.success(`Import selesai! Berhasil: ${successCount}, Dilewati (Ganda): ${skipCount}`);
+        setIsImportModalOpen(false);
+      } catch (error) {
+        console.error(error);
+        toast.error('Gagal memproses file Excel.');
+      } finally {
+        setLoading(false);
+        e.target.value = '';
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  };
+
   return (
     <div className="space-y-8">
       {/* Slot Assignment Section */}
@@ -198,12 +275,20 @@ const Doctors = () => {
             <h2 className="text-xl font-bold text-gray-800">Daftar Dokter</h2>
             <p className="text-sm text-gray-500 mt-1">Kelola data seluruh dokter IGD di sini.</p>
           </div>
-          <button 
-            onClick={() => handleOpenModal()}
-            className="bg-primary hover:bg-blue-800 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors shadow-sm"
-          >
-            <FaPlus /> Tambah Dokter
-          </button>
+          <div className="flex gap-3">
+            <button 
+              onClick={() => setIsImportModalOpen(true)}
+              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors shadow-sm"
+            >
+              <FaFileExcel /> Import Excel
+            </button>
+            <button 
+              onClick={() => handleOpenModal()}
+              className="bg-primary hover:bg-blue-800 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors shadow-sm"
+            >
+              <FaPlus /> Tambah Dokter
+            </button>
+          </div>
         </div>
         
         <div className="overflow-x-auto">
@@ -407,6 +492,62 @@ const Doctors = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Import Excel */}
+      {isImportModalOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden flex flex-col">
+            <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+              <h3 className="text-xl font-bold text-gray-800">Import Data dari Excel</h3>
+              <button onClick={() => setIsImportModalOpen(false)} className="text-gray-400 hover:text-gray-600">
+                <FaTimes size={24} />
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-6">
+              <div className="bg-blue-50 text-blue-800 p-4 rounded-xl text-sm border border-blue-100">
+                <p className="font-semibold mb-2">Panduan Import:</p>
+                <ol className="list-decimal pl-4 space-y-1">
+                  <li>Unduh template Excel yang disediakan.</li>
+                  <li>Isi data dokter/staf tanpa mengubah nama kolom (header).</li>
+                  <li>Jika nama dokter sudah ada di sistem, maka akan diabaikan (skip) agar tidak ganda.</li>
+                </ol>
+              </div>
+
+              <button
+                onClick={handleDownloadTemplate}
+                className="w-full flex justify-center items-center gap-2 border-2 border-green-600 text-green-700 hover:bg-green-50 px-4 py-3 rounded-xl font-medium transition-colors"
+              >
+                <FaDownload /> Download Template Excel
+              </button>
+
+              <div className="relative">
+                <input
+                  type="file"
+                  accept=".xlsx, .xls"
+                  onChange={handleFileUpload}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  disabled={loading}
+                />
+                <div className={`w-full flex flex-col items-center justify-center gap-2 border-2 border-dashed ${loading ? 'border-gray-300 bg-gray-50 text-gray-400' : 'border-primary bg-blue-50/50 hover:bg-blue-50 text-primary cursor-pointer'} px-4 py-8 rounded-xl font-medium transition-colors text-center`}>
+                  {loading ? (
+                    <>
+                      <div className="w-8 h-8 border-4 border-gray-300 border-t-primary rounded-full animate-spin mb-2"></div>
+                      <span>Sedang memproses...</span>
+                    </>
+                  ) : (
+                    <>
+                      <FaUpload size={32} className="mb-2" />
+                      <span>Klik atau seret file Excel (.xlsx) ke sini</span>
+                      <span className="text-xs font-normal text-gray-500">Maks. 5MB</span>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}
