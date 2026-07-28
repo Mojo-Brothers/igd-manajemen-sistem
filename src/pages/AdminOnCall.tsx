@@ -299,9 +299,24 @@ const AdminOnCall = () => {
 
   const parseDateFromExcel = (excelDate: any): string => {
     if (!excelDate) return '';
+    if (excelDate instanceof Date) {
+      const y = excelDate.getFullYear();
+      const m = String(excelDate.getMonth() + 1).padStart(2, '0');
+      const d = String(excelDate.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
     if (typeof excelDate === 'number') {
       const date = new Date(Math.round((excelDate - 25569) * 86400 * 1000));
       return date.toISOString().split('T')[0];
+    }
+    if (typeof excelDate === 'string') {
+      const parsed = new Date(excelDate);
+      if (!isNaN(parsed.getTime())) {
+        const y = parsed.getFullYear();
+        const m = String(parsed.getMonth() + 1).padStart(2, '0');
+        const d = String(parsed.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+      }
     }
     return String(excelDate);
   };
