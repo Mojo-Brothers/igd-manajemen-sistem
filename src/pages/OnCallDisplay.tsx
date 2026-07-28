@@ -88,14 +88,14 @@ const OnCallDisplay = () => {
   const col2 = finalSchedules.slice(Math.ceil(finalSchedules.length / 2));
 
   const renderColumnHeader = () => (
-    <div className="flex gap-2 mb-2">
-      <div className="w-1/2 bg-[#17596b] text-white p-2 rounded text-center border-2 border-white/20">
-        <div className="font-bold text-xl tracking-wide">DEPARTEMEN</div>
-        <div className="text-xs italic text-blue-100 uppercase tracking-widest">Department</div>
+    <div className="flex gap-[clamp(4px,0.8vh,8px)] mb-[clamp(4px,0.8vh,8px)]">
+      <div className="w-1/2 bg-[#17596b] text-white p-[clamp(4px,0.8vh,8px)] rounded text-center border-2 border-white/20">
+        <div className="font-bold text-[clamp(12px,1.8vh,20px)] tracking-wide leading-tight">DEPARTEMEN</div>
+        <div className="text-[clamp(8px,1vh,12px)] italic text-blue-100 uppercase tracking-widest leading-tight">Department</div>
       </div>
-      <div className="w-1/2 bg-[#17596b] text-white p-2 rounded text-center border-2 border-white/20">
-        <div className="font-bold text-xl tracking-wide">NAMA DOKTER</div>
-        <div className="text-xs italic text-blue-100 uppercase tracking-widest">Doctor's Name</div>
+      <div className="w-1/2 bg-[#17596b] text-white p-[clamp(4px,0.8vh,8px)] rounded text-center border-2 border-white/20">
+        <div className="font-bold text-[clamp(12px,1.8vh,20px)] tracking-wide leading-tight">NAMA DOKTER</div>
+        <div className="text-[clamp(8px,1vh,12px)] italic text-blue-100 uppercase tracking-widest leading-tight">Doctor's Name</div>
       </div>
     </div>
   );
@@ -109,25 +109,25 @@ const OnCallDisplay = () => {
       'bg-green-500';
 
     return (
-      <div key={schedule.id} className="flex gap-2 mb-1.5 flex-1 min-h-0">
-        <div className="w-1/2 bg-[#17596b] text-white px-3 py-1.5 flex flex-col justify-center rounded shadow-sm relative overflow-hidden">
+      <div key={schedule.id} className="flex gap-[clamp(4px,0.8vh,8px)] mb-[clamp(2px,0.6vh,6px)] flex-1 min-h-0">
+        <div className="w-1/2 bg-[#17596b] text-white px-[clamp(6px,1vh,12px)] py-[clamp(2px,0.5vh,6px)] flex flex-col justify-center rounded shadow-sm relative overflow-hidden">
           {/* Glossy effect to mimic acrylic */}
           <div className="absolute top-0 left-0 right-0 h-1/3 bg-gradient-to-b from-white/10 to-transparent"></div>
-          <div className="font-bold text-[14px] xl:text-[16px] leading-tight z-10">{schedule.department}</div>
-          <div className="text-[10px] xl:text-[11px] text-blue-100 italic z-10">{schedule.departmentEn}</div>
+          <div className="font-bold text-[clamp(11px,1.5vh,16px)] leading-tight z-10 line-clamp-2" title={schedule.department}>{schedule.department}</div>
+          <div className="text-[clamp(9px,1.1vh,11px)] text-blue-100 italic z-10 truncate opacity-90">{schedule.departmentEn}</div>
         </div>
-        <div className="w-1/2 bg-white text-[#333] pl-3 pr-2 py-1.5 flex items-center justify-between rounded shadow-md border border-gray-200 h-full overflow-hidden gap-2">
-          <div className="flex flex-col flex-1 truncate justify-center">
-            <div className="font-bold text-[14px] xl:text-[16px] leading-tight truncate">
+        <div className="w-1/2 bg-white text-[#333] pl-[clamp(8px,1vh,12px)] pr-[clamp(4px,0.5vh,8px)] py-[clamp(2px,0.5vh,6px)] flex items-center justify-between rounded shadow-md border border-gray-200 h-full overflow-hidden gap-2">
+          <div className="flex flex-col flex-1 min-w-0 justify-center">
+            <div className="font-bold text-[clamp(11px,1.5vh,16px)] leading-tight truncate" title={schedule.doctorName}>
               {schedule.doctorName}
             </div>
             {schedule.originalDoctorName && schedule.originalDoctorName !== schedule.doctorName && (
-              <div className="text-[9px] xl:text-[10px] text-gray-500 italic truncate mt-0.5 font-normal">
+              <div className="text-[clamp(9px,1vh,11px)] text-gray-500 italic truncate mt-0.5 font-normal">
                 Menggantikan: {schedule.originalDoctorName} {schedule.overrideReason ? `(${schedule.overrideReason})` : ''}
               </div>
             )}
           </div>
-          <div className={`${statusColor} text-white text-[9px] xl:text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full whitespace-nowrap shadow-sm self-center`}>
+          <div className={`${statusColor} text-white text-[clamp(8px,1vh,10px)] font-bold uppercase tracking-wider px-[clamp(4px,0.8vh,8px)] py-[clamp(2px,0.4vh,4px)] rounded-full whitespace-nowrap shadow-sm shrink-0 self-center`}>
             {status}
           </div>
         </div>
