@@ -109,25 +109,25 @@ const OnCallDisplay = () => {
       'bg-green-500';
 
     return (
-      <div key={schedule.id} className="flex gap-[clamp(4px,0.8vh,8px)] mb-[clamp(2px,0.6vh,6px)] flex-1 min-h-0">
-        <div className="w-1/2 bg-[#17596b] text-white px-[clamp(6px,1vh,12px)] py-[clamp(2px,0.5vh,6px)] flex flex-col justify-center rounded shadow-sm relative overflow-hidden">
+      <div key={schedule.id} className="flex gap-[clamp(2px,0.6vh,8px)] mb-[clamp(1px,0.4vh,6px)] flex-1 min-h-0">
+        <div className="w-1/2 bg-[#17596b] text-white px-[clamp(4px,0.8vh,12px)] py-[clamp(1px,0.3vh,6px)] flex flex-col justify-center rounded shadow-sm relative overflow-hidden">
           {/* Glossy effect to mimic acrylic */}
           <div className="absolute top-0 left-0 right-0 h-1/3 bg-gradient-to-b from-white/10 to-transparent"></div>
-          <div className="font-bold text-[clamp(11px,1.5vh,16px)] leading-tight z-10 line-clamp-2" title={schedule.department}>{schedule.department}</div>
-          <div className="text-[clamp(9px,1.1vh,11px)] text-blue-100 italic z-10 truncate opacity-90">{schedule.departmentEn}</div>
+          <div className="font-bold text-[clamp(8px,1.4vh,16px)] leading-[1.1] z-10 line-clamp-2" title={schedule.department}>{schedule.department}</div>
+          <div className="text-[clamp(6px,1vh,11px)] text-blue-100 italic z-10 truncate opacity-90 leading-none mt-[0.5px]">{schedule.departmentEn}</div>
         </div>
-        <div className="w-1/2 bg-white text-[#333] pl-[clamp(8px,1vh,12px)] pr-[clamp(4px,0.5vh,8px)] py-[clamp(2px,0.5vh,6px)] flex items-center justify-between rounded shadow-md border border-gray-200 h-full overflow-hidden gap-2">
+        <div className="w-1/2 bg-white text-[#333] pl-[clamp(6px,0.8vh,12px)] pr-[clamp(4px,0.5vh,8px)] py-[clamp(1px,0.3vh,6px)] flex items-center justify-between rounded shadow-md border border-gray-200 h-full overflow-hidden gap-1">
           <div className="flex flex-col flex-1 min-w-0 justify-center">
-            <div className="font-bold text-[clamp(11px,1.5vh,16px)] leading-tight truncate" title={schedule.doctorName}>
+            <div className="font-bold text-[clamp(8px,1.4vh,16px)] leading-[1.1] truncate" title={schedule.doctorName}>
               {schedule.doctorName}
             </div>
             {schedule.originalDoctorName && schedule.originalDoctorName !== schedule.doctorName && (
-              <div className="text-[clamp(9px,1vh,11px)] text-gray-500 italic truncate mt-0.5 font-normal">
+              <div className="text-[clamp(6px,1vh,11px)] text-gray-500 italic truncate mt-[0.5px] leading-none font-normal">
                 Menggantikan: {schedule.originalDoctorName} {schedule.overrideReason ? `(${schedule.overrideReason})` : ''}
               </div>
             )}
           </div>
-          <div className={`${statusColor} text-white text-[clamp(8px,1vh,10px)] font-bold uppercase tracking-wider px-[clamp(4px,0.8vh,8px)] py-[clamp(2px,0.4vh,4px)] rounded-full whitespace-nowrap shadow-sm shrink-0 self-center`}>
+          <div className={`${statusColor} text-white text-[clamp(5px,0.8vh,10px)] font-bold uppercase tracking-wider px-[clamp(3px,0.6vh,8px)] py-[clamp(1px,0.3vh,4px)] rounded-full whitespace-nowrap shadow-sm shrink-0 self-center`}>
             {status}
           </div>
         </div>
