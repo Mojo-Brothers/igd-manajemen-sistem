@@ -4,6 +4,8 @@ import { collection, onSnapshot, query, orderBy, doc } from 'firebase/firestore'
 import { db } from '../firebase/config';
 import { OnCallSchedule, Specialist, MonthlyScheduleItem } from '../types';
 import { addOnCallSchedule, updateOnCallSchedule, deleteOnCallSchedule, addSpecialist, updateSpecialist, deleteSpecialist, saveMonthlySchedules } from '../services/db';
+import { useSettings } from '../contexts/SettingsContext';
+import { getEffectiveDateString, getEffectiveDate } from '../utils/dateUtils';
 import toast from 'react-hot-toast';
 import { FaPlus, FaEdit, FaTrash, FaSave, FaTimes, FaUserMd, FaHospitalAlt, FaFileExcel, FaDownload } from 'react-icons/fa';
 import Select from 'react-select';
@@ -34,6 +36,7 @@ export const DEPARTMENTS = [
 ];
 
 const AdminOnCall = () => {
+  const { settings } = useSettings();
   const [schedules, setSchedules] = useState<OnCallSchedule[]>([]);
   const [specialists, setSpecialists] = useState<Specialist[]>([]);
   
@@ -86,10 +89,7 @@ const AdminOnCall = () => {
     });
 
     // Fetch Today's Monthly Schedule
-    const yyyy = new Date().getFullYear();
-    const mm = String(new Date().getMonth() + 1).padStart(2, '0');
-    const dd = String(new Date().getDate()).padStart(2, '0');
-    const todayStr = `${yyyy}-${mm}-${dd}`;
+    const todayStr = getEffectiveDateString(new Date(), settings?.dailyScheduleSwitchTime);
     
     const unsubMonthly = onSnapshot(doc(db, 'monthlySchedules', todayStr), (docSnap) => {
       if (docSnap.exists()) {
@@ -104,7 +104,7 @@ const AdminOnCall = () => {
       unsubSpecialist();
       unsubMonthly();
     };
-  }, []);
+  }, [settings?.dailyScheduleSwitchTime]);
 
   useEffect(() => {
     // We no longer read from local storage on load.
@@ -472,7 +472,7 @@ const AdminOnCall = () => {
             </div>
             <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
               <span className="bg-blue-50 text-blue-700 px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2">
-                <FaHospitalAlt /> {new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                <FaHospitalAlt /> {getEffectiveDate(new Date(), settings?.dailyScheduleSwitchTime).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
               </span>
             </div>
           </div>

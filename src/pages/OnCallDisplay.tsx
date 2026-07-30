@@ -3,6 +3,7 @@ import { collection, onSnapshot, query, orderBy, doc } from 'firebase/firestore'
 import { db } from '../firebase/config';
 import { OnCallSchedule } from '../types';
 import { useSettings } from '../contexts/SettingsContext';
+import { getEffectiveDate, getEffectiveDateString } from '../utils/dateUtils';
 import { motion } from 'framer-motion';
 import DigitalClock from '../components/DigitalClock';
 import { DEPARTMENTS } from './AdminOnCall';
@@ -22,12 +23,13 @@ const OnCallDisplay = () => {
     return () => unsubscribe();
   }, []);
 
+  const effectiveDate = useMemo(() => {
+    return getEffectiveDate(currentTime, settings?.dailyScheduleSwitchTime);
+  }, [currentTime, settings?.dailyScheduleSwitchTime]);
+
   const todayStr = useMemo(() => {
-    const yyyy = currentTime.getFullYear();
-    const mm = String(currentTime.getMonth() + 1).padStart(2, '0');
-    const dd = String(currentTime.getDate()).padStart(2, '0');
-    return `${yyyy}-${mm}-${dd}`;
-  }, [currentTime.getDate(), currentTime.getMonth(), currentTime.getFullYear()]);
+    return getEffectiveDateString(currentTime, settings?.dailyScheduleSwitchTime);
+  }, [currentTime, settings?.dailyScheduleSwitchTime]);
 
   useEffect(() => {
 
@@ -61,7 +63,7 @@ const OnCallDisplay = () => {
   }, []);
 
   const days = ['MINGGU', 'SENIN', 'SELASA', 'RABU', 'KAMIS', 'JUMAT', 'SABTU'];
-  const currentDay = days[currentTime.getDay()];
+  const currentDay = days[effectiveDate.getDay()];
   
   const formatDate = (date: Date) => {
     const d = date.getDate().toString().padStart(2, '0');
@@ -210,7 +212,7 @@ const OnCallDisplay = () => {
               <span className="text-[#17596b] text-sm italic pr-4">Date</span>
             </div>
             <div className="bg-white border-2 border-gray-200 px-3 py-1 rounded shadow-inner flex gap-1 items-center justify-center">
-              {formatDate(currentTime).split('').map((char, i) => (
+              {formatDate(effectiveDate).split('').map((char, i) => (
                 <span key={i} className={`text-2xl font-bold text-gray-800 text-center ${char === '-' ? 'text-gray-400 px-1' : 'bg-gray-100 w-9 py-0.5 rounded border border-gray-200 shadow-sm'}`}>
                   {char}
                 </span>

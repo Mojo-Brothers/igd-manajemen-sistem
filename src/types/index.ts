@@ -16,6 +16,7 @@ export interface AppSettings {
   logoUrl: string;
   theme?: 'classic' | 'modern';
   copyright?: string;
+  dailyScheduleSwitchTime?: string;
 }
 
 export interface Specialist {

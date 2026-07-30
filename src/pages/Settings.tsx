@@ -16,7 +16,8 @@ const Settings = () => {
     secondaryColor: '',
     logoUrl: '',
     theme: 'modern' as 'classic' | 'modern',
-    copyright: ''
+    copyright: '',
+    dailyScheduleSwitchTime: '08:00'
   });
   
   const [loading, setLoading] = useState(false);
@@ -29,7 +30,8 @@ const Settings = () => {
         secondaryColor: settings.secondaryColor || '#F5F8FA',
         logoUrl: settings.logoUrl || '',
         theme: settings.theme || 'modern',
-        copyright: settings.copyright || ''
+        copyright: settings.copyright || '',
+        dailyScheduleSwitchTime: settings.dailyScheduleSwitchTime || '08:00'
       });
     }
   }, [settings]);
@@ -154,6 +156,20 @@ const Settings = () => {
                 <option value="modern">Tema Modern (Teks Besar & Minimalis)</option>
                 <option value="classic">Tema Klasik (Lengkap dengan Foto)</option>
               </select>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Waktu Pergantian Jadwal Otomatis</label>
+              <input 
+                type="time" 
+                value={formData.dailyScheduleSwitchTime}
+                onChange={e => setFormData({...formData, dailyScheduleSwitchTime: e.target.value})}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Jadwal akan berganti secara otomatis ke tanggal hari ini setelah melewati waktu ini. 
+                Sebelum waktu ini, jadwal akan menampilkan jadwal hari sebelumnya.
+              </p>
             </div>
           </div>
         </div>
