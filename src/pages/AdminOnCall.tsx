@@ -40,6 +40,8 @@ const AdminOnCall = () => {
   const [schedules, setSchedules] = useState<OnCallSchedule[]>([]);
   const [specialists, setSpecialists] = useState<Specialist[]>([]);
   const [searchSpecialist, setSearchSpecialist] = useState('');
+  const [filterDepartment, setFilterDepartment] = useState('Semua');
+  const [sortSpecialist, setSortSpecialist] = useState('name-asc');
   
   const [selectedSpecialists, setSelectedSpecialists] = useState<string[]>([]);
 
@@ -460,6 +462,24 @@ const AdminOnCall = () => {
     reader.readAsBinaryString(file);
   };
 
+  const filteredAndSortedSpecialists = specialists.filter(s => {
+    const matchesSearch = s.name.toLowerCase().includes(searchSpecialist.toLowerCase()) || (s.department && s.department.toLowerCase().includes(searchSpecialist.toLowerCase()));
+    
+    let matchesDept = true;
+    if (filterDepartment === 'Lainnya') {
+      matchesDept = !s.department || !DEPARTMENTS.includes(s.department);
+    } else if (filterDepartment !== 'Semua') {
+      matchesDept = s.department === filterDepartment;
+    }
+    
+    return matchesSearch && matchesDept;
+  }).sort((a, b) => {
+    if (sortSpecialist === 'name-asc') return a.name.localeCompare(b.name);
+    if (sortSpecialist === 'name-desc') return b.name.localeCompare(a.name);
+    if (sortSpecialist === 'dept-asc') return (a.department || '').localeCompare(b.department || '');
+    return 0;
+  });
+
   return (
     <div className="space-y-6">
       <div className="flex bg-white rounded-xl shadow-sm border border-gray-100 p-1 w-fit">
@@ -639,8 +659,8 @@ const AdminOnCall = () => {
             </div>
           </div>
           
-          <div className="p-4 sm:p-6 bg-gray-50 border-b border-gray-100">
-            <div className="relative max-w-md">
+          <div className="p-4 sm:p-6 bg-gray-50 border-b border-gray-100 flex flex-col md:flex-row gap-4">
+            <div className="relative flex-1">
               <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
@@ -649,6 +669,29 @@ const AdminOnCall = () => {
                 value={searchSpecialist}
                 onChange={(e) => setSearchSpecialist(e.target.value)}
               />
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <select 
+                value={filterDepartment}
+                onChange={e => setFilterDepartment(e.target.value)}
+                className="px-4 py-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-primary focus:border-primary outline-none text-sm bg-white shadow-sm transition-all w-full sm:w-auto min-w-[200px]"
+              >
+                <option value="Semua">Semua Spesialisasi</option>
+                {DEPARTMENTS.map(dep => (
+                  <option key={dep} value={dep}>{dep}</option>
+                ))}
+                <option value="Lainnya">Lainnya / Kosong</option>
+              </select>
+
+              <select 
+                value={sortSpecialist}
+                onChange={e => setSortSpecialist(e.target.value)}
+                className="px-4 py-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-primary focus:border-primary outline-none text-sm bg-white shadow-sm transition-all w-full sm:w-auto"
+              >
+                <option value="name-asc">Nama (A - Z)</option>
+                <option value="name-desc">Nama (Z - A)</option>
+                <option value="dept-asc">Departemen (A - Z)</option>
+              </select>
             </div>
           </div>
           
@@ -661,16 +704,15 @@ const AdminOnCall = () => {
                       type="checkbox" 
                       className="rounded border-gray-300 text-primary focus:ring-primary cursor-pointer w-4 h-4"
                       checked={
-                        specialists.filter(s => s.name.toLowerCase().includes(searchSpecialist.toLowerCase()) || (s.department && s.department.toLowerCase().includes(searchSpecialist.toLowerCase()))).length > 0 && 
-                        specialists.filter(s => s.name.toLowerCase().includes(searchSpecialist.toLowerCase()) || (s.department && s.department.toLowerCase().includes(searchSpecialist.toLowerCase()))).every(s => selectedSpecialists.includes(s.id))
+                        filteredAndSortedSpecialists.length > 0 && 
+                        filteredAndSortedSpecialists.every(s => selectedSpecialists.includes(s.id))
                       }
                       onChange={(e) => {
-                        const filtered = specialists.filter(s => s.name.toLowerCase().includes(searchSpecialist.toLowerCase()) || (s.department && s.department.toLowerCase().includes(searchSpecialist.toLowerCase())));
                         if (e.target.checked) {
-                          const newSelection = new Set([...selectedSpecialists, ...filtered.map(s => s.id)]);
+                          const newSelection = new Set([...selectedSpecialists, ...filteredAndSortedSpecialists.map(s => s.id)]);
                           setSelectedSpecialists(Array.from(newSelection));
                         } else {
-                          const filteredIds = new Set(filtered.map(s => s.id));
+                          const filteredIds = new Set(filteredAndSortedSpecialists.map(s => s.id));
                           setSelectedSpecialists(selectedSpecialists.filter(id => !filteredIds.has(id)));
                         }
                       }}
@@ -682,14 +724,14 @@ const AdminOnCall = () => {
                 </tr>
               </thead>
               <tbody>
-                {specialists.filter(s => s.name.toLowerCase().includes(searchSpecialist.toLowerCase()) || (s.department && s.department.toLowerCase().includes(searchSpecialist.toLowerCase()))).length === 0 ? (
+                {filteredAndSortedSpecialists.length === 0 ? (
                   <tr>
                     <td colSpan={4} className="py-8 text-center text-gray-500">
-                      {searchSpecialist ? 'Tidak ada dokter yang cocok dengan pencarian.' : 'Belum ada master data dokter. Silakan tambah data baru.'}
+                      {searchSpecialist || filterDepartment !== 'Semua' ? 'Tidak ada dokter yang cocok dengan filter pencarian.' : 'Belum ada master data dokter. Silakan tambah data baru.'}
                     </td>
                   </tr>
                 ) : (
-                  specialists.filter(s => s.name.toLowerCase().includes(searchSpecialist.toLowerCase()) || (s.department && s.department.toLowerCase().includes(searchSpecialist.toLowerCase()))).map((specialist) => (
+                  filteredAndSortedSpecialists.map((specialist) => (
                     <tr key={specialist.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
                       <td className="py-3 px-4 text-center">
                         <input 
