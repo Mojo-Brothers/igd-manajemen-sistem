@@ -7,7 +7,8 @@ import {
   deleteDoc, 
   query, 
   orderBy,
-  addDoc
+  addDoc,
+  where
 } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { Doctor, AppSettings, OnCallSchedule, Specialist, MonthlyScheduleItem } from '../types';
@@ -96,4 +97,21 @@ export const saveMonthlySchedules = async (schedules: MonthlyScheduleItem[]) => 
   }
   
   await batch.commit();
+};
+
+export const getMonthlySchedulesByMonth = async (year: number, month: number): Promise<MonthlyScheduleItem[]> => {
+  const monthStr = String(month).padStart(2, '0');
+  const startDate = `${year}-${monthStr}-01`;
+  const endDate = `${year}-${monthStr}-31`;
+
+  const q = query(
+    collection(db, 'monthlySchedules'),
+    where('date', '>=', startDate),
+    where('date', '<=', endDate)
+  );
+
+  const snapshot = await getDocs(q);
+  const items = snapshot.docs.map(doc => doc.data() as MonthlyScheduleItem);
+  items.sort((a, b) => a.date.localeCompare(b.date)); // Ensure sorted by date
+  return items;
 };

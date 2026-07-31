@@ -3,7 +3,7 @@ import * as XLSX from 'xlsx';
 import { collection, onSnapshot, query, orderBy, doc } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { OnCallSchedule, Specialist, MonthlyScheduleItem } from '../types';
-import { addOnCallSchedule, updateOnCallSchedule, deleteOnCallSchedule, addSpecialist, updateSpecialist, deleteSpecialist, saveMonthlySchedules } from '../services/db';
+import { addOnCallSchedule, updateOnCallSchedule, deleteOnCallSchedule, addSpecialist, updateSpecialist, deleteSpecialist, saveMonthlySchedules, getMonthlySchedulesByMonth } from '../services/db';
 import { useSettings } from '../contexts/SettingsContext';
 import { getEffectiveDateString, getEffectiveDate } from '../utils/dateUtils';
 import toast from 'react-hot-toast';
@@ -45,6 +45,12 @@ const AdminOnCall = () => {
   const [activeTab, setActiveTab] = useState<'schedule' | 'specialist' | 'monthly'>('schedule');
   const [monthlyPreview, setMonthlyPreview] = useState<MonthlyScheduleItem[]>([]);
   const [todayMonthlySchedule, setTodayMonthlySchedule] = useState<MonthlyScheduleItem | null>(null);
+
+  // History states
+  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const [historySchedules, setHistorySchedules] = useState<MonthlyScheduleItem[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState<boolean>(false);
 
   // Modal states
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
@@ -110,6 +116,25 @@ const AdminOnCall = () => {
     // We no longer read from local storage on load.
     // Preview will only show the most recently uploaded data in this session.
   }, []);
+
+  // Fetch History Schedules
+  useEffect(() => {
+    if (activeTab === 'monthly') {
+      const fetchHistory = async () => {
+        setLoadingHistory(true);
+        try {
+          const schedules = await getMonthlySchedulesByMonth(selectedYear, selectedMonth);
+          setHistorySchedules(schedules);
+        } catch (error) {
+          console.error('Error fetching history:', error);
+          toast.error('Gagal mengambil data riwayat jadwal.');
+        } finally {
+          setLoadingHistory(false);
+        }
+      };
+      fetchHistory();
+    }
+  }, [activeTab, selectedMonth, selectedYear]);
 
   // --- Schedule Handlers ---
   const handleOpenScheduleModal = (departmentName: string, existingOverride?: OnCallSchedule) => {
@@ -743,6 +768,101 @@ const AdminOnCall = () => {
                           const sched = item.schedules.find(s => s.department === dep);
                           return (
                             <td key={dep} className="py-2 px-6 text-gray-600">
+                              {sched ? sched.doctorName : '-'}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className="p-4 sm:p-6 border-t border-gray-100">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+              <div>
+                <h3 className="font-semibold text-gray-700">Data Jadwal Bulanan (History)</h3>
+                <p className="text-sm text-gray-500">Lihat jadwal yang sudah di-upload berdasarkan bulan dan tahun.</p>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                <select
+                  value={selectedMonth}
+                  onChange={(e) => setSelectedMonth(Number(e.target.value))}
+                  className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none"
+                >
+                  {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
+                    <option key={m} value={m}>
+                      {new Date(2000, m - 1).toLocaleString('id-ID', { month: 'long' })}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  type="number"
+                  value={selectedYear}
+                  onChange={(e) => setSelectedYear(Number(e.target.value))}
+                  className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm w-24 focus:ring-2 focus:ring-primary outline-none"
+                />
+                <button
+                  onClick={() => {
+                    if (historySchedules.length === 0) {
+                      toast.error('Tidak ada data untuk didownload pada bulan ini.');
+                      return;
+                    }
+                    const data: Record<string, string>[] = [];
+                    historySchedules.forEach(item => {
+                      const row: Record<string, string> = { Tanggal: item.date };
+                      DEPARTMENTS.forEach(dep => {
+                        const sched = item.schedules.find(s => s.department === dep);
+                        row[dep] = sched ? sched.doctorName : '';
+                      });
+                      data.push(row);
+                    });
+                    const ws = XLSX.utils.json_to_sheet(data);
+                    const wb = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(wb, ws, "Jadwal Bulanan");
+                    XLSX.writeFile(wb, `Jadwal_Bulanan_${selectedYear}_${selectedMonth.toString().padStart(2, '0')}.xlsx`);
+                  }}
+                  disabled={loadingHistory || historySchedules.length === 0}
+                  className="w-full sm:w-auto justify-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors shadow-sm text-sm disabled:opacity-50"
+                >
+                  <FaDownload /> Download ke Excel
+                </button>
+              </div>
+            </div>
+            
+            <div className="overflow-x-auto border border-gray-100 rounded-lg max-h-[500px]">
+              <table className="w-full text-left border-collapse relative">
+                <thead className="sticky top-0 z-10 shadow-sm">
+                  <tr className="bg-gray-50 text-gray-600 text-sm border-b border-gray-100">
+                    <th className="py-3 px-6 font-semibold whitespace-nowrap bg-gray-50 sticky left-0 z-20">Tanggal</th>
+                    {DEPARTMENTS.map(dep => (
+                      <th key={dep} className="py-3 px-6 font-semibold whitespace-nowrap bg-gray-50">{dep}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {loadingHistory ? (
+                    <tr>
+                      <td colSpan={DEPARTMENTS.length + 1} className="py-8 text-center text-gray-500">
+                        Memuat data...
+                      </td>
+                    </tr>
+                  ) : historySchedules.length === 0 ? (
+                    <tr>
+                      <td colSpan={DEPARTMENTS.length + 1} className="py-8 text-center text-gray-500">
+                        Belum ada jadwal untuk bulan dan tahun yang dipilih.
+                      </td>
+                    </tr>
+                  ) : (
+                    historySchedules.map((item, idx) => (
+                      <tr key={idx} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors text-sm">
+                        <td className="py-2 px-6 font-medium text-gray-800 bg-white sticky left-0 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">{item.date}</td>
+                        {DEPARTMENTS.map(dep => {
+                          const sched = item.schedules.find(s => s.department === dep);
+                          return (
+                            <td key={dep} className="py-2 px-6 text-gray-600 whitespace-nowrap">
                               {sched ? sched.doctorName : '-'}
                             </td>
                           );
