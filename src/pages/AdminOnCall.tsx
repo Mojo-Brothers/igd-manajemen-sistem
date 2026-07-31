@@ -7,7 +7,7 @@ import { addOnCallSchedule, updateOnCallSchedule, deleteOnCallSchedule, addSpeci
 import { useSettings } from '../contexts/SettingsContext';
 import { getEffectiveDateString, getEffectiveDate } from '../utils/dateUtils';
 import toast from 'react-hot-toast';
-import { FaPlus, FaEdit, FaTrash, FaSave, FaTimes, FaUserMd, FaHospitalAlt, FaFileExcel, FaDownload } from 'react-icons/fa';
+import { FaPlus, FaEdit, FaTrash, FaSave, FaTimes, FaUserMd, FaHospitalAlt, FaFileExcel, FaDownload, FaSearch } from 'react-icons/fa';
 import Select from 'react-select';
 
 export const DEPARTMENTS = [
@@ -39,6 +39,7 @@ const AdminOnCall = () => {
   const { settings } = useSettings();
   const [schedules, setSchedules] = useState<OnCallSchedule[]>([]);
   const [specialists, setSpecialists] = useState<Specialist[]>([]);
+  const [searchSpecialist, setSearchSpecialist] = useState('');
   
   const [selectedSpecialists, setSelectedSpecialists] = useState<string[]>([]);
 
@@ -638,6 +639,19 @@ const AdminOnCall = () => {
             </div>
           </div>
           
+          <div className="p-4 sm:p-6 bg-gray-50 border-b border-gray-100">
+            <div className="relative max-w-md">
+              <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Cari nama dokter atau departemen..."
+                className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-primary focus:border-primary outline-none text-sm bg-white shadow-sm transition-all"
+                value={searchSpecialist}
+                onChange={(e) => setSearchSpecialist(e.target.value)}
+              />
+            </div>
+          </div>
+          
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
@@ -646,10 +660,19 @@ const AdminOnCall = () => {
                     <input 
                       type="checkbox" 
                       className="rounded border-gray-300 text-primary focus:ring-primary cursor-pointer w-4 h-4"
-                      checked={specialists.length > 0 && selectedSpecialists.length === specialists.length}
+                      checked={
+                        specialists.filter(s => s.name.toLowerCase().includes(searchSpecialist.toLowerCase()) || (s.department && s.department.toLowerCase().includes(searchSpecialist.toLowerCase()))).length > 0 && 
+                        specialists.filter(s => s.name.toLowerCase().includes(searchSpecialist.toLowerCase()) || (s.department && s.department.toLowerCase().includes(searchSpecialist.toLowerCase()))).every(s => selectedSpecialists.includes(s.id))
+                      }
                       onChange={(e) => {
-                        if (e.target.checked) setSelectedSpecialists(specialists.map(s => s.id));
-                        else setSelectedSpecialists([]);
+                        const filtered = specialists.filter(s => s.name.toLowerCase().includes(searchSpecialist.toLowerCase()) || (s.department && s.department.toLowerCase().includes(searchSpecialist.toLowerCase())));
+                        if (e.target.checked) {
+                          const newSelection = new Set([...selectedSpecialists, ...filtered.map(s => s.id)]);
+                          setSelectedSpecialists(Array.from(newSelection));
+                        } else {
+                          const filteredIds = new Set(filtered.map(s => s.id));
+                          setSelectedSpecialists(selectedSpecialists.filter(id => !filteredIds.has(id)));
+                        }
                       }}
                     />
                   </th>
@@ -659,14 +682,14 @@ const AdminOnCall = () => {
                 </tr>
               </thead>
               <tbody>
-                {specialists.length === 0 ? (
+                {specialists.filter(s => s.name.toLowerCase().includes(searchSpecialist.toLowerCase()) || (s.department && s.department.toLowerCase().includes(searchSpecialist.toLowerCase()))).length === 0 ? (
                   <tr>
                     <td colSpan={4} className="py-8 text-center text-gray-500">
-                      Belum ada master data dokter. Silakan tambah data baru.
+                      {searchSpecialist ? 'Tidak ada dokter yang cocok dengan pencarian.' : 'Belum ada master data dokter. Silakan tambah data baru.'}
                     </td>
                   </tr>
                 ) : (
-                  specialists.map((specialist) => (
+                  specialists.filter(s => s.name.toLowerCase().includes(searchSpecialist.toLowerCase()) || (s.department && s.department.toLowerCase().includes(searchSpecialist.toLowerCase()))).map((specialist) => (
                     <tr key={specialist.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
                       <td className="py-3 px-4 text-center">
                         <input 
