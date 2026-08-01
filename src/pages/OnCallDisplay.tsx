@@ -135,9 +135,14 @@ const OnCallDisplay = () => {
               </div>
             )}
           </div>
-          <div className={`${statusColor} text-white text-[clamp(5px,0.8vh,10px)] font-bold uppercase tracking-wider px-[clamp(3px,0.6vh,8px)] py-[clamp(1px,0.3vh,4px)] rounded-full whitespace-nowrap shadow-sm shrink-0 self-center`}>
-            {status}
-          </div>
+          {/* 
+            TODO: Fitur status text disembunyikan sementara untuk memberikan ruang lebih pada nama dokter.
+            Kode asli untuk badge status:
+            <div className={`${statusColor} text-white text-[clamp(5px,0.8vh,10px)] font-bold uppercase tracking-wider px-[clamp(3px,0.6vh,8px)] py-[clamp(1px,0.3vh,4px)] rounded-full whitespace-nowrap shadow-sm shrink-0 self-center`}>
+              {status}
+            </div>
+          */}
+          <div className={`${statusColor} w-[clamp(10px,1.5vh,16px)] h-[clamp(10px,1.5vh,16px)] rounded-full shadow-sm shrink-0 self-center border border-black/10`} title={status}></div>
         </div>
       </div>
     );
@@ -266,9 +271,6 @@ const OnCallDisplay = () => {
                 ))
               : 'Selamat Datang di Instalasi Gawat Darurat Primaya Hospital'}
           </motion.div>
-        </div>
-        <div className="absolute bottom-1 right-2 z-30 text-[10px] text-white/50 tracking-wide pointer-events-none">
-          &copy; {new Date().getFullYear()} Roby Viori Fansya
         </div>
       </footer>
     </div>
