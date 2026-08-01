@@ -21,18 +21,45 @@ const DigitalClock = () => {
         let lat = -6.2088;
         let lon = 106.8456;
         let locName = 'Jakarta';
+        // Helper to get geolocation
+        const getPosition = (): Promise<GeolocationPosition> => {
+          return new Promise((resolve, reject) => {
+            if (!navigator.geolocation) {
+              reject(new Error("Geolocation not supported"));
+            } else {
+              navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 10000 });
+            }
+          });
+        };
 
         try {
-          const locRes = await fetch('https://ipinfo.io/json');
-          const locData = await locRes.json();
-          if (locData && locData.loc) {
-            const [latStr, lonStr] = locData.loc.split(',');
-            lat = parseFloat(latStr);
-            lon = parseFloat(lonStr);
-            locName = locData.city || 'Jakarta';
+          // Try to get precise location from browser
+          const position = await getPosition();
+          lat = position.coords.latitude;
+          lon = position.coords.longitude;
+          
+          // Get city name via reverse geocoding
+          try {
+            const geoRes = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=id`);
+            const geoData = await geoRes.json();
+            locName = geoData.city || geoData.locality || geoData.principalSubdivision || 'Lokasi Saat Ini';
+          } catch (e) {
+            locName = 'Lokasi Saat Ini';
           }
-        } catch (e) {
-          console.log("Using default location");
+        } catch (error) {
+          console.log("Geolocation permission denied or failed, falling back to IP based location");
+          try {
+            const locRes = await fetch('https://ipinfo.io/json');
+            const locData = await locRes.json();
+            if (locData && locData.loc) {
+              const [latStr, lonStr] = locData.loc.split(',');
+              lat = parseFloat(latStr);
+              lon = parseFloat(lonStr);
+              locName = locData.city || 'Jakarta';
+            }
+          } catch (e) {
+            console.log("Using default location");
+          }
         }
 
         const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto`);
