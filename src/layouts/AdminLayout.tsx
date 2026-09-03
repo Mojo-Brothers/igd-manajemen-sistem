@@ -112,7 +112,7 @@ const AdminLayout = () => {
             </h1>
           </div>
           <Link 
-            to={location.pathname.includes('on-call') ? '/on-call' : '/'} 
+            to={location.pathname.includes('on-call') ? '/on-call' : '/display'} 
             target="_blank" 
             className="text-xs md:text-sm text-primary hover:underline font-medium whitespace-nowrap"
           >

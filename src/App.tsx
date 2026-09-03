@@ -1,5 +1,5 @@
 import { Suspense, lazy } from 'react';
-import { HashRouter as Router, Routes, Route } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './contexts/AuthContext';
 import { SettingsProvider } from './contexts/SettingsContext';
@@ -24,8 +24,11 @@ function App() {
           <Toaster position="top-right" />
           <Suspense fallback={<div className="min-h-screen bg-gray-50 flex items-center justify-center"><div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary"></div></div>}>
             <Routes>
-            {/* Public TV Display Route */}
-            <Route path="/" element={<Display />} />
+            {/* Direct initial access to Admin Dashboard */}
+            <Route path="/" element={<Navigate to="/admin" replace />} />
+
+            {/* Public TV Display Routes */}
+            <Route path="/display" element={<Display />} />
             <Route path="/on-call" element={<OnCallDisplay />} />
             
             {/* Admin Login */}
