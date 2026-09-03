@@ -15,6 +15,7 @@ const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Doctors = lazy(() => import('./pages/Doctors'));
 const Settings = lazy(() => import('./pages/Settings'));
 const AdminOnCall = lazy(() => import('./pages/AdminOnCall'));
+const LinenManagement = lazy(() => import('./pages/linen/LinenManagement'));
 
 function App() {
   return (
@@ -40,6 +41,7 @@ function App() {
                 <Route index element={<Dashboard />} />
                 <Route path="doctors" element={<Doctors />} />
                 <Route path="on-call" element={<AdminOnCall />} />
+                <Route path="linen" element={<LinenManagement />} />
                 <Route path="settings" element={<Settings />} />
               </Route>
             </Route>
