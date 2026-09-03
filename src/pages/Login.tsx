@@ -35,7 +35,7 @@ const Login = () => {
             <FaHospital size={32} />
           </div>
           <h2 className="text-2xl font-bold">Admin Login</h2>
-          <p className="text-blue-200 mt-1">IGD Management System</p>
+          <p className="text-blue-200 mt-1">IGD Schedule Display Panel</p>
         </div>
         
         <form onSubmit={handleLogin} className="p-8 space-y-6">

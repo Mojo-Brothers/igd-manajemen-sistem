@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { FaHome, FaUserMd, FaCog, FaSignOutAlt, FaHospitalAlt, FaBars, FaTimes, FaCalendarAlt, FaBoxes } from 'react-icons/fa';
+import { FaHome, FaUserMd, FaCog, FaSignOutAlt, FaHospitalAlt, FaBars, FaTimes, FaCalendarAlt } from 'react-icons/fa';
 
 const AdminLayout = () => {
   const { logout, currentUser } = useAuth();
@@ -22,7 +22,6 @@ const AdminLayout = () => {
     { path: '/admin', icon: <FaHome size={20} />, label: 'Dashboard' },
     { path: '/admin/doctors', icon: <FaUserMd size={20} />, label: 'Jadwal Dokter IGD' },
     { path: '/admin/on-call', icon: <FaCalendarAlt size={20} />, label: 'Jadwal On Call' },
-    { path: '/admin/linen', icon: <FaBoxes size={20} />, label: 'Linen Management' },
     { path: '/admin/settings', icon: <FaCog size={20} />, label: 'Pengaturan' },
   ];
 
@@ -43,7 +42,7 @@ const AdminLayout = () => {
             <FaHospitalAlt size={28} />
             <div>
               <h2 className="font-bold text-lg leading-tight">Admin Panel</h2>
-              <p className="text-xs text-blue-200">IGD Management System</p>
+              <p className="text-xs text-blue-200">Doctor Schedule Display</p>
             </div>
           </div>
           <button 
