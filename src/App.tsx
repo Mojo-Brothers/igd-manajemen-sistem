@@ -15,6 +15,7 @@ const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Doctors = lazy(() => import('./pages/Doctors'));
 const Settings = lazy(() => import('./pages/Settings'));
 const AdminOnCall = lazy(() => import('./pages/AdminOnCall'));
+const LinenFlowPage = lazy(() => import('./pages/linen/LinenFlowPage'));
 
 function App() {
   return (
@@ -30,6 +31,9 @@ function App() {
             {/* Public TV Display Routes */}
             <Route path="/display" element={<Display />} />
             <Route path="/on-call" element={<OnCallDisplay />} />
+
+            {/* LinenFlow IGD (Akses Cepat Lemari Operasional Tanpa Login) */}
+            <Route path="/linen" element={<LinenFlowPage />} />
             
             {/* Admin Login */}
             <Route path="/login" element={<Login />} />
@@ -40,6 +44,7 @@ function App() {
                 <Route index element={<Dashboard />} />
                 <Route path="doctors" element={<Doctors />} />
                 <Route path="on-call" element={<AdminOnCall />} />
+                <Route path="linen" element={<LinenFlowPage />} />
                 <Route path="settings" element={<Settings />} />
               </Route>
             </Route>
