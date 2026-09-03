@@ -14,7 +14,7 @@ body {
   font-family: var(--font-sans);
   background-color: var(--color-secondary);
   color: #1f2937;
-  overflow: hidden; /* Hide scrollbars for TV Display */
+  overflow-x: hidden;
 }
 
 /* Glassmorphism utility */
@@ -24,4 +24,14 @@ body {
   -webkit-backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.18);
   box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
+}
+
+/* Hide default browser number spin arrows for ultra-clean UI */
+input[type=number]::-webkit-inner-spin-button, 
+input[type=number]::-webkit-outer-spin-button { 
+  -webkit-appearance: none; 
+  margin: 0; 
+}
+input[type=number] {
+  -moz-appearance: textfield;
 }

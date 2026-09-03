@@ -166,11 +166,17 @@ export const executeLinenTransition = async (params: {
       case 'LAUNDRY_PICKUP':
         sourceStatus = 'dirty';
         targetStatus = 'laundry';
-        if (dirty < quantity) {
-          throw new Error(`Jumlah linen kotor tidak mencukupi (Tercatat kotor: ${dirty}, Diambil: ${quantity})`);
+        {
+          // Ambil dari dirty terlebih dahulu; jika belum tercatat di kotor, potong sisa dari lemari/clean
+          const fromDirty = Math.min(dirty, quantity);
+          const remainingNeeded = quantity - fromDirty;
+          if (clean < remainingNeeded) {
+            throw new Error(`Stok linen di IGD tidak mencukupi (Tersedia kotor: ${dirty}, bersih: ${clean}, diserahkan: ${quantity})`);
+          }
+          dirty -= fromDirty;
+          clean -= remainingNeeded;
+          laundry += quantity;
         }
-        dirty -= quantity;
-        laundry += quantity;
         break;
 
       case 'LAUNDRY_RETURN':
@@ -226,6 +232,60 @@ export const executeLinenTransition = async (params: {
 };
 
 /**
+ * Directly adjust clean stock in closet (Koreksi stok fisik lemari / Stock Opname)
+ */
+export const adjustCleanStock = async (params: {
+  itemId: string;
+  newClean: number;
+  actor?: string;
+  notes?: string;
+}) => {
+  const { itemId, newClean, actor, notes } = params;
+  if (newClean < 0) throw new Error('Stok bersih tidak boleh kurang dari 0');
+
+  const itemRef = doc(db, ITEMS_COLLECTION, itemId);
+  const txRef = doc(collection(db, TRANSACTIONS_COLLECTION));
+
+  return await runTransaction(db, async (transaction) => {
+    const itemDoc = await transaction.get(itemRef);
+    if (!itemDoc.exists()) throw new Error('Data linen tidak ditemukan');
+
+    const current = itemDoc.data() as LinenItem;
+    const oldClean = current.clean || 0;
+    const diff = newClean - oldClean;
+
+    // Update total owned if clean increases/decreases so total matches circulation
+    const newTotalOwned = Math.max(
+      newClean + (current.used || 0) + (current.dirty || 0) + (current.laundry || 0),
+      current.totalOwned + diff
+    );
+
+    transaction.update(itemRef, {
+      clean: newClean,
+      totalOwned: newTotalOwned,
+      updatedAt: serverTimestamp()
+    });
+
+    const logData: LinenTransaction = {
+      id: txRef.id,
+      unitId: current.unitId,
+      itemId: current.id,
+      itemName: current.name,
+      type: 'ADJUST_STOCK',
+      quantity: Math.abs(diff),
+      sourceStatus: diff >= 0 ? 'system' : 'clean',
+      targetStatus: diff >= 0 ? 'clean' : 'system',
+      actor: actor || 'Perawat IGD',
+      notes: notes || `Koreksi stok bersih lemari: ${oldClean} -> ${newClean} (${diff >= 0 ? '+' : ''}${diff})`,
+      timestamp: serverTimestamp()
+    };
+
+    transaction.set(txRef, logData);
+    return { oldClean, newClean, diff };
+  });
+};
+
+/**
  * Update master specifications (Total Owned, Min, Critical) for an item
  */
 export const updateLinenMaster = async (itemId: string, updates: {
@@ -235,6 +295,7 @@ export const updateLinenMaster = async (itemId: string, updates: {
   name?: string;
   notes?: string;
   actor?: string;
+  resetToClean?: boolean;
 }) => {
   const itemRef = doc(db, ITEMS_COLLECTION, itemId);
   const txRef = doc(collection(db, TRANSACTIONS_COLLECTION));
@@ -249,9 +310,18 @@ export const updateLinenMaster = async (itemId: string, updates: {
     const oldTotal = current.totalOwned;
     const newTotal = updates.totalOwned !== undefined ? updates.totalOwned : oldTotal;
 
-    // If total owned increases/decreases, adjust clean stock proportionally
+    // If resetToClean is true (Pemutihan / Selaraskan ke 100% Lemari Bersih)
     let newClean = current.clean;
-    if (updates.totalOwned !== undefined && updates.totalOwned !== oldTotal) {
+    let newUsed = current.used || 0;
+    let newDirty = current.dirty || 0;
+    let newLaundry = current.laundry || 0;
+
+    if (updates.resetToClean) {
+      newClean = newTotal;
+      newUsed = 0;
+      newDirty = 0;
+      newLaundry = 0;
+    } else if (updates.totalOwned !== undefined && updates.totalOwned !== oldTotal) {
       const diff = updates.totalOwned - oldTotal;
       newClean = Math.max(0, newClean + diff);
     }
@@ -259,8 +329,14 @@ export const updateLinenMaster = async (itemId: string, updates: {
     const payload: Partial<LinenItem> = {
       ...updates,
       clean: newClean,
+      used: newUsed,
+      dirty: newDirty,
+      laundry: newLaundry,
+      totalOwned: newTotal,
       updatedAt: serverTimestamp()
     };
+
+    delete (payload as any).resetToClean;
 
     transaction.update(itemRef, payload);
 
@@ -271,11 +347,13 @@ export const updateLinenMaster = async (itemId: string, updates: {
       itemId: current.id,
       itemName: current.name,
       type: 'ADJUST_STOCK',
-      quantity: Math.abs((updates.totalOwned || oldTotal) - oldTotal),
+      quantity: updates.resetToClean ? newTotal : Math.abs(newTotal - oldTotal),
       sourceStatus: 'system',
       targetStatus: 'clean',
       actor: updates.actor || 'Koordinator IGD',
-      notes: updates.notes || `Penyesuaian master: Total ${oldTotal} -> ${newTotal}`,
+      notes: updates.resetToClean 
+        ? `Pemutihan Master: Selaraskan seluruh kepemilikan (${newTotal} pcs) ke lemari bersih` 
+        : (updates.notes || `Penyesuaian master: Total ${oldTotal} -> ${newTotal}`),
       timestamp: serverTimestamp()
     };
 
@@ -308,3 +386,52 @@ export const subscribeRecentTransactions = (
     console.error('Error fetching transactions:', err);
   });
 };
+
+/**
+ * Pemutihan / Penyelarasan Total Kepemilikan ke 100% Lemari Bersih
+ * Mereset dirty = 0, used = 0, laundry = 0, dan clean = totalOwned
+ */
+export const reconcileAndWhitewashStock = async (
+  unitId: string = 'igd',
+  actor: string = 'Koordinator IGD (Pemutihan)',
+  notes: string = 'Pemutihan / Penyelarasan stok 100% lemari bersih'
+) => {
+  const q = query(collection(db, ITEMS_COLLECTION), where('unitId', '==', unitId));
+  const snapshot = await getDocs(q);
+
+  for (const itemDoc of snapshot.docs) {
+    const item = itemDoc.data() as LinenItem;
+    const total = item.totalOwned || (item.clean + (item.dirty || 0) + (item.used || 0) + (item.laundry || 0));
+
+    const itemRef = doc(db, ITEMS_COLLECTION, itemDoc.id);
+    const txRef = doc(collection(db, TRANSACTIONS_COLLECTION));
+
+    await runTransaction(db, async (transaction) => {
+      transaction.update(itemRef, {
+        clean: total,
+        used: 0,
+        dirty: 0,
+        laundry: 0,
+        totalOwned: total,
+        updatedAt: serverTimestamp()
+      });
+
+      const logData: LinenTransaction = {
+        id: txRef.id,
+        unitId,
+        itemId: item.id,
+        itemName: item.name,
+        type: 'ADJUST_STOCK',
+        quantity: total,
+        sourceStatus: 'system',
+        targetStatus: 'clean',
+        actor,
+        notes: `${notes}: ${total} ${item.unitLabel || 'pcs'} ${item.name}`,
+        timestamp: serverTimestamp()
+      };
+
+      transaction.set(txRef, logData);
+    });
+  }
+};
+

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { LinenItem, TransactionType } from '../../../types/linen';
 import { executeLinenTransition } from '../../../services/linenService';
 import toast from 'react-hot-toast';
-import { FaTimes, FaCheck, FaMinus, FaPlus } from 'react-icons/fa';
+import { FaTimes, FaCheck, FaMinus, FaPlus, FaTruckLoading, FaCheckDouble } from 'react-icons/fa';
 
 interface LinenActionModalProps {
   isOpen: boolean;
@@ -10,15 +10,18 @@ interface LinenActionModalProps {
   items: LinenItem[];
   defaultType?: TransactionType;
   defaultItemId?: string;
+  defaultRole?: 'IGD' | 'LAUNDRY';
 }
 
 export const LinenActionModal: React.FC<LinenActionModalProps> = ({
   isOpen,
   onClose,
   items,
-  defaultType = 'TAKE',
-  defaultItemId
+  defaultType = 'LAUNDRY_PICKUP',
+  defaultItemId,
+  defaultRole = 'IGD'
 }) => {
+  const [role, setRole] = useState<'IGD' | 'LAUNDRY'>(defaultRole);
   const [activeType, setActiveType] = useState<TransactionType>(defaultType);
   const [selectedItemId, setSelectedItemId] = useState<string>(
     defaultItemId || (items[0]?.id || '')
@@ -33,7 +36,9 @@ export const LinenActionModal: React.FC<LinenActionModalProps> = ({
   // Sync when modal opens with props
   React.useEffect(() => {
     if (isOpen) {
-      setActiveType(defaultType);
+      setRole(defaultRole);
+      const initialType = (defaultType === 'TAKE' || defaultType === 'TO_DIRTY') ? 'LAUNDRY_PICKUP' : defaultType;
+      setActiveType(initialType);
       if (defaultItemId) {
         setSelectedItemId(defaultItemId);
       } else if (items.length > 0 && !selectedItemId) {
@@ -42,65 +47,60 @@ export const LinenActionModal: React.FC<LinenActionModalProps> = ({
       setQuantity(1);
       setNotes('');
     }
-  }, [isOpen, defaultType, defaultItemId, items]);
+  }, [isOpen, defaultType, defaultItemId, defaultRole, items]);
 
   if (!isOpen) return null;
 
   const currentItem = items.find((i) => i.id === selectedItemId) || items[0];
 
-  // Title and helper info based on type
+  // Title and helper info based on type and role
   const getActionConfig = () => {
-    switch (activeType) {
-      case 'TAKE':
+    if (role === 'LAUNDRY') {
+      // Peran Petugas Laundry: Terima Kotor & Serah Bersih
+      if (activeType === 'LAUNDRY_PICKUP') {
         return {
-          title: 'Ambil Linen Bersih',
-          description: 'Linen diambil dari lemari untuk digunakan pada pasien/bed.',
-          sourceName: 'Lemari Bersih',
-          available: currentItem?.clean || 0,
-          buttonText: 'Simpan Pengambilan',
-          buttonColor: 'bg-emerald-600 hover:bg-emerald-700',
-          badge: 'Bersih -> Digunakan'
-        };
-      case 'TO_DIRTY':
-        return {
-          title: 'Kembalikan / Linen Jadi Kotor',
-          description: 'Linen yang selesai digunakan dimasukkan ke keranjang kotor.',
-          sourceName: 'Sedang Digunakan',
-          available: currentItem?.used || 0,
-          buttonText: 'Catat Linen Kotor',
+          title: 'Terima Linen Kotor dari IGD',
+          description: 'Petugas laundry menerima linen kotor dari IGD untuk dibawa dan dicuci.',
+          sourceName: 'Linen Kotor di IGD',
+          available: (currentItem?.dirty || 0) + (currentItem?.clean || 0),
+          buttonText: 'Simpan Terima Kotor',
           buttonColor: 'bg-amber-600 hover:bg-amber-700',
-          badge: 'Digunakan -> Kotor'
+          badge: 'Laundry ← IGD (Kotor)'
         };
-      case 'LAUNDRY_PICKUP':
+      } else {
         return {
-          title: 'Konfirmasi Pengambilan Laundry',
-          description: 'Petugas laundry mengambil linen kotor dari ruang IGD.',
-          sourceName: 'Linen Kotor Siap Diambil',
-          available: currentItem?.dirty || 0,
-          buttonText: 'Konfirmasi Laundry Ambil',
-          buttonColor: 'bg-blue-600 hover:bg-blue-700',
-          badge: 'Kotor -> Laundry'
-        };
-      case 'LAUNDRY_RETURN':
-        return {
-          title: 'Terima Linen Bersih dari Laundry',
-          description: 'Linen yang selesai dicuci laundry diantar kembali ke lemari bersih.',
+          title: 'Serah Linen Bersih ke IGD',
+          description: 'Petugas laundry menyerahkan linen bersih hasil cuci ke lemari IGD.',
           sourceName: 'Sedang di Laundry',
           available: currentItem?.laundry || 0,
-          buttonText: 'Simpan ke Lemari Bersih',
-          buttonColor: 'bg-indigo-600 hover:bg-indigo-700',
-          badge: 'Laundry -> Bersih'
+          buttonText: 'Simpan Serah Bersih',
+          buttonColor: 'bg-teal-600 hover:bg-teal-700',
+          badge: 'Laundry → IGD (Bersih)'
         };
-      default:
+      }
+    } else {
+      // Peran Petugas IGD: Serah Kotor & Terima Bersih
+      if (activeType === 'LAUNDRY_PICKUP') {
         return {
-          title: 'Transaksi Linen',
-          description: '',
-          sourceName: 'Tersedia',
-          available: 0,
-          buttonText: 'Simpan',
-          buttonColor: 'bg-primary hover:bg-blue-800',
-          badge: ''
+          title: 'Serah Linen Kotor ke Laundry',
+          description: 'Petugas IGD menyerahkan linen kotor ke petugas laundry untuk dicuci.',
+          sourceName: 'Linen Kotor di IGD',
+          available: (currentItem?.dirty || 0) + (currentItem?.clean || 0),
+          buttonText: 'Simpan Serah Kotor',
+          buttonColor: 'bg-rose-600 hover:bg-rose-700',
+          badge: 'IGD → Laundry (Kotor)'
         };
+      } else {
+        return {
+          title: 'Terima Linen Bersih dari Laundry',
+          description: 'Petugas IGD menerima linen bersih dari laundry kembali ke lemari bersih.',
+          sourceName: 'Sedang di Laundry',
+          available: currentItem?.laundry || 0,
+          buttonText: 'Simpan Terima Bersih',
+          buttonColor: 'bg-indigo-600 hover:bg-indigo-700',
+          badge: 'Laundry → Lemari IGD (Bersih)'
+        };
+      }
     }
   };
 
@@ -120,12 +120,9 @@ export const LinenActionModal: React.FC<LinenActionModalProps> = ({
     }
 
     // Role labeling
-    let actorRole = 'Staf IGD';
-    if (activeType === 'TAKE' || activeType === 'TO_DIRTY') {
-      actorRole = actorName ? `Perawat (${actorName})` : 'Perawat IGD';
-    } else if (activeType === 'LAUNDRY_PICKUP' || activeType === 'LAUNDRY_RETURN') {
-      actorRole = actorName ? `Laundry (${actorName})` : 'Petugas Laundry';
-    }
+    let actorRole = role === 'LAUNDRY' 
+      ? (actorName ? `Petugas Laundry (${actorName})` : 'Petugas Laundry')
+      : (actorName ? `Petugas IGD (${actorName})` : 'Petugas IGD');
 
     if (actorName) {
       localStorage.setItem('linenflow_actor_name', actorName);
@@ -155,12 +152,15 @@ export const LinenActionModal: React.FC<LinenActionModalProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-150">
         
-        {/* Modal Header */}
+        {/* Modal Header with Role Tag */}
         <div className="bg-slate-900 text-white p-5 flex items-center justify-between">
           <div>
             <div className="flex items-center gap-2">
               <span className="text-xs px-2.5 py-0.5 rounded-full bg-white/20 font-medium">
                 {config.badge}
+              </span>
+              <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-md bg-blue-500/30 text-blue-300 font-bold">
+                Mode: {role === 'IGD' ? 'Petugas IGD' : 'Petugas Laundry'}
               </span>
             </div>
             <h3 className="text-lg font-bold mt-1">{config.title}</h3>
@@ -173,41 +173,63 @@ export const LinenActionModal: React.FC<LinenActionModalProps> = ({
           </button>
         </div>
 
-        {/* Action Type Selector Tabs */}
-        <div className="grid grid-cols-3 bg-slate-100 p-1 border-b border-slate-200 text-xs font-semibold">
-          <button
-            type="button"
-            onClick={() => { setActiveType('TAKE'); setQuantity(1); }}
-            className={`py-2 px-1 rounded-xl text-center transition-all ${
-              activeType === 'TAKE'
-                ? 'bg-emerald-600 text-white shadow-sm'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            Ambil Bersih
-          </button>
-          <button
-            type="button"
-            onClick={() => { setActiveType('TO_DIRTY'); setQuantity(1); }}
-            className={`py-2 px-1 rounded-xl text-center transition-all ${
-              activeType === 'TO_DIRTY'
-                ? 'bg-amber-600 text-white shadow-sm'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            Linen Kotor
-          </button>
-          <button
-            type="button"
-            onClick={() => { setActiveType('LAUNDRY_RETURN'); setQuantity(1); }}
-            className={`py-2 px-1 rounded-xl text-center transition-all ${
-              activeType === 'LAUNDRY_RETURN'
-                ? 'bg-indigo-600 text-white shadow-sm'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            Terima Bersih
-          </button>
+        {/* Action Type Selector Tabs (Hanya 2 Tab Sesuai Peran) */}
+        <div className="grid grid-cols-2 bg-slate-100 p-1.5 border-b border-slate-200 text-xs font-bold">
+          {role === 'IGD' ? (
+            <>
+              <button
+                type="button"
+                onClick={() => { setActiveType('LAUNDRY_PICKUP'); setQuantity(1); }}
+                className={`py-2.5 px-3 rounded-xl text-center transition-all flex items-center justify-center gap-2 ${
+                  activeType === 'LAUNDRY_PICKUP'
+                    ? 'bg-rose-600 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <FaTruckLoading size={14} />
+                <span>Serah Kotor</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => { setActiveType('LAUNDRY_RETURN'); setQuantity(1); }}
+                className={`py-2.5 px-3 rounded-xl text-center transition-all flex items-center justify-center gap-2 ${
+                  activeType === 'LAUNDRY_RETURN'
+                    ? 'bg-indigo-600 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <FaCheckDouble size={14} />
+                <span>Terima Bersih</span>
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={() => { setActiveType('LAUNDRY_PICKUP'); setQuantity(1); }}
+                className={`py-2.5 px-3 rounded-xl text-center transition-all flex items-center justify-center gap-2 ${
+                  activeType === 'LAUNDRY_PICKUP'
+                    ? 'bg-amber-600 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <FaTruckLoading size={14} />
+                <span>Terima Kotor</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => { setActiveType('LAUNDRY_RETURN'); setQuantity(1); }}
+                className={`py-2.5 px-3 rounded-xl text-center transition-all flex items-center justify-center gap-2 ${
+                  activeType === 'LAUNDRY_RETURN'
+                    ? 'bg-teal-600 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <FaCheckDouble size={14} />
+                <span>Serah Bersih</span>
+              </button>
+            </>
+          )}
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
@@ -238,9 +260,11 @@ export const LinenActionModal: React.FC<LinenActionModalProps> = ({
                       {isSelected && <FaCheck className="text-blue-600" size={14} />}
                     </div>
                     <div className="mt-2 text-xs text-slate-500">
-                      Tersedia: <span className="font-semibold text-slate-700">
-                        {activeType === 'TAKE' ? item.clean : activeType === 'TO_DIRTY' ? item.used : activeType === 'LAUNDRY_PICKUP' ? item.dirty : item.laundry}
-                      </span> {item.unitLabel}
+                      {activeType === 'LAUNDRY_PICKUP' ? (
+                        <span>Tersedia di IGD: <strong className="text-rose-700">{(item.dirty || 0) + (item.clean || 0)}</strong> {item.unitLabel}</span>
+                      ) : (
+                        <span>Sedang di Laundry: <strong className="text-indigo-700">{item.laundry || 0}</strong> {item.unitLabel}</span>
+                      )}
                     </div>
                   </button>
                 );

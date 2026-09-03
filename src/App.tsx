@@ -32,8 +32,13 @@ function App() {
             <Route path="/display" element={<Display />} />
             <Route path="/on-call" element={<OnCallDisplay />} />
 
-            {/* LinenFlow IGD (Akses Cepat Lemari Operasional Tanpa Login) */}
-            <Route path="/linen" element={<LinenFlowPage />} />
+            {/* 1. Halaman Khusus IGD (Akses Meja Perawat & Lemari) */}
+            <Route path="/linen" element={<LinenFlowPage initialRole="IGD" />} />
+            <Route path="/linen/igd" element={<LinenFlowPage initialRole="IGD" />} />
+
+            {/* 2. Halaman Khusus Laundry (Akses Runner & Petugas Cuci) */}
+            <Route path="/laundry" element={<LinenFlowPage initialRole="LAUNDRY" />} />
+            <Route path="/linen/laundry" element={<LinenFlowPage initialRole="LAUNDRY" />} />
             
             {/* Admin Login */}
             <Route path="/login" element={<Login />} />

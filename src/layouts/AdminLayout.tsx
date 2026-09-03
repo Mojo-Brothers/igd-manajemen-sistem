@@ -112,13 +112,32 @@ const AdminLayout = () => {
               {menuItems.find(m => m.path === location.pathname)?.label || 'Admin Panel'}
             </h1>
           </div>
-          <Link 
-            to={location.pathname.includes('on-call') ? '/on-call' : '/display'} 
-            target="_blank" 
-            className="text-xs md:text-sm text-primary hover:underline font-medium whitespace-nowrap"
-          >
-            Lihat Layar ↗
-          </Link>
+          {location.pathname.startsWith('/admin/linen') ? (
+            <Link 
+              to={location.search.includes('tab=coordinator') ? '/linen' : '/admin/linen?tab=coordinator'}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`text-xs md:text-sm font-bold px-3.5 py-2 rounded-xl border transition-all flex items-center justify-center ${
+                location.search.includes('tab=coordinator')
+                  ? 'bg-blue-600 text-white border-blue-600 shadow-xs hover:bg-blue-700'
+                  : 'bg-white text-slate-700 border-slate-300 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 shadow-2xs'
+              }`}
+            >
+              {location.search.includes('tab=coordinator') ? (
+                <span>Mode Operasional Lemari</span>
+              ) : (
+                <span>Dashboard Admin Manajemen Linen</span>
+              )}
+            </Link>
+          ) : (
+            <Link 
+              to={location.pathname.includes('on-call') ? '/on-call' : '/display'} 
+              target="_blank" 
+              className="text-xs md:text-sm text-primary hover:underline font-medium whitespace-nowrap"
+            >
+              Lihat Layar ↗
+            </Link>
+          )}
         </header>
         
         <div className="flex-1 overflow-y-auto p-4 md:p-8 bg-gray-50">
