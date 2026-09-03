@@ -367,8 +367,8 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({
       {/* Edit Master Modal */}
       {editingItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-150">
-            <div className="bg-slate-900 text-white p-5 flex items-center justify-between">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-150 max-h-[92vh] flex flex-col">
+            <div className="bg-slate-900 text-white p-5 flex items-center justify-between shrink-0">
               <div>
                 <span className="text-xs text-blue-300 font-bold uppercase tracking-wider">
                   Pengaturan Master
@@ -383,7 +383,7 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({
               </button>
             </div>
 
-            <form onSubmit={handleSaveMaster} className="p-6 space-y-4">
+            <form onSubmit={handleSaveMaster} className="p-6 space-y-4 overflow-y-auto">
               {/* Dual Stock Inputs: Stok Lama & Tambah Stok Baru */}
               <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-3">

@@ -65,10 +65,10 @@ export const LinenQrModal: React.FC<LinenQrModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-150 print:m-0 print:shadow-none print:w-full">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-150 print:m-0 print:shadow-none print:w-full max-h-[95vh] flex flex-col">
         
         {/* Header (hidden during print) */}
-        <div className="bg-slate-900 text-white p-5 flex items-center justify-between print:hidden">
+        <div className="bg-slate-900 text-white p-5 flex items-center justify-between print:hidden shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-xl bg-blue-600/50 flex items-center justify-center text-blue-300">
               <FaQrcode size={16} />
@@ -87,7 +87,7 @@ export const LinenQrModal: React.FC<LinenQrModalProps> = ({
         </div>
 
         {/* Domain Target Selector (hidden during print) */}
-        <div className="bg-slate-50 px-4 py-2 border-b border-slate-200 flex items-center justify-between text-xs print:hidden">
+        <div className="bg-slate-50 px-4 py-2 border-b border-slate-200 flex items-center justify-between text-xs print:hidden shrink-0">
           <span className="text-slate-500 font-medium">Domain Target QR:</span>
           <div className="flex items-center gap-1">
             <button
@@ -120,7 +120,7 @@ export const LinenQrModal: React.FC<LinenQrModalProps> = ({
         </div>
 
         {/* Tab Selector: QR IGD vs QR Laundry (hidden during print) */}
-        <div className="grid grid-cols-2 bg-slate-100 p-2 border-b border-slate-200 text-xs font-bold print:hidden">
+        <div className="grid grid-cols-2 bg-slate-100 p-2 border-b border-slate-200 text-xs font-bold print:hidden shrink-0">
           <button
             type="button"
             onClick={() => setActiveTab('IGD')}
@@ -148,7 +148,7 @@ export const LinenQrModal: React.FC<LinenQrModalProps> = ({
         </div>
 
         {/* Printable Card Area */}
-        <div className="p-6 text-center space-y-4 print:p-8">
+        <div className="p-6 text-center space-y-4 print:p-8 overflow-y-auto">
           <div className={`border-4 border-dashed rounded-3xl p-5 transition-all ${
             activeTab === 'IGD' 
               ? 'border-rose-300 bg-rose-50/40' 

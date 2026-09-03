@@ -64,10 +64,10 @@ export const AdjustCleanModal: React.FC<AdjustCleanModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-150 border border-slate-200">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-150 border border-slate-200 max-h-[92vh] flex flex-col">
         
         {/* Modal Header */}
-        <div className="bg-slate-900 text-white p-5 flex items-center justify-between">
+        <div className="bg-slate-900 text-white p-5 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-blue-600/30 border border-blue-400/30 flex items-center justify-center text-blue-400">
               <FaClipboardCheck size={20} />
@@ -89,7 +89,7 @@ export const AdjustCleanModal: React.FC<AdjustCleanModalProps> = ({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto">
           
           {/* Dual Inputs: Stok Lama (Yang Sedang Tampil) & Input Stok Baru */}
           <div className="space-y-2">

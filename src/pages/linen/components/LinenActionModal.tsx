@@ -150,10 +150,10 @@ export const LinenActionModal: React.FC<LinenActionModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-150">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-150 max-h-[92vh] flex flex-col">
         
         {/* Modal Header with Role Tag */}
-        <div className="bg-slate-900 text-white p-5 flex items-center justify-between">
+        <div className="bg-slate-900 text-white p-5 flex items-center justify-between shrink-0">
           <div>
             <div className="flex items-center gap-2">
               <span className="text-xs px-2.5 py-0.5 rounded-full bg-white/20 font-medium">
@@ -174,7 +174,7 @@ export const LinenActionModal: React.FC<LinenActionModalProps> = ({
         </div>
 
         {/* Action Type Selector Tabs (Hanya 2 Tab Sesuai Peran) */}
-        <div className="grid grid-cols-2 bg-slate-100 p-1.5 border-b border-slate-200 text-xs font-bold">
+        <div className="grid grid-cols-2 bg-slate-100 p-1.5 border-b border-slate-200 text-xs font-bold shrink-0">
           {role === 'IGD' ? (
             <>
               <button
@@ -232,7 +232,7 @@ export const LinenActionModal: React.FC<LinenActionModalProps> = ({
           )}
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+        <form onSubmit={handleSubmit} className="p-6 space-y-5 overflow-y-auto">
           {/* Item Selector */}
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
