@@ -793,3 +793,56 @@ export const verifyLinenLaundryPin = async (inputPin: string): Promise<boolean> 
   return inputPin.trim() === currentPin.trim();
 };
 
+export const DEFAULT_MOBILE_FRIENDLY = true;
+
+/**
+ * Mengambil preferensi mode Mobile-Friendly untuk sistem Linen dari Firestore
+ * Default: true
+ */
+export const getLinenMobileFriendly = async (): Promise<boolean> => {
+  try {
+    const configRef = doc(db, SETTINGS_COLLECTION, LINEN_CONFIG_DOC);
+    const snap = await getDoc(configRef);
+    if (snap.exists() && typeof snap.data()?.mobileFriendly === 'boolean') {
+      return snap.data().mobileFriendly;
+    }
+  } catch (error) {
+    console.warn('Gagal membaca preferensi mobile-friendly, gunakan default:', error);
+  }
+  return DEFAULT_MOBILE_FRIENDLY;
+};
+
+/**
+ * Mengubah preferensi mode Mobile-Friendly untuk sistem Linen di Firestore
+ */
+export const setLinenMobileFriendly = async (
+  enabled: boolean,
+  updatedBy: string = 'Administrator'
+): Promise<void> => {
+  const configRef = doc(db, SETTINGS_COLLECTION, LINEN_CONFIG_DOC);
+  await setDoc(configRef, {
+    mobileFriendly: Boolean(enabled),
+    updatedAt: serverTimestamp(),
+    updatedBy
+  }, { merge: true });
+};
+
+/**
+ * Berlangganan real-time terhadap perubahan preferensi Mobile-Friendly Linen
+ */
+export const subscribeLinenMobileFriendly = (
+  callback: (enabled: boolean) => void
+): (() => void) => {
+  const configRef = doc(db, SETTINGS_COLLECTION, LINEN_CONFIG_DOC);
+  return onSnapshot(configRef, (snap) => {
+    if (snap.exists() && typeof snap.data()?.mobileFriendly === 'boolean') {
+      callback(snap.data().mobileFriendly);
+    } else {
+      callback(DEFAULT_MOBILE_FRIENDLY);
+    }
+  }, (error) => {
+    console.warn('Galat sinkronisasi preferensi mobile-friendly:', error);
+    callback(DEFAULT_MOBILE_FRIENDLY);
+  });
+};
+

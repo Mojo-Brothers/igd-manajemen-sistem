@@ -36,12 +36,14 @@ import { LinenReportModal } from './components/LinenReportModal';
 import { CreateLinenModal } from './components/CreateLinenModal';
 import { LaundryPinGate } from './components/LaundryPinGate';
 import { FaLock } from 'react-icons/fa';
+import { useLinenMobileFriendly } from '../../hooks/useLinenMobileFriendly';
 
 interface LinenFlowPageProps {
   initialRole?: 'IGD' | 'LAUNDRY';
 }
 
 export const LinenFlowPage: React.FC<LinenFlowPageProps> = ({ initialRole }) => {
+  const { containerClass } = useLinenMobileFriendly();
   const location = useLocation();
   const isInsideAdmin = location.pathname.startsWith('/admin');
   const [searchParams] = useSearchParams();
@@ -161,19 +163,19 @@ export const LinenFlowPage: React.FC<LinenFlowPageProps> = ({ initialRole }) => 
 
 
   return (
-    <div className={`font-sans pb-16 ${isInsideAdmin ? 'w-full' : 'min-h-screen bg-slate-100 text-slate-900'}`}>
+    <div className={`font-sans pb-16 ${containerClass} ${isInsideAdmin ? 'w-full' : 'min-h-screen bg-slate-100 text-slate-900'}`}>
       
       {/* Top Header Bar: Rendered only in Standalone Mode (outside AdminLayout) */}
       {!isInsideAdmin && (
         <header className="bg-slate-900 text-white shadow-md">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 sm:py-4 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
+          <div className="max-w-7xl mx-auto px-3.5 sm:px-6 py-3 sm:py-4 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
               <div className="w-10 h-10 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-md shrink-0">
                 <FaHospital size={20} />
               </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h1 className="font-black text-base sm:text-lg tracking-tight leading-tight">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h1 className="font-black text-base sm:text-lg tracking-tight leading-tight truncate">
                     {operationalRole === 'IGD' ? 'LINENFLOW IGD' : 'LINENFLOW LAUNDRY'}
                   </h1>
                   <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-md ${
@@ -196,7 +198,7 @@ export const LinenFlowPage: React.FC<LinenFlowPageProps> = ({ initialRole }) => 
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               {/* Tombol Kunci Stasiun Laundry saat terbuka */}
               {isLaundry && isLaundryAuthorized && (
                 <button

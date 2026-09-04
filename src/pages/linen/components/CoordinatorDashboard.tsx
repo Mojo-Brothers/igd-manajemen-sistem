@@ -29,8 +29,11 @@ import {
   FaFilter,
   FaPlus,
   FaTrash,
-  FaKey
+  FaKey,
+  FaMobileAlt,
+  FaDesktop
 } from 'react-icons/fa';
+import { useLinenMobileFriendly } from '../../../hooks/useLinenMobileFriendly';
 
 interface CoordinatorDashboardProps {
   items: LinenItem[];
@@ -43,6 +46,7 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({
   unitId,
   unitName
 }) => {
+  const { isMobileFriendly, setMobileFriendly } = useLinenMobileFriendly();
   const [transactions, setTransactions] = useState<LinenTransaction[]>([]);
   const [filterDate, setFilterDate] = useState<string>('');
   const [filterActionType, setFilterActionType] = useState<string>('ALL');
@@ -342,7 +346,70 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({
         </div>
       )}
 
-      {/* 3. Real-time Complete Circulation Matrix Table (All 6 statuses) */}
+      {/* 3. Pengaturan Tampilan Mobile-Friendly Sistem Linen */}
+      <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-start sm:items-center gap-3.5">
+          <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 shadow-2xs ${
+            isMobileFriendly ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-700'
+          }`}>
+            {isMobileFriendly ? <FaMobileAlt size={22} /> : <FaDesktop size={20} />}
+          </div>
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h4 className="font-black text-sm sm:text-base text-slate-900">
+                Pengaturan Tampilan Mobile-Friendly (Linen)
+              </h4>
+              <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full ${
+                isMobileFriendly 
+                  ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' 
+                  : 'bg-slate-200 text-slate-700 border border-slate-300'
+              }`}>
+                {isMobileFriendly ? '🟢 Aktif' : '⚪ Nonaktif (Desktop Workstation)'}
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 mt-1 max-w-2xl leading-relaxed">
+              {isMobileFriendly 
+                ? 'Seluruh stasiun linen (IGD & Laundry) menyesuaikan layar smartphone & tablet secara responsif (desain fleksibel, tombol sentuh jempol, kartu bertumpuk ramah seluler).'
+                : 'Seluruh stasiun linen dikunci pada tampilan desktop monitor penuh (1240px) tanpa penumpukan kolom. Tampilan tidak mengalir ke bawah, layar ponsel dapat di-scroll horizontal.'}
+            </p>
+          </div>
+        </div>
+
+        {/* Toggle Switch */}
+        <div className="flex items-center gap-3 shrink-0 self-start sm:self-auto">
+          <button
+            type="button"
+            onClick={async () => {
+              const nextState = !isMobileFriendly;
+              try {
+                await setMobileFriendly(nextState, `Administrator ${unitName}`);
+                toast.success(
+                  nextState 
+                    ? 'Mode Mobile-Friendly AKTIF! Tampilan HP & tablet kini responsif.' 
+                    : 'Mode Mobile-Friendly NONAKTIF! Tampilan dikunci ke mode desktop.'
+                );
+              } catch (err: any) {
+                toast.error(err.message || 'Gagal mengubah pengaturan tampilan');
+              }
+            }}
+            className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/30 cursor-pointer shadow-inner ${
+              isMobileFriendly ? 'bg-emerald-600' : 'bg-slate-300'
+            }`}
+            title={isMobileFriendly ? 'Klik untuk nonaktifkan mode mobile-friendly' : 'Klik untuk aktifkan mode mobile-friendly'}
+          >
+            <span
+              className={`inline-block h-6 w-6 transform rounded-full bg-white shadow-md transition-transform ${
+                isMobileFriendly ? 'translate-x-7' : 'translate-x-1'
+              }`}
+            />
+          </button>
+          <span className="text-xs font-bold text-slate-700">
+            {isMobileFriendly ? 'Aktif' : 'Nonaktif'}
+          </span>
+        </div>
+      </div>
+
+      {/* 4. Real-time Complete Circulation Matrix Table (All 6 statuses) */}
       <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
         <div className="p-5 bg-slate-900 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
