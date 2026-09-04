@@ -212,7 +212,7 @@ export const LinenFlowPage: React.FC<LinenFlowPageProps> = ({ initialRole }) => 
                 </span>
               </div>
               <p className="text-[11px] text-slate-400 font-medium">
-                Primaya Hospital • {operationalRole === 'IGD' ? 'Stasiun Lemari & Perawat IGD' : 'Stasiun Serah Terima Laundry IGD'}
+                Primaya Hospital • {operationalRole === 'IGD' ? 'Stasiun Lemari & Perawat IGD' : 'Stasiun Gudang & Pelayanan Laundry'}
               </p>
             </div>
           </div>
@@ -229,10 +229,10 @@ export const LinenFlowPage: React.FC<LinenFlowPageProps> = ({ initialRole }) => 
             <button
               onClick={() => setIsQrModalOpen(true)}
               className="p-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors border border-white/10"
-              title="Cetak Barcode/QR Lemari"
+              title={operationalRole === 'IGD' ? "Cetak Barcode/QR Lemari IGD" : "Cetak Barcode/QR Gudang Laundry"}
             >
               <FaQrcode size={16} />
-              <span className="hidden sm:inline">QR Lemari</span>
+              <span className="hidden sm:inline">{operationalRole === 'IGD' ? 'QR Lemari' : 'QR Gudang'}</span>
             </button>
             {!isInsideAdmin && (
               <Link
@@ -302,7 +302,7 @@ export const LinenFlowPage: React.FC<LinenFlowPageProps> = ({ initialRole }) => 
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
                 <div className="flex items-center gap-2">
                   <h3 className="text-xs font-black uppercase tracking-wider text-slate-500">
-                    Stok Bersih di Lemari IGD
+                    {operationalRole === 'IGD' ? 'Stok Bersih di Lemari IGD' : 'Monitoring Stok Lemari IGD & Gudang Laundry'}
                   </h3>
                   <span className="text-[11px] text-slate-400 hidden sm:inline">• Real-time Sync</span>
                 </div>
@@ -657,7 +657,7 @@ export const LinenFlowPage: React.FC<LinenFlowPageProps> = ({ initialRole }) => 
                   <p className="text-[11px] text-slate-400 mt-0.5">
                     {operationalRole === 'IGD' 
                       ? 'Stasiun perawat & lemari IGD: serahkan kotor atau terima bersih' 
-                      : 'Stasiun runner laundry: terima kotor atau serahkan bersih ke IGD'}
+                      : 'Stasiun gudang & runner laundry: terima kotor dari IGD atau kirim bersih ke IGD'}
                   </p>
                 </div>
 
@@ -710,9 +710,9 @@ export const LinenFlowPage: React.FC<LinenFlowPageProps> = ({ initialRole }) => 
                     onClick={() => {
                       if (totalInTransitClean === 0) {
                         if (totalInLaundry > 0) {
-                          toast.error('Linen masih sedang dikerjakan di laundry. Belum ada linen bersih yang dikirim ke IGD.');
+                          toast.error('Linen masih sedang dikerjakan di gudang laundry. Belum ada linen bersih yang dikirim ke IGD.');
                         } else if (totalInTransitDirty > 0) {
-                          toast.error('Linen kotor masih dalam perjalanan ke laundry.');
+                          toast.error('Linen kotor masih dalam perjalanan ke gudang laundry.');
                         } else {
                           toast.error('Tidak ada linen bersih yang menunggu diterima.');
                         }
@@ -750,7 +750,7 @@ export const LinenFlowPage: React.FC<LinenFlowPageProps> = ({ initialRole }) => 
                         {totalInTransitClean > 0
                           ? `Terima ${totalInTransitClean} pcs linen bersih masuk lemari IGD`
                           : totalInLaundry > 0
-                          ? `Nonaktif: Masih dikerjakan di laundry (${totalInLaundry} pcs)`
+                          ? `Nonaktif: Masih dikerjakan di gudang laundry (${totalInLaundry} pcs)`
                           : totalInTransitDirty > 0
                           ? `Nonaktif: Sedang dikirim ke laundry (${totalInTransitDirty} pcs)`
                           : 'Nonaktif: Semua linen bersih di lemari'}
@@ -769,9 +769,9 @@ export const LinenFlowPage: React.FC<LinenFlowPageProps> = ({ initialRole }) => 
                         onClick={() => {
                           if (waitingDirty === 0) {
                             toast.error('Belum ada linen kotor yang dikirim dari IGD.');
-                            return;
+                          } else {
+                            handleOpenAction('LAUNDRY_PICKUP', undefined, 'LAUNDRY');
                           }
-                          handleOpenAction('LAUNDRY_PICKUP', undefined, 'LAUNDRY');
                         }}
                         disabled={waitingDirty === 0}
                         className={`p-5 rounded-3xl text-left flex items-center gap-4 min-h-[100px] transition-all ${
@@ -790,7 +790,7 @@ export const LinenFlowPage: React.FC<LinenFlowPageProps> = ({ initialRole }) => 
                             <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
                               waitingDirty > 0 ? 'bg-white/20 text-white' : 'bg-slate-300 text-slate-600'
                             }`}>
-                              Laundry
+                              Gudang
                             </span>
                             {waitingDirty > 0 && (
                               <span className="text-[10px] bg-rose-400 text-rose-950 font-black px-2 py-0.5 rounded-full animate-pulse">
@@ -801,7 +801,7 @@ export const LinenFlowPage: React.FC<LinenFlowPageProps> = ({ initialRole }) => 
                           <h4 className="font-black text-lg sm:text-xl leading-tight mt-1">TERIMA KOTOR</h4>
                           <p className={`text-xs mt-0.5 font-medium ${waitingDirty > 0 ? 'text-amber-100' : 'text-slate-500'}`}>
                             {waitingDirty > 0
-                              ? `Terima ${waitingDirty} pcs linen kotor untuk dicuci`
+                              ? `Terima ${waitingDirty} pcs linen kotor untuk diproses di gudang`
                               : 'Nonaktif: Belum ada linen kotor dikirim dari IGD'}
                           </p>
                         </div>
@@ -816,7 +816,7 @@ export const LinenFlowPage: React.FC<LinenFlowPageProps> = ({ initialRole }) => 
                         if (totalInTransitClean > 0) {
                           toast.error('Linen bersih sedang dalam perjalanan ke IGD, menunggu konfirmasi perawat.');
                         } else {
-                          toast.error('Tidak ada cucian yang sedang dikerjakan untuk dikirim.');
+                          toast.error('Tidak ada cucian yang siap dikirim di gudang.');
                         }
                         return;
                       }
@@ -839,7 +839,7 @@ export const LinenFlowPage: React.FC<LinenFlowPageProps> = ({ initialRole }) => 
                         <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
                           totalInLaundry > 0 ? 'bg-white/20 text-white' : 'bg-slate-300 text-slate-600'
                         }`}>
-                          Laundry
+                          Gudang
                         </span>
                         {totalInLaundry > 0 ? (
                           <span className="text-[10px] bg-emerald-400 text-emerald-950 font-black px-2 py-0.5 rounded-full">
@@ -854,10 +854,10 @@ export const LinenFlowPage: React.FC<LinenFlowPageProps> = ({ initialRole }) => 
                       <h4 className="font-black text-lg sm:text-xl leading-tight mt-1">KIRIM BERSIH</h4>
                       <p className={`text-xs mt-0.5 font-medium ${totalInLaundry > 0 ? 'text-teal-100' : 'text-slate-500'}`}>
                         {totalInLaundry > 0
-                          ? `Kirim ${totalInLaundry} pcs linen bersih hasil cuci ke IGD`
+                          ? `Kirim ${totalInLaundry} pcs linen bersih dari gudang laundry ke IGD`
                           : totalInTransitClean > 0
                           ? 'Nonaktif: Sedang dikirim ke IGD (menunggu konfirmasi perawat)'
-                          : 'Nonaktif: Tidak ada antrean cucian'}
+                          : 'Nonaktif: Tidak ada stok siap di gudang'}
                       </p>
                     </div>
                   </button>
@@ -1163,7 +1163,7 @@ export const LinenFlowPage: React.FC<LinenFlowPageProps> = ({ initialRole }) => 
                       <span>Pengiriman Linen Bersih (Kirim Bersih)</span>
                     </h4>
                     <p className="text-xs text-slate-500 mt-0.5">
-                      Konfirmasi pengiriman linen bersih hasil cuci untuk diserahkan kembali ke IGD.
+                      Konfirmasi pengiriman linen bersih dari gudang laundry untuk diserahkan ke IGD.
                     </p>
                   </div>
                   <span className="text-[11px] font-bold text-teal-800 bg-teal-50 border border-teal-200 px-3 py-1 rounded-full self-start sm:self-auto">
@@ -1173,18 +1173,18 @@ export const LinenFlowPage: React.FC<LinenFlowPageProps> = ({ initialRole }) => 
 
                 {/* CARD TUNGGAL: KIRIM BERSIH SESUAI STATUS REAL-TIME */}
                 {totalInLaundry > 0 ? (
-                  /* KONDISI 1: Linen Sedang Dikerjakan di Laundry -> SIAP KIRIM BERSIH (TOMBOL AKTIF) */
+                  /* KONDISI 1: Linen Siap di Gudang Laundry -> SIAP KIRIM BERSIH (TOMBOL AKTIF) */
                   <div className="p-4 sm:p-5 rounded-2xl border-2 border-teal-300 bg-teal-50/40 flex flex-col justify-between space-y-4">
                     <div>
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
                         <div className="flex items-center gap-2 min-w-0">
                           <span className="w-3 h-3 rounded-full bg-teal-500 animate-pulse shrink-0"></span>
                           <h4 className="text-xs sm:text-sm font-black text-teal-950 uppercase tracking-wider truncate">
-                            Linen Sedang Dikerjakan (Siap Kirim Bersih ke IGD)
+                            Linen Siap di Gudang Laundry (Siap Kirim ke IGD)
                           </h4>
                         </div>
                         <span className="text-xs font-black px-3 py-1 rounded-full border bg-teal-100 text-teal-800 border-teal-300 shrink-0 font-bold">
-                          {totalInLaundry} pcs (Siap Kirim ke IGD)
+                          {totalInLaundry} pcs (Tersedia di Gudang)
                         </span>
                       </div>
 
@@ -1192,9 +1192,9 @@ export const LinenFlowPage: React.FC<LinenFlowPageProps> = ({ initialRole }) => 
                       <div className="bg-teal-100/70 border border-teal-300 rounded-xl p-3 text-xs text-teal-900 flex items-start gap-2.5 mb-3">
                         <span className="text-base shrink-0">🧺</span>
                         <div>
-                          <strong>Linen Bersih Siap Dikirim ke IGD</strong>
+                          <strong>Linen Bersih Siap Dikirim dari Gudang Laundry</strong>
                           <p className="text-[11px] text-teal-800 mt-0.5 leading-relaxed">
-                            Linen hasil cuci siap diserahkan ke IGD. Tekan tombol <strong>"Kirim Semua Bersih ke IGD"</strong> di bawah untuk mengirim linen. Status akan otomatis berubah menjadi <strong>"Sedang Dikirim"</strong> di IGD dan tombol terima perawat akan aktif.
+                            Linen hasil cuci siap diserahkan dari gudang laundry ke IGD. Tekan tombol <strong>"Kirim Semua Bersih ke IGD"</strong> di bawah untuk mengirim linen. Status akan otomatis berubah menjadi <strong>"Sedang Dikirim"</strong> di IGD dan tombol terima perawat akan aktif.
                           </p>
                         </div>
                       </div>
@@ -1208,7 +1208,7 @@ export const LinenFlowPage: React.FC<LinenFlowPageProps> = ({ initialRole }) => 
                               {i.laundry || 0} <span className="text-xs font-normal text-slate-400">{i.unitLabel}</span>
                             </div>
                             <div className="text-[10px] text-teal-600 font-medium mt-1">
-                              Siap dikirim ke IGD
+                              Siap di gudang laundry
                             </div>
                           </div>
                         ))}
@@ -1235,7 +1235,7 @@ export const LinenFlowPage: React.FC<LinenFlowPageProps> = ({ initialRole }) => 
                       <button
                         onClick={() => handleOpenAction('LAUNDRY_RETURN', undefined, 'LAUNDRY')}
                         className="py-3.5 px-5 bg-white hover:bg-teal-50 border border-teal-300 text-teal-800 font-bold rounded-xl text-xs sm:text-sm transition-all shadow-2xs active:scale-[0.98]"
-                        title="Kirim sebagian atau pilih jumlah spesifik"
+                        title="Kirim sebagian atau pilih jumlah spesifik dari gudang"
                       >
                         Pilih Parsial
                       </button>
@@ -1263,7 +1263,7 @@ export const LinenFlowPage: React.FC<LinenFlowPageProps> = ({ initialRole }) => 
                         <div>
                           <strong>Linen Bersih Sedang Dalam Perjalanan ke Lemari IGD</strong>
                           <p className="text-[11px] text-amber-800 mt-0.5 leading-relaxed">
-                            Linen bersih telah dikirim dari laundry dan saat ini dalam perjalanan menuju IGD. <strong>Tombol kirim bersih nonaktif</strong> hingga perawat IGD menekan tombol "Terima Bersih" untuk memasukkan linen ke lemari IGD.
+                            Linen bersih telah dikirim dari gudang laundry dan saat ini dalam perjalanan menuju IGD. <strong>Tombol kirim bersih nonaktif</strong> hingga perawat IGD menekan tombol "Terima Bersih" untuk memasukkan linen ke lemari IGD.
                           </p>
                         </div>
                       </div>
@@ -1315,7 +1315,7 @@ export const LinenFlowPage: React.FC<LinenFlowPageProps> = ({ initialRole }) => 
                           </h4>
                         </div>
                         <span className="text-xs font-black px-3 py-1 rounded-full border bg-rose-100 text-rose-800 border-rose-200 shrink-0">
-                          {totalInTransitDirty} pcs (Menunggu Diterima Laundry)
+                          {totalInTransitDirty} pcs (Menunggu Diterima Gudang Laundry)
                         </span>
                       </div>
 
@@ -1325,7 +1325,7 @@ export const LinenFlowPage: React.FC<LinenFlowPageProps> = ({ initialRole }) => 
                         <div>
                           <strong>Ada Linen Kotor Dikirim dari IGD</strong>
                           <p className="text-[11px] text-rose-800 mt-0.5 leading-relaxed">
-                            Perawat IGD telah menyerahkan {totalInTransitDirty} pcs linen kotor. Silakan klik tombol <strong>"TERIMA KOTOR"</strong> pada menu aksi di atas untuk mengonfirmasi penerimaan ke pencucian laundry.
+                            Perawat IGD telah menyerahkan {totalInTransitDirty} pcs linen kotor. Silakan klik tombol <strong>"TERIMA KOTOR"</strong> pada menu aksi di atas untuk mengonfirmasi penerimaan ke gudang pencucian laundry.
                           </p>
                         </div>
                       </div>
@@ -1339,7 +1339,7 @@ export const LinenFlowPage: React.FC<LinenFlowPageProps> = ({ initialRole }) => 
                               {i.inTransitDirty || 0} <span className="text-xs font-normal text-slate-400">{i.unitLabel}</span>
                             </div>
                             <div className="text-[10px] text-rose-600 font-medium mt-1">
-                              Menunggu diterima laundry
+                              Menunggu diterima gudang laundry
                             </div>
                           </div>
                         ))}

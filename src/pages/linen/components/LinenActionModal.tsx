@@ -69,28 +69,28 @@ export const LinenActionModal: React.FC<LinenActionModalProps> = ({
         return {
           title: 'Terima Linen Kotor dari IGD',
           description: waitingFromIgd > 0
-            ? 'Petugas laundry mengonfirmasi penerimaan linen kotor yang dikirim dari IGD.'
+            ? 'Petugas laundry mengonfirmasi penerimaan linen kotor yang dikirim dari IGD ke gudang.'
             : 'Belum ada linen kotor yang dikirim dari IGD.',
           sourceName: (currentItem?.inTransitDirty || 0) > 0 ? 'Sedang Dikirim dari IGD' : 'Linen Kotor IGD',
           available: waitingFromIgd,
           buttonText: 'Simpan Terima Kotor',
           buttonColor: 'bg-amber-600 hover:bg-amber-700',
-          badge: 'Laundry ← IGD (Terima Kotor)'
+          badge: 'Gudang Laundry ← IGD (Terima Kotor)'
         };
       } else {
         const readyToDispatch = currentItem?.laundry || 0;
         return {
           title: 'Kirim Linen Bersih ke IGD',
           description: readyToDispatch > 0 
-            ? 'Petugas laundry mengirim dan menyerahkan linen bersih hasil cuci ke lemari IGD.'
+            ? 'Petugas laundry mengirim dan menyerahkan linen bersih hasil cuci dari gudang ke lemari IGD.'
             : (currentItem?.inTransitClean || 0) > 0
             ? 'Linen sudah dikirim ke IGD (sedang dalam perjalanan menunggu konfirmasi perawat IGD).'
-            : 'Tidak ada linen yang sedang dikerjakan untuk dikirim.',
-          sourceName: 'Sedang Dikerjakan di Laundry',
+            : 'Tidak ada linen yang siap dikirim di gudang.',
+          sourceName: 'Stok di Gudang Laundry',
           available: readyToDispatch,
           buttonText: 'Simpan Kirim Bersih',
           buttonColor: 'bg-teal-600 hover:bg-teal-700',
-          badge: 'Laundry → IGD (Kirim Bersih)'
+          badge: 'Gudang Laundry → IGD (Kirim Bersih)'
         };
       }
     } else {
@@ -323,9 +323,33 @@ export const LinenActionModal: React.FC<LinenActionModalProps> = ({
                         <div className="font-black text-xs sm:text-sm truncate">
                           {item.name}
                         </div>
-                        <div className="text-[10px] text-slate-400 truncate">
-                          Lemari: <strong className={isSelected ? 'text-emerald-700 font-bold' : 'text-slate-600 font-semibold'}>{item.clean || 0} {item.unitLabel}</strong>
-                        </div>
+                        {role === 'LAUNDRY' ? (
+                          activeType === 'LAUNDRY_PICKUP' ? (
+                            <div className="text-[10px] text-slate-400 truncate" title={`Stok dikirim dari IGD: ${item.inTransitDirty || 0} ${item.unitLabel}`}>
+                              Gudang: <strong className={isSelected ? 'text-amber-700 font-bold' : ((item.inTransitDirty || 0) > 0 ? 'text-amber-600 font-bold' : 'text-slate-600 font-semibold')}>
+                                {item.inTransitDirty || 0} {item.unitLabel}
+                              </strong>
+                              {(item.inTransitDirty || 0) > 0 && (
+                                <span className="text-[9px] text-amber-600 ml-1 font-semibold">(Kirim)</span>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="text-[10px] text-slate-400 truncate" title={`Stok siap di gudang laundry: ${item.laundry || 0} ${item.unitLabel}`}>
+                              Gudang: <strong className={isSelected ? 'text-teal-700 font-bold' : 'text-slate-600 font-semibold'}>
+                                {item.laundry || 0} {item.unitLabel}
+                              </strong>
+                              {(item.inTransitClean || 0) > 0 && (
+                                <span className="text-[9px] text-teal-600 ml-1 font-semibold">({item.inTransitClean} dikirim)</span>
+                              )}
+                            </div>
+                          )
+                        ) : (
+                          <div className="text-[10px] text-slate-400 truncate" title={`Stok bersih di lemari IGD: ${item.clean || 0} ${item.unitLabel}`}>
+                            Lemari: <strong className={isSelected ? 'text-emerald-700 font-bold' : 'text-slate-600 font-semibold'}>
+                              {item.clean || 0} {item.unitLabel}
+                            </strong>
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -356,48 +380,89 @@ export const LinenActionModal: React.FC<LinenActionModalProps> = ({
                 </div>
                 
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 pt-1 text-[11px]">
-                  <div className="p-2 rounded-xl bg-emerald-50 border border-emerald-200">
-                    <span className="text-[10px] text-emerald-700 block font-semibold">Lemari Bersih</span>
-                    <strong className="text-sm text-emerald-900 font-black">{currentItem.clean || 0} {currentItem.unitLabel}</strong>
-                  </div>
+                  {role === 'LAUNDRY' ? (
+                    <>
+                      <div className="p-2 rounded-xl bg-blue-50 border border-blue-200 text-blue-900">
+                        <span className="text-[10px] text-blue-700 block font-semibold flex items-center gap-1">
+                          <span>🏬</span>
+                          <span>Gudang Laundry</span>
+                        </span>
+                        <strong className="text-sm text-blue-900 font-black">{currentItem.laundry || 0} {currentItem.unitLabel}</strong>
+                      </div>
 
-                  <div className={`p-2 rounded-xl border ${
-                    (currentItem.dirty || 0) > 0
-                      ? 'bg-rose-50 border-rose-200 text-rose-900'
-                      : 'bg-slate-100/70 border-slate-200 text-slate-600'
-                  }`}>
-                    <span className="text-[10px] block font-semibold">Kotor di IGD</span>
-                    <strong className="text-sm font-black">{currentItem.dirty || 0} {currentItem.unitLabel}</strong>
-                  </div>
+                      <div className={`p-2 rounded-xl border ${
+                        (currentItem.inTransitDirty || 0) > 0
+                          ? 'bg-amber-50 border-amber-200 text-amber-900'
+                          : 'bg-slate-100/70 border-slate-200 text-slate-600'
+                      }`}>
+                        <span className="text-[10px] block font-semibold flex items-center gap-1">
+                          <span>🚚</span>
+                          <span>Dikirim dari IGD</span>
+                        </span>
+                        <strong className="text-sm font-black">{currentItem.inTransitDirty || 0} {currentItem.unitLabel}</strong>
+                      </div>
 
-                  {(currentItem.inTransitDirty || 0) > 0 && (
-                    <div className="p-2 rounded-xl bg-orange-50 border border-orange-200 text-orange-900 col-span-2 sm:col-span-1">
-                      <span className="text-[10px] block font-semibold flex items-center gap-1">
-                        <span>🚚</span>
-                        <span>Kirim Laundry</span>
-                      </span>
-                      <strong className="text-sm font-black text-orange-700">{currentItem.inTransitDirty} {currentItem.unitLabel}</strong>
-                    </div>
-                  )}
+                      {(currentItem.inTransitClean || 0) > 0 ? (
+                        <div className="p-2 rounded-xl bg-teal-50 border border-teal-200 text-teal-900 col-span-2 sm:col-span-1">
+                          <span className="text-[10px] block font-semibold flex items-center gap-1">
+                            <span>🚚</span>
+                            <span>Dikirim ke IGD</span>
+                          </span>
+                          <strong className="text-sm font-black text-teal-700">{currentItem.inTransitClean} {currentItem.unitLabel}</strong>
+                        </div>
+                      ) : (
+                        <div className="p-2 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 col-span-2 sm:col-span-1">
+                          <span className="text-[10px] text-emerald-700 block font-semibold">Lemari IGD (Bersih)</span>
+                          <strong className="text-sm text-emerald-900 font-black">{currentItem.clean || 0} {currentItem.unitLabel}</strong>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <div className="p-2 rounded-xl bg-emerald-50 border border-emerald-200">
+                        <span className="text-[10px] text-emerald-700 block font-semibold">Lemari Bersih</span>
+                        <strong className="text-sm text-emerald-900 font-black">{currentItem.clean || 0} {currentItem.unitLabel}</strong>
+                      </div>
 
-                  {(currentItem.laundry || 0) > 0 && (
-                    <div className="p-2 rounded-xl bg-blue-50 border border-blue-200 text-blue-900 col-span-2 sm:col-span-1">
-                      <span className="text-[10px] block font-semibold flex items-center gap-1">
-                        <span>⚙️</span>
-                        <span>Di Laundry</span>
-                      </span>
-                      <strong className="text-sm font-black text-blue-700">{currentItem.laundry} {currentItem.unitLabel}</strong>
-                    </div>
-                  )}
+                      <div className={`p-2 rounded-xl border ${
+                        (currentItem.dirty || 0) > 0
+                          ? 'bg-rose-50 border-rose-200 text-rose-900'
+                          : 'bg-slate-100/70 border-slate-200 text-slate-600'
+                      }`}>
+                        <span className="text-[10px] block font-semibold">Kotor di IGD</span>
+                        <strong className="text-sm font-black">{currentItem.dirty || 0} {currentItem.unitLabel}</strong>
+                      </div>
 
-                  {(currentItem.inTransitClean || 0) > 0 && (
-                    <div className="p-2 rounded-xl bg-teal-50 border border-teal-200 text-teal-900 col-span-2 sm:col-span-1">
-                      <span className="text-[10px] block font-semibold flex items-center gap-1">
-                        <span>🚚</span>
-                        <span>Kirim ke IGD</span>
-                      </span>
-                      <strong className="text-sm font-black text-teal-700">{currentItem.inTransitClean} {currentItem.unitLabel}</strong>
-                    </div>
+                      {(currentItem.inTransitDirty || 0) > 0 && (
+                        <div className="p-2 rounded-xl bg-orange-50 border border-orange-200 text-orange-900 col-span-2 sm:col-span-1">
+                          <span className="text-[10px] block font-semibold flex items-center gap-1">
+                            <span>🚚</span>
+                            <span>Kirim Laundry</span>
+                          </span>
+                          <strong className="text-sm font-black text-orange-700">{currentItem.inTransitDirty} {currentItem.unitLabel}</strong>
+                        </div>
+                      )}
+
+                      {(currentItem.laundry || 0) > 0 && (
+                        <div className="p-2 rounded-xl bg-blue-50 border border-blue-200 text-blue-900 col-span-2 sm:col-span-1">
+                          <span className="text-[10px] block font-semibold flex items-center gap-1">
+                            <span>⚙️</span>
+                            <span>Di Laundry</span>
+                          </span>
+                          <strong className="text-sm font-black text-blue-700">{currentItem.laundry} {currentItem.unitLabel}</strong>
+                        </div>
+                      )}
+
+                      {(currentItem.inTransitClean || 0) > 0 && (
+                        <div className="p-2 rounded-xl bg-teal-50 border border-teal-200 text-teal-900 col-span-2 sm:col-span-1">
+                          <span className="text-[10px] block font-semibold flex items-center gap-1">
+                            <span>🚚</span>
+                            <span>Kirim ke IGD</span>
+                          </span>
+                          <strong className="text-sm font-black text-teal-700">{currentItem.inTransitClean} {currentItem.unitLabel}</strong>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               </div>

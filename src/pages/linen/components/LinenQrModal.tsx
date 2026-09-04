@@ -181,7 +181,7 @@ export const LinenQrModal: React.FC<LinenQrModalProps> = ({
                   TERIMA KOTOR & SERAH BERSIH
                 </h4>
                 <p className="text-[11px] text-amber-800 font-medium mt-0.5">
-                  Dibawa Petugas Laundry / Ditempel di Troli
+                  Ditempel di Gudang Laundry / Dibawa Petugas di Troli
                 </p>
               </div>
             )}
