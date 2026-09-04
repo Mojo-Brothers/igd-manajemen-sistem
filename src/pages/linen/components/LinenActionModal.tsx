@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { LinenItem, TransactionType } from '../../../types/linen';
 import { executeLinenTransition } from '../../../services/linenService';
 import toast from 'react-hot-toast';
-import { FaTimes, FaCheck, FaMinus, FaPlus, FaTruckLoading, FaCheckDouble } from 'react-icons/fa';
+import { FaTimes, FaCheck, FaMinus, FaPlus, FaTruckLoading, FaCheckDouble, FaChevronDown } from 'react-icons/fa';
 
 interface LinenActionModalProps {
   isOpen: boolean;
@@ -271,43 +271,66 @@ export const LinenActionModal: React.FC<LinenActionModalProps> = ({
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-5 overflow-y-auto">
-          {/* Item Selector */}
+          {/* Item Selector Dropdown */}
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
+            <label htmlFor="linen-select" className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
               Pilih Jenis Linen
             </label>
-            <div className="grid grid-cols-2 gap-3">
-              {items.map((item) => {
-                const isSelected = item.id === selectedItemId;
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => {
-                      setSelectedItemId(item.id);
-                      setQuantity(1);
-                    }}
-                    className={`p-3 rounded-2xl border-2 text-left transition-all flex flex-col justify-between ${
-                      isSelected
-                        ? 'border-blue-600 bg-blue-50/50 shadow-sm'
-                        : 'border-slate-200 bg-white hover:border-slate-300'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-slate-800">{item.name}</span>
-                      {isSelected && <FaCheck className="text-blue-600" size={14} />}
-                    </div>
-                    <div className="mt-2 text-xs text-slate-500">
-                      {activeType === 'LAUNDRY_PICKUP' ? (
-                        <span>Tersedia di IGD: <strong className="text-rose-700">{(item.dirty || 0) + (item.clean || 0)}</strong> {item.unitLabel}</span>
-                      ) : (
-                        <span>Sedang di Laundry: <strong className="text-indigo-700">{item.laundry || 0}</strong> {item.unitLabel}</span>
-                      )}
-                    </div>
-                  </button>
-                );
-              })}
+            <div className="relative">
+              <select
+                id="linen-select"
+                value={selectedItemId}
+                onChange={(e) => {
+                  setSelectedItemId(e.target.value);
+                  setQuantity(1);
+                }}
+                className="w-full appearance-none px-4 py-3.5 pr-11 rounded-2xl border-2 border-slate-200 bg-white hover:border-slate-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 text-sm font-black text-slate-800 shadow-2xs outline-none cursor-pointer transition-all"
+              >
+                {items.map((item) => {
+                  let stockSummary = '';
+                  if (role === 'LAUNDRY') {
+                    if (activeType === 'LAUNDRY_PICKUP') {
+                      const waitingKotor = (item.inTransitDirty || 0) > 0 ? item.inTransitDirty : (item.dirty || 0);
+                      stockSummary = `Kotor Menunggu: ${waitingKotor || 0} ${item.unitLabel}`;
+                    } else {
+                      stockSummary = `Siap Kirim: ${item.laundry || 0} ${item.unitLabel}`;
+                    }
+                  } else {
+                    if (activeType === 'LAUNDRY_PICKUP') {
+                      const kotor = item.dirty || 0;
+                      const bersih = item.clean || 0;
+                      stockSummary = `Kotor: ${kotor} ${item.unitLabel} • Bersih Lemari: ${bersih} ${item.unitLabel}`;
+                    } else {
+                      const siapTerima = item.inTransitClean || 0;
+                      const diLaundry = item.laundry || 0;
+                      stockSummary = `Siap Diterima: ${siapTerima} ${item.unitLabel} • Di Laundry: ${diLaundry} ${item.unitLabel}`;
+                    }
+                  }
+                  return (
+                    <option key={item.id} value={item.id} className="py-2 text-slate-800 font-semibold">
+                      {item.name} ({stockSummary})
+                    </option>
+                  );
+                })}
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500">
+                <FaChevronDown size={14} />
+              </div>
             </div>
+
+            {/* Quick stock status pill for selected item */}
+            {currentItem && (
+              <div className="mt-2.5 px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs flex items-center justify-between gap-2 text-slate-600">
+                <span className="font-bold text-slate-800 truncate">
+                  {currentItem.name}
+                </span>
+                <span className="text-[11px] shrink-0 font-medium">
+                  {config.sourceName}: <strong className="text-blue-700 font-bold">{config.available} {currentItem.unitLabel}</strong>
+                  <span className="text-slate-300 mx-1.5">•</span>
+                  Lemari: <strong className="text-emerald-700 font-bold">{currentItem.clean || 0} {currentItem.unitLabel}</strong>
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Quantity Selector with Chips */}
