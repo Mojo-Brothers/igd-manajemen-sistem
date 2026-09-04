@@ -69,13 +69,13 @@ export const LinenActionModal: React.FC<LinenActionModalProps> = ({
         };
       } else {
         return {
-          title: 'Serah Linen Bersih ke IGD',
-          description: 'Petugas laundry menyerahkan linen bersih hasil cuci ke lemari IGD.',
-          sourceName: 'Sedang di Laundry',
+          title: 'Kirim Linen Bersih ke IGD',
+          description: 'Petugas laundry mengirim dan menyerahkan linen bersih hasil cuci ke lemari IGD.',
+          sourceName: 'Selesai Cuci di Laundry',
           available: currentItem?.laundry || 0,
-          buttonText: 'Simpan Serah Bersih',
+          buttonText: 'Simpan Kirim Bersih',
           buttonColor: 'bg-teal-600 hover:bg-teal-700',
-          badge: 'Laundry → IGD (Bersih)'
+          badge: 'Laundry → IGD (Kirim Bersih)'
         };
       }
     } else {

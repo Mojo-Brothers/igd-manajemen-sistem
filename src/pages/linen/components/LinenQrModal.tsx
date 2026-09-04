@@ -19,7 +19,7 @@ export const LinenQrModal: React.FC<LinenQrModalProps> = ({
   const [copied, setCopied] = useState<boolean>(false);
 
   // GitHub Pages Canonical Base URL
-  const GITHUB_PAGES_BASE = 'https://mojo-brothers.github.io/primaya-igd-doctor-schedule-display/';
+  const GITHUB_PAGES_BASE = 'https://mojo-brothers.github.io/igd-manajemen-sistem/';
   const isOnlineGhPages = typeof window !== 'undefined' && window.location.hostname.includes('github.io');
   
   // Default to GitHub Pages so QR code scanned with mobile phone always opens the live app!
