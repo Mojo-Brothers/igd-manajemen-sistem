@@ -287,23 +287,25 @@ export const LinenActionModal: React.FC<LinenActionModalProps> = ({
               <button
                 type="button"
                 onClick={() => setQuantity((prev) => Math.max(1, prev - 1))}
-                className="w-12 h-12 rounded-2xl bg-slate-100 hover:bg-slate-200 active:scale-95 flex items-center justify-center text-slate-700 font-bold transition-all text-lg"
+                className="flex-1 h-14 rounded-2xl bg-slate-100 hover:bg-slate-200 active:scale-95 flex items-center justify-center text-slate-800 font-bold transition-all border border-slate-200 shadow-2xs cursor-pointer"
+                title="Kurangi 1"
               >
-                <FaMinus size={14} />
+                <FaMinus size={18} />
               </button>
               <input
                 type="number"
                 min={1}
                 value={quantity}
                 onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                className="flex-1 h-12 text-center text-2xl font-black rounded-2xl border-2 border-slate-200 focus:border-blue-600 focus:outline-none"
+                className="w-24 sm:w-28 h-14 text-center text-3xl font-black rounded-2xl border-2 border-slate-300 focus:border-blue-600 focus:ring-4 focus:ring-blue-100 focus:outline-none bg-white shadow-inner shrink-0"
               />
               <button
                 type="button"
                 onClick={() => setQuantity((prev) => prev + 1)}
-                className="w-12 h-12 rounded-2xl bg-slate-100 hover:bg-slate-200 active:scale-95 flex items-center justify-center text-slate-700 font-bold transition-all text-lg"
+                className="flex-1 h-14 rounded-2xl bg-slate-100 hover:bg-slate-200 active:scale-95 flex items-center justify-center text-slate-800 font-bold transition-all border border-slate-200 shadow-2xs cursor-pointer"
+                title="Tambah 1"
               >
-                <FaPlus size={14} />
+                <FaPlus size={18} />
               </button>
             </div>
 

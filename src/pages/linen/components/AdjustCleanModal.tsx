@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { LinenItem } from '../../../types/linen';
 import { adjustCleanStock } from '../../../services/linenService';
-import { FaTimes, FaSave, FaClipboardCheck } from 'react-icons/fa';
+import { FaTimes, FaSave, FaClipboardCheck, FaMinus, FaPlus } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 
 interface AdjustCleanModalProps {
@@ -128,16 +128,32 @@ export const AdjustCleanModal: React.FC<AdjustCleanModalProps> = ({
                     Hasil Hitung
                   </span>
                 </div>
-                <div>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => handleQuickAdd(-1)}
+                    className="w-9 h-10 rounded-xl bg-white hover:bg-rose-50 hover:text-rose-600 active:scale-95 flex items-center justify-center text-slate-700 font-bold border border-slate-300 shrink-0 shadow-2xs"
+                    title="Kurang 1"
+                  >
+                    <FaMinus size={12} />
+                  </button>
                   <input
                     type="number"
                     min={0}
                     required
                     value={newStock}
                     onChange={(e) => setNewStock(parseInt(e.target.value) || 0)}
-                    className="w-full bg-white border-2 border-blue-500 rounded-xl px-2 py-1.5 text-2xl font-black text-blue-900 outline-none text-center focus:ring-2 focus:ring-blue-200 transition-all"
+                    className="w-full bg-white border-2 border-blue-500 rounded-xl py-1 text-2xl font-black text-blue-900 outline-none text-center focus:ring-2 focus:ring-blue-200 transition-all min-w-0"
                     autoFocus
                   />
+                  <button
+                    type="button"
+                    onClick={() => handleQuickAdd(1)}
+                    className="w-9 h-10 rounded-xl bg-white hover:bg-blue-50 hover:text-blue-600 active:scale-95 flex items-center justify-center text-slate-700 font-bold border border-slate-300 shrink-0 shadow-2xs"
+                    title="Tambah 1"
+                  >
+                    <FaPlus size={12} />
+                  </button>
                 </div>
                 <span className="text-[10px] text-blue-600/70 mt-1.5 text-center block">
                   Hitungan lemari saat ini
@@ -152,7 +168,7 @@ export const AdjustCleanModal: React.FC<AdjustCleanModalProps> = ({
                   key={delta}
                   type="button"
                   onClick={() => handleQuickAdd(delta)}
-                  className={`flex-1 py-1.5 font-bold text-xs rounded-xl transition-all active:scale-95 border ${
+                  className={`flex-1 py-2 font-bold text-xs rounded-xl transition-all active:scale-95 border shadow-2xs ${
                     delta < 0
                       ? 'bg-rose-50 hover:bg-rose-100 text-rose-700 border-rose-200'
                       : 'bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200'
@@ -167,7 +183,7 @@ export const AdjustCleanModal: React.FC<AdjustCleanModalProps> = ({
                   setBaseOldStock(item.clean);
                   setNewStock(item.clean);
                 }}
-                className="py-1.5 px-3 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs rounded-xl transition-colors border border-slate-200"
+                className="py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs rounded-xl transition-colors border border-slate-200 shadow-2xs"
               >
                 Reset
               </button>
