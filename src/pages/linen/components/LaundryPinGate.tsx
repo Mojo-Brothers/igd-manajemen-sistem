@@ -7,14 +7,12 @@ import {
 import { 
   FaLock, 
   FaKey, 
-  FaHospital, 
   FaEye, 
   FaEyeSlash, 
   FaArrowLeft, 
   FaBoxes,
   FaShieldAlt
 } from 'react-icons/fa';
-import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
 interface LaundryPinGateProps {
@@ -309,8 +307,8 @@ export const LaundryPinGate: React.FC<LaundryPinGateProps> = ({
               </button>
             </div>
 
-            {/* Settings & Back Navigation Footers */}
-            <div className="pt-3 border-t border-slate-100 flex flex-col gap-2.5">
+            {/* Settings Footer */}
+            <div className="pt-3 border-t border-slate-100">
               <div className="flex items-center justify-between text-xs">
                 <span className="text-slate-500 text-[11px]">Ingin mengubah PIN Laundry?</span>
                 <button
@@ -321,23 +319,6 @@ export const LaundryPinGate: React.FC<LaundryPinGateProps> = ({
                   <FaKey size={10} />
                   <span>Pengaturan PIN</span>
                 </button>
-              </div>
-
-              <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100">
-                <Link
-                  to="/linen"
-                  className="text-xs text-slate-600 hover:text-slate-900 font-semibold flex items-center gap-1.5 py-1 px-2 rounded-lg hover:bg-slate-100 transition-colors"
-                >
-                  <FaArrowLeft size={11} />
-                  <span>Kembali ke Lemari IGD</span>
-                </Link>
-                <Link
-                  to="/admin"
-                  className="text-xs text-slate-600 hover:text-slate-900 font-semibold flex items-center gap-1.5 py-1 px-2 rounded-lg hover:bg-slate-100 transition-colors"
-                >
-                  <FaHospital size={11} />
-                  <span>Panel Admin</span>
-                </Link>
               </div>
             </div>
 
