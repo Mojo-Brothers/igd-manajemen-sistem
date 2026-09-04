@@ -2,7 +2,10 @@ import React, { useState, useRef, useEffect } from 'react';
 import { 
   verifyLinenWhitewashPin, 
   setLinenWhitewashPin,
-  DEFAULT_WHITEWASH_PIN 
+  DEFAULT_WHITEWASH_PIN,
+  verifyLinenLaundryPin,
+  setLinenLaundryPin,
+  DEFAULT_LAUNDRY_PIN
 } from '../../../services/linenService';
 import { 
   FaTimes, 
@@ -13,7 +16,8 @@ import {
   FaEyeSlash, 
   FaCheckCircle, 
   FaExclamationTriangle,
-  FaArrowLeft
+  FaArrowLeft,
+  FaBoxes
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 
@@ -35,6 +39,7 @@ export const WhitewashPinModal: React.FC<WhitewashPinModalProps> = ({
   unitName
 }) => {
   const [mode, setMode] = useState<'AUTH' | 'SETTINGS'>(initialMode);
+  const [settingsTarget, setSettingsTarget] = useState<'WHITEWASH' | 'LAUNDRY'>('WHITEWASH');
   const [pinDigits, setPinDigits] = useState<string[]>(['', '', '', '', '', '']);
   const [isMasked, setIsMasked] = useState<boolean>(true);
   const [loading, setLoading] = useState<boolean>(false);
@@ -52,6 +57,7 @@ export const WhitewashPinModal: React.FC<WhitewashPinModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       setMode(initialMode);
+      setSettingsTarget('WHITEWASH');
       setPinDigits(['', '', '', '', '', '']);
       setIsError(false);
       setCurrentPinInput('');
@@ -161,7 +167,7 @@ export const WhitewashPinModal: React.FC<WhitewashPinModalProps> = ({
     }
   };
 
-  // Save new PIN in settings mode
+  // Save new PIN in settings mode (Whitewash or Laundry)
   const handleSaveNewPin = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -182,23 +188,39 @@ export const WhitewashPinModal: React.FC<WhitewashPinModalProps> = ({
 
     setSavingSettings(true);
     try {
-      // Check current PIN validity first
-      const isCurrentValid = await verifyLinenWhitewashPin(currentPinInput.trim());
-      if (!isCurrentValid) {
-        toast.error('PIN saat ini salah! Tidak dapat memperbarui PIN.');
-        return;
-      }
+      if (settingsTarget === 'WHITEWASH') {
+        const isCurrentValid = await verifyLinenWhitewashPin(currentPinInput.trim());
+        if (!isCurrentValid) {
+          toast.error('PIN saat ini salah! Tidak dapat memperbarui PIN Pemutihan.');
+          return;
+        }
 
-      await setLinenWhitewashPin(newPinInput.trim(), `Administrator ${unitName}`);
-      toast.success('PIN Otorisasi Pemutihan berhasil diperbarui!');
+        await setLinenWhitewashPin(newPinInput.trim(), `Administrator ${unitName}`);
+        toast.success('PIN Otorisasi Pemutihan berhasil diperbarui!');
+      } else {
+        const isCurrentValid = await verifyLinenLaundryPin(currentPinInput.trim());
+        if (!isCurrentValid) {
+          toast.error('PIN saat ini salah! Tidak dapat memperbarui PIN Laundry.');
+          return;
+        }
+
+        await setLinenLaundryPin(newPinInput.trim(), `Administrator ${unitName}`);
+        toast.success('PIN Akses Stasiun Laundry berhasil diperbarui!');
+      }
       
-      // Return to AUTH mode with empty digits
-      setMode('AUTH');
-      setPinDigits(['', '', '', '', '', '']);
+      // Clear inputs
       setCurrentPinInput('');
       setNewPinInput('');
       setConfirmPinInput('');
-      setTimeout(() => inputRefs.current[0]?.focus(), 100);
+      
+      // If was opened specifically for setting up Whitewash auth, switch to AUTH
+      if (initialMode === 'AUTH') {
+        setMode('AUTH');
+        setPinDigits(['', '', '', '', '', '']);
+        setTimeout(() => inputRefs.current[0]?.focus(), 100);
+      } else {
+        onClose();
+      }
     } catch (error: any) {
       toast.error(error.message || 'Gagal menyimpan PIN baru');
     } finally {
@@ -225,7 +247,11 @@ export const WhitewashPinModal: React.FC<WhitewashPinModalProps> = ({
                 {mode === 'AUTH' ? 'Security Authorization' : 'Admin Security Settings'}
               </span>
               <h3 className="text-base sm:text-lg font-black leading-tight">
-                {mode === 'AUTH' ? 'Otorisasi PIN Pemutihan' : 'Pengaturan PIN Pemutihan'}
+                {mode === 'AUTH' 
+                  ? 'Otorisasi PIN Pemutihan' 
+                  : settingsTarget === 'WHITEWASH' 
+                  ? 'Pengaturan PIN Pemutihan' 
+                  : 'Pengaturan PIN Akses Laundry'}
               </h3>
             </div>
           </div>
@@ -355,16 +381,63 @@ export const WhitewashPinModal: React.FC<WhitewashPinModalProps> = ({
         {mode === 'SETTINGS' && (
           <form onSubmit={handleSaveNewPin} className="p-5 sm:p-6 space-y-4">
             
+            {/* Target Switcher: Pemutihan vs Laundry */}
+            <div className="flex rounded-2xl bg-slate-100 p-1 border border-slate-200 shadow-2xs">
+              <button
+                type="button"
+                onClick={() => {
+                  setSettingsTarget('WHITEWASH');
+                  setCurrentPinInput('');
+                  setNewPinInput('');
+                  setConfirmPinInput('');
+                }}
+                className={`flex-1 py-2 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                  settingsTarget === 'WHITEWASH'
+                    ? 'bg-white text-slate-900 shadow-xs border border-slate-200/60'
+                    : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <FaBroom size={12} className={settingsTarget === 'WHITEWASH' ? 'text-amber-600' : ''} />
+                <span>PIN Pemutihan</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setSettingsTarget('LAUNDRY');
+                  setCurrentPinInput('');
+                  setNewPinInput('');
+                  setConfirmPinInput('');
+                }}
+                className={`flex-1 py-2 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                  settingsTarget === 'LAUNDRY'
+                    ? 'bg-white text-slate-900 shadow-xs border border-slate-200/60'
+                    : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <FaBoxes size={12} className={settingsTarget === 'LAUNDRY' ? 'text-blue-600' : ''} />
+                <span>PIN Akses Laundry</span>
+              </button>
+            </div>
+
             {/* Info callout */}
-            <div className="p-3.5 bg-blue-50 border border-blue-200 rounded-2xl text-xs text-blue-950 flex items-start gap-2.5">
-              <FaCheckCircle size={16} className="text-blue-600 shrink-0 mt-0.5" />
+            <div className={`p-3.5 rounded-2xl text-xs flex items-start gap-2.5 border ${
+              settingsTarget === 'WHITEWASH'
+                ? 'bg-amber-50/80 border-amber-200 text-amber-950'
+                : 'bg-blue-50/80 border-blue-200 text-blue-950'
+            }`}>
+              <FaCheckCircle size={16} className={`shrink-0 mt-0.5 ${
+                settingsTarget === 'WHITEWASH' ? 'text-amber-600' : 'text-blue-600'
+              }`} />
               <div className="space-y-1">
-                <span className="font-bold block text-blue-900">
-                  Keamanan Akses Pemutihan
+                <span className="font-bold block">
+                  {settingsTarget === 'WHITEWASH' ? 'Keamanan Otorisasi Pemutihan' : 'Keamanan Stasiun Kerja Laundry'}
                 </span>
-                <p className="text-[11px] text-blue-800 leading-relaxed">
-                  PIN 6 angka ini melindungi aksi pemutihan dari eksekusi tanpa sengaja. 
-                  Jika belum pernah diubah, PIN default adalah <strong className="font-mono">{DEFAULT_WHITEWASH_PIN}</strong>.
+                <p className="text-[11px] leading-relaxed opacity-90">
+                  {settingsTarget === 'WHITEWASH' ? (
+                    <>PIN ini membatasi eksekusi aksi pemutihan stok lemari. PIN default: <strong className="font-mono">{DEFAULT_WHITEWASH_PIN}</strong>.</>
+                  ) : (
+                    <>PIN ini mengamankan akses ke halaman stasiun kerja operasional Laundry. PIN default: <strong className="font-mono">{DEFAULT_LAUNDRY_PIN}</strong>.</>
+                  )}
                 </p>
               </div>
             </div>
@@ -380,7 +453,7 @@ export const WhitewashPinModal: React.FC<WhitewashPinModalProps> = ({
                   inputMode="numeric"
                   maxLength={6}
                   required
-                  placeholder="Masukkan 6 angka PIN saat ini"
+                  placeholder={`Masukkan 6 angka PIN ${settingsTarget === 'WHITEWASH' ? 'pemutihan' : 'laundry'} saat ini`}
                   value={currentPinInput}
                   onChange={(e) => setCurrentPinInput(e.target.value.replace(/\D/g, ''))}
                   className="w-full px-3.5 py-2.5 rounded-xl border-2 border-slate-200 focus:border-blue-600 font-mono font-bold text-sm tracking-widest outline-none transition-colors"
@@ -396,7 +469,7 @@ export const WhitewashPinModal: React.FC<WhitewashPinModalProps> = ({
                   inputMode="numeric"
                   maxLength={6}
                   required
-                  placeholder="Masukkan 6 angka PIN baru"
+                  placeholder={`Masukkan 6 angka PIN baru`}
                   value={newPinInput}
                   onChange={(e) => setNewPinInput(e.target.value.replace(/\D/g, ''))}
                   className="w-full px-3.5 py-2.5 rounded-xl border-2 border-slate-200 focus:border-blue-600 font-mono font-bold text-sm tracking-widest outline-none transition-colors"
@@ -427,11 +500,17 @@ export const WhitewashPinModal: React.FC<WhitewashPinModalProps> = ({
             <div className="flex gap-2.5 pt-2">
               <button
                 type="button"
-                onClick={() => setMode('AUTH')}
+                onClick={() => {
+                  if (initialMode === 'AUTH') {
+                    setMode('AUTH');
+                  } else {
+                    onClose();
+                  }
+                }}
                 className="py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-1.5"
               >
                 <FaArrowLeft size={11} />
-                <span>Kembali</span>
+                <span>{initialMode === 'AUTH' ? 'Kembali' : 'Tutup'}</span>
               </button>
               <button
                 type="submit"
@@ -443,7 +522,7 @@ export const WhitewashPinModal: React.FC<WhitewashPinModalProps> = ({
                 ) : (
                   <>
                     <FaKey size={12} />
-                    <span>Simpan PIN Baru</span>
+                    <span>Simpan PIN {settingsTarget === 'WHITEWASH' ? 'Pemutihan' : 'Laundry'}</span>
                   </>
                 )}
               </button>

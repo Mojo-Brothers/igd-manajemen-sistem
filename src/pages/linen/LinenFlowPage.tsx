@@ -34,6 +34,8 @@ import {
 } from 'react-icons/fa';
 import { LinenReportModal } from './components/LinenReportModal';
 import { CreateLinenModal } from './components/CreateLinenModal';
+import { LaundryPinGate } from './components/LaundryPinGate';
+import { FaLock } from 'react-icons/fa';
 
 interface LinenFlowPageProps {
   initialRole?: 'IGD' | 'LAUNDRY';
@@ -56,6 +58,26 @@ export const LinenFlowPage: React.FC<LinenFlowPageProps> = ({ initialRole }) => 
   );
 
   const operationalRole: 'IGD' | 'LAUNDRY' = isLaundry ? 'LAUNDRY' : 'IGD';
+  
+  // Session authorization for Laundry Station access
+  const [isLaundryAuthorized, setIsLaundryAuthorized] = useState<boolean>(() => {
+    try {
+      return sessionStorage.getItem('linen_laundry_auth') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const handleLockLaundryStation = () => {
+    try {
+      sessionStorage.removeItem('linen_laundry_auth');
+    } catch (e) {
+      console.warn(e);
+    }
+    setIsLaundryAuthorized(false);
+    toast.success('Stasiun Laundry berhasil dikunci.');
+  };
+
   const activeUnit = unitParam;
   const [items, setItems] = useState<LinenItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -155,9 +177,17 @@ export const LinenFlowPage: React.FC<LinenFlowPageProps> = ({ initialRole }) => 
                     {operationalRole === 'IGD' ? 'LINENFLOW IGD' : 'LINENFLOW LAUNDRY'}
                   </h1>
                   <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-md ${
-                    operationalRole === 'IGD' ? 'bg-rose-500/30 text-rose-300' : 'bg-amber-500/30 text-amber-300'
+                    operationalRole === 'IGD' 
+                      ? 'bg-rose-500/30 text-rose-300' 
+                      : !isLaundryAuthorized
+                      ? 'bg-rose-500/30 text-rose-300 border border-rose-400/30'
+                      : 'bg-amber-500/30 text-amber-300'
                   }`}>
-                    {operationalRole === 'IGD' ? 'Stasiun Kerja IGD' : 'Stasiun Kerja Laundry'}
+                    {operationalRole === 'IGD' 
+                      ? 'Stasiun Kerja IGD' 
+                      : !isLaundryAuthorized
+                      ? 'Stasiun Terkunci (PIN)'
+                      : 'Stasiun Kerja Laundry'}
                   </span>
                 </div>
                 <p className="text-[11px] text-slate-400 font-medium">
@@ -167,22 +197,40 @@ export const LinenFlowPage: React.FC<LinenFlowPageProps> = ({ initialRole }) => 
             </div>
 
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => setIsReportModalOpen(true)}
-                className="p-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors border border-blue-500 shadow-xs active:scale-95 cursor-pointer"
-                title="Unduh Laporan Harian / Bulanan (PDF & Excel)"
-              >
-                <FaDownload size={14} />
-                <span className="hidden sm:inline">Unduh Laporan</span>
-              </button>
-              <button
-                onClick={() => setIsQrModalOpen(true)}
-                className="p-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors border border-white/10"
-                title={operationalRole === 'IGD' ? "Cetak Barcode/QR Lemari IGD" : "Cetak Barcode/QR Gudang Laundry"}
-              >
-                <FaQrcode size={16} />
-                <span className="hidden sm:inline">{operationalRole === 'IGD' ? 'QR Lemari' : 'QR Gudang'}</span>
-              </button>
+              {/* Tombol Kunci Stasiun Laundry saat terbuka */}
+              {isLaundry && isLaundryAuthorized && (
+                <button
+                  onClick={handleLockLaundryStation}
+                  className="p-2.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors border border-amber-500/40 active:scale-95 cursor-pointer shadow-2xs"
+                  title="Kunci Stasiun Kerja Laundry (Kembali ke Proteksi PIN)"
+                >
+                  <FaLock size={13} />
+                  <span className="hidden sm:inline">Kunci Stasiun</span>
+                </button>
+              )}
+
+              {/* Tombol Laporan & QR hanya saat stasiun tidak terkunci */}
+              {(!isLaundry || isLaundryAuthorized) && (
+                <>
+                  <button
+                    onClick={() => setIsReportModalOpen(true)}
+                    className="p-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors border border-blue-500 shadow-xs active:scale-95 cursor-pointer"
+                    title="Unduh Laporan Harian / Bulanan (PDF & Excel)"
+                  >
+                    <FaDownload size={14} />
+                    <span className="hidden sm:inline">Unduh Laporan</span>
+                  </button>
+                  <button
+                    onClick={() => setIsQrModalOpen(true)}
+                    className="p-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors border border-white/10"
+                    title={operationalRole === 'IGD' ? "Cetak Barcode/QR Lemari IGD" : "Cetak Barcode/QR Gudang Laundry"}
+                  >
+                    <FaQrcode size={16} />
+                    <span className="hidden sm:inline">{operationalRole === 'IGD' ? 'QR Lemari' : 'QR Gudang'}</span>
+                  </button>
+                </>
+              )}
+
               <Link
                 to="/admin"
                 className="p-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition-colors border border-white/10"
@@ -246,6 +294,18 @@ export const LinenFlowPage: React.FC<LinenFlowPageProps> = ({ initialRole }) => 
                 </Link>
               </div>
 
+              {/* Tombol Kunci Stasiun Laundry dalam mode admin jika aktif */}
+              {isLaundry && isLaundryAuthorized && activeTab === 'OPERATIONAL' && (
+                <button
+                  onClick={handleLockLaundryStation}
+                  className="p-2 bg-amber-50 hover:bg-amber-100 text-amber-900 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors border border-amber-300 shadow-2xs cursor-pointer"
+                  title="Kunci Stasiun Kerja Laundry"
+                >
+                  <FaLock size={13} className="text-amber-700" />
+                  <span className="hidden md:inline">Kunci Stasiun</span>
+                </button>
+              )}
+
               <button
                 onClick={() => setIsQrModalOpen(true)}
                 className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors border border-slate-200 shadow-2xs cursor-pointer"
@@ -270,6 +330,14 @@ export const LinenFlowPage: React.FC<LinenFlowPageProps> = ({ initialRole }) => 
             unitId={unitId} 
             unitName={activeUnit} 
           />
+        ) : isLaundry && !isLaundryAuthorized ? (
+          /* Laundry Station PIN Gate Authorization */
+          <div className="py-2">
+            <LaundryPinGate 
+              onUnlock={() => setIsLaundryAuthorized(true)}
+              unitName={activeUnit}
+            />
+          </div>
         ) : (
           /* TAB 1: OPERATIONAL (3-CLICK UI) */
           <>

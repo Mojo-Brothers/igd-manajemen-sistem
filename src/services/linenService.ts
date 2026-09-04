@@ -747,3 +747,49 @@ export const verifyLinenWhitewashPin = async (inputPin: string): Promise<boolean
   return inputPin.trim() === currentPin.trim();
 };
 
+export const DEFAULT_LAUNDRY_PIN = '123456';
+
+/**
+ * Mengambil PIN Otorisasi 6 Angka untuk Akses Stasiun Kerja Laundry dari Firestore
+ * Default fallback: '123456'
+ */
+export const getLinenLaundryPin = async (): Promise<string> => {
+  try {
+    const configRef = doc(db, SETTINGS_COLLECTION, LINEN_CONFIG_DOC);
+    const snap = await getDoc(configRef);
+    if (snap.exists() && snap.data()?.laundryPin) {
+      return String(snap.data().laundryPin).trim();
+    }
+  } catch (error) {
+    console.warn('Menggunakan PIN default untuk akses laundry:', error);
+  }
+  return DEFAULT_LAUNDRY_PIN;
+};
+
+/**
+ * Mengubah PIN Otorisasi 6 Angka untuk Akses Stasiun Kerja Laundry
+ */
+export const setLinenLaundryPin = async (
+  newPin: string,
+  updatedBy: string = 'Administrator'
+): Promise<void> => {
+  const sanitizedPin = newPin.trim();
+  if (!/^\d{6}$/.test(sanitizedPin)) {
+    throw new Error('PIN harus terdiri dari tepat 6 digit angka numerik (0-9)');
+  }
+  const configRef = doc(db, SETTINGS_COLLECTION, LINEN_CONFIG_DOC);
+  await setDoc(configRef, {
+    laundryPin: sanitizedPin,
+    updatedAt: serverTimestamp(),
+    updatedBy
+  }, { merge: true });
+};
+
+/**
+ * Verifikasi apakah PIN yang dimasukkan cocok dengan PIN Laundry yang tersimpan
+ */
+export const verifyLinenLaundryPin = async (inputPin: string): Promise<boolean> => {
+  const currentPin = await getLinenLaundryPin();
+  return inputPin.trim() === currentPin.trim();
+};
+
