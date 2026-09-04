@@ -27,7 +27,8 @@ import {
   FaThLarge,
   FaTh,
   FaList,
-  FaDownload
+  FaDownload,
+  FaSlidersH
 } from 'react-icons/fa';
 import { LinenReportModal } from './components/LinenReportModal';
 
@@ -191,50 +192,50 @@ export const LinenFlowPage: React.FC<LinenFlowPageProps> = ({ initialRole }) => 
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 text-slate-900 pb-16 font-sans">
+    <div className={`font-sans pb-16 ${isInsideAdmin ? 'w-full' : 'min-h-screen bg-slate-100 text-slate-900'}`}>
       
-      {/* Top Header Bar */}
-      <header className="bg-slate-900 text-white shadow-md">
-        <div className="max-w-4xl mx-auto px-4 py-3 sm:py-4 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-md shrink-0">
-              <FaHospital size={20} />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="font-black text-base sm:text-lg tracking-tight leading-tight">
-                  {operationalRole === 'IGD' ? 'LINENFLOW IGD' : 'LINENFLOW LAUNDRY'}
-                </h1>
-                <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-md ${
-                  operationalRole === 'IGD' ? 'bg-rose-500/30 text-rose-300' : 'bg-amber-500/30 text-amber-300'
-                }`}>
-                  {operationalRole === 'IGD' ? 'Stasiun Kerja IGD' : 'Stasiun Kerja Laundry'}
-                </span>
+      {/* Top Header Bar: Rendered only in Standalone Mode (outside AdminLayout) */}
+      {!isInsideAdmin && (
+        <header className="bg-slate-900 text-white shadow-md">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 sm:py-4 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-md shrink-0">
+                <FaHospital size={20} />
               </div>
-              <p className="text-[11px] text-slate-400 font-medium">
-                Primaya Hospital • {operationalRole === 'IGD' ? 'Stasiun Lemari & Perawat IGD' : 'Stasiun Gudang & Pelayanan Laundry'}
-              </p>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h1 className="font-black text-base sm:text-lg tracking-tight leading-tight">
+                    {operationalRole === 'IGD' ? 'LINENFLOW IGD' : 'LINENFLOW LAUNDRY'}
+                  </h1>
+                  <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-md ${
+                    operationalRole === 'IGD' ? 'bg-rose-500/30 text-rose-300' : 'bg-amber-500/30 text-amber-300'
+                  }`}>
+                    {operationalRole === 'IGD' ? 'Stasiun Kerja IGD' : 'Stasiun Kerja Laundry'}
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-400 font-medium">
+                  Primaya Hospital • {operationalRole === 'IGD' ? 'Stasiun Lemari & Perawat IGD' : 'Stasiun Gudang & Pelayanan Laundry'}
+                </p>
+              </div>
             </div>
-          </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setIsReportModalOpen(true)}
-              className="p-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors border border-blue-500 shadow-xs active:scale-95 cursor-pointer"
-              title="Unduh Laporan Harian / Bulanan (PDF & Excel)"
-            >
-              <FaDownload size={14} />
-              <span className="hidden sm:inline">Unduh Laporan</span>
-            </button>
-            <button
-              onClick={() => setIsQrModalOpen(true)}
-              className="p-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors border border-white/10"
-              title={operationalRole === 'IGD' ? "Cetak Barcode/QR Lemari IGD" : "Cetak Barcode/QR Gudang Laundry"}
-            >
-              <FaQrcode size={16} />
-              <span className="hidden sm:inline">{operationalRole === 'IGD' ? 'QR Lemari' : 'QR Gudang'}</span>
-            </button>
-            {!isInsideAdmin && (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setIsReportModalOpen(true)}
+                className="p-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors border border-blue-500 shadow-xs active:scale-95 cursor-pointer"
+                title="Unduh Laporan Harian / Bulanan (PDF & Excel)"
+              >
+                <FaDownload size={14} />
+                <span className="hidden sm:inline">Unduh Laporan</span>
+              </button>
+              <button
+                onClick={() => setIsQrModalOpen(true)}
+                className="p-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors border border-white/10"
+                title={operationalRole === 'IGD' ? "Cetak Barcode/QR Lemari IGD" : "Cetak Barcode/QR Gudang Laundry"}
+              >
+                <FaQrcode size={16} />
+                <span className="hidden sm:inline">{operationalRole === 'IGD' ? 'QR Lemari' : 'QR Gudang'}</span>
+              </button>
               <Link
                 to="/admin"
                 className="p-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition-colors border border-white/10"
@@ -242,12 +243,73 @@ export const LinenFlowPage: React.FC<LinenFlowPageProps> = ({ initialRole }) => 
               >
                 <FaArrowLeft size={14} />
               </Link>
-            )}
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
+      )}
 
-      <main className="max-w-4xl mx-auto px-4 pt-4 sm:pt-6 space-y-6">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 pt-4 sm:pt-6 space-y-6">
+        
+        {/* Admin In-Page Navigation Hero Card (Only inside AdminLayout) */}
+        {isInsideAdmin && (
+          <div className="bg-white rounded-3xl p-5 shadow-xs border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3.5">
+              <div className="w-11 h-11 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-xs shrink-0 font-black text-lg">
+                <FaHospital size={20} />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-base sm:text-lg font-black text-slate-900 tracking-tight">
+                    {activeTab === 'COORDINATOR' ? 'Dashboard Koordinator Linen' : 'Mode Operasional Stasiun Kerja'}
+                  </h2>
+                  <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-blue-100 text-blue-800">
+                    {unitParam}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 font-medium mt-0.5">
+                  Primaya Hospital • Sistem Inventaris & Manajemen Sirkulasi Linen IGD ⟷ Laundry
+                </p>
+              </div>
+            </div>
+
+            {/* In-Page Navigation Switcher (Coordinator vs Operational) */}
+            <div className="flex items-center gap-2.5 self-start sm:self-auto">
+              <div className="inline-flex p-1 bg-slate-100 rounded-2xl border border-slate-200 shadow-2xs">
+                <Link
+                  to="/admin/linen?tab=coordinator"
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
+                    activeTab === 'COORDINATOR'
+                      ? 'bg-blue-600 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <FaSlidersH size={12} />
+                  <span>Matriks Koordinator</span>
+                </Link>
+                <Link
+                  to="/admin/linen"
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
+                    activeTab === 'OPERATIONAL'
+                      ? 'bg-blue-600 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <FaThLarge size={12} />
+                  <span>Operasional Stasiun</span>
+                </Link>
+              </div>
+
+              <button
+                onClick={() => setIsQrModalOpen(true)}
+                className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors border border-slate-200 shadow-2xs cursor-pointer"
+                title={operationalRole === 'IGD' ? "Cetak Barcode/QR Lemari IGD" : "Cetak Barcode/QR Gudang Laundry"}
+              >
+                <FaQrcode size={15} />
+                <span className="hidden md:inline">QR Stasiun</span>
+              </button>
+            </div>
+          </div>
+        )}
         
         {loading ? (
           <div className="bg-white rounded-3xl p-12 text-center shadow-xs border border-slate-200">

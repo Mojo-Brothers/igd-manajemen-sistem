@@ -18,9 +18,11 @@ import {
   FaSave,
   FaClipboardCheck,
   FaBroom,
-  FaDownload
+  FaBed,
+  FaTruckLoading,
+  FaBoxes,
+  FaLayerGroup
 } from 'react-icons/fa';
-import { LinenReportModal } from './LinenReportModal';
 
 interface CoordinatorDashboardProps {
   items: LinenItem[];
@@ -44,7 +46,6 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({
   const [editNotes, setEditNotes] = useState<string>('');
   const [resetToClean, setResetToClean] = useState<boolean>(true);
   const [saving, setSaving] = useState<boolean>(false);
-  const [isReportModalOpen, setIsReportModalOpen] = useState<boolean>(false);
 
   useEffect(() => {
     const unsub = subscribeRecentTransactions(unitId, (txs) => {
@@ -122,7 +123,19 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({
     }
   };
 
-  // Check overall discrepancies
+  // Executive summary metrics
+  const totalMaster = items.reduce((acc, i) => acc + (i.totalOwned || 0), 0);
+  const totalClean = items.reduce((acc, i) => acc + (i.clean || 0), 0);
+  const totalUsed = items.reduce((acc, i) => acc + (i.used || 0), 0);
+  const totalDirty = items.reduce((acc, i) => acc + (i.dirty || 0), 0);
+  const totalInTransitDirty = items.reduce((acc, i) => acc + (i.inTransitDirty || 0), 0);
+  const totalLaundry = items.reduce((acc, i) => acc + (i.laundry || 0), 0);
+  const totalInTransitClean = items.reduce((acc, i) => acc + (i.inTransitClean || 0), 0);
+  const totalCirculating = totalDirty + totalInTransitDirty + totalLaundry + totalInTransitClean;
+  const totalPhysical = totalClean + totalUsed + totalCirculating;
+  const cleanPercent = totalMaster > 0 ? Math.min(100, Math.round((totalClean / totalMaster) * 100)) : 100;
+
+  // Check overall discrepancies (compare total physical against totalMaster)
   const itemsWithDiscrepancy = items.filter((item) => {
     const currentSum = 
       (item.clean || 0) + 
@@ -137,77 +150,161 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
       
-      {/* Alert Banner for Discrepancy */}
+      {/* 1. Executive Summary KPI Overview Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+        {/* Card 1: Total Kepemilikan Master */}
+        <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-2xs relative overflow-hidden flex flex-col justify-between hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[11px] font-black text-slate-500 uppercase tracking-wider">Total Milik</span>
+            <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold shadow-2xs">
+              <FaBoxes size={15} />
+            </div>
+          </div>
+          <div>
+            <div className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
+              {totalMaster} <span className="text-xs font-bold text-slate-400 uppercase">pcs</span>
+            </div>
+            <p className="text-[11px] text-slate-500 mt-1.5 flex items-center gap-1.5 font-medium">
+              <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0"></span>
+              <span className="truncate">Target Single Source of Truth</span>
+            </p>
+          </div>
+        </div>
+
+        {/* Card 2: Stok Bersih di Lemari */}
+        <div className="bg-white p-5 rounded-3xl border border-emerald-200 shadow-2xs relative overflow-hidden flex flex-col justify-between bg-gradient-to-br from-white to-emerald-50/40 hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[11px] font-black text-emerald-700 uppercase tracking-wider">Bersih di Lemari</span>
+            <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold shadow-2xs">
+              <FaCheckCircle size={15} />
+            </div>
+          </div>
+          <div>
+            <div className="text-3xl sm:text-4xl font-black text-emerald-800 tracking-tight">
+              {totalClean} <span className="text-xs font-bold text-emerald-600 uppercase">pcs</span>
+            </div>
+            <p className="text-[11px] text-emerald-700 mt-1.5 flex items-center gap-1.5 font-medium">
+              <span className="font-black bg-emerald-100 px-1.5 py-0.5 rounded text-[10px]">{cleanPercent}%</span>
+              <span className="truncate">Siap Digunakan Pasien</span>
+            </p>
+          </div>
+        </div>
+
+        {/* Card 3: Sedang Digunakan */}
+        <div className="bg-white p-5 rounded-3xl border border-amber-200 shadow-2xs relative overflow-hidden flex flex-col justify-between bg-gradient-to-br from-white to-amber-50/40 hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[11px] font-black text-amber-700 uppercase tracking-wider">Sedang Dipakai</span>
+            <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center font-bold shadow-2xs">
+              <FaBed size={15} />
+            </div>
+          </div>
+          <div>
+            <div className="text-3xl sm:text-4xl font-black text-amber-800 tracking-tight">
+              {totalUsed} <span className="text-xs font-bold text-amber-600 uppercase">pcs</span>
+            </div>
+            <p className="text-[11px] text-amber-700 mt-1.5 font-medium truncate">
+              Terpasang pada bed / pasien IGD
+            </p>
+          </div>
+        </div>
+
+        {/* Card 4: Siklus Cuci & Pengiriman */}
+        <div className="bg-white p-5 rounded-3xl border border-rose-200 shadow-2xs relative overflow-hidden flex flex-col justify-between bg-gradient-to-br from-white to-rose-50/30 hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[11px] font-black text-rose-700 uppercase tracking-wider">Sirkulasi Cuci</span>
+            <div className="w-8 h-8 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center font-bold shadow-2xs">
+              <FaTruckLoading size={15} />
+            </div>
+          </div>
+          <div>
+            <div className="text-3xl sm:text-4xl font-black text-rose-800 tracking-tight">
+              {totalCirculating} <span className="text-xs font-bold text-rose-600 uppercase">pcs</span>
+            </div>
+            <p className="text-[11px] text-slate-500 mt-1.5 font-medium truncate">
+              {totalDirty} kotor • {totalInTransitDirty + totalInTransitClean} transit • {totalLaundry} gudang
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* 2. Single Source of Truth / Discrepancy Status Card */}
       {itemsWithDiscrepancy.length > 0 ? (
-        <div className="p-4 rounded-2xl bg-amber-50 border border-amber-300 text-amber-900 flex items-center justify-between gap-3 shadow-xs">
-          <div className="flex items-start gap-3">
-            <FaExclamationTriangle className="text-amber-600 shrink-0 mt-1" size={20} />
+        <div className="p-5 rounded-3xl bg-amber-50 border-2 border-amber-300 text-amber-900 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
+          <div className="flex items-start gap-3.5">
+            <div className="w-11 h-11 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0 shadow-2xs">
+              <FaExclamationTriangle size={22} />
+            </div>
             <div>
-              <h4 className="font-bold text-sm">Peringatan Selisih Fisik (Discrepancy Detected)</h4>
-              <p className="text-xs text-amber-800 mt-1">
-                Jumlah sirkulasi tidak sama dengan target kepemilikan unit pada:{' '}
-                <strong>{itemsWithDiscrepancy.map(i => i.name).join(', ')}</strong>.
+              <div className="flex items-center gap-2">
+                <h4 className="font-black text-base text-amber-950">Peringatan Selisih Fisik (Discrepancy Detected)</h4>
+                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-200 text-amber-900 animate-pulse">
+                  Perlu Tindakan
+                </span>
+              </div>
+              <p className="text-xs text-amber-800 mt-1 leading-relaxed">
+                Jumlah total sirkulasi fisik tidak sama dengan target master kepemilikan pada:{' '}
+                <strong className="underline font-bold">{itemsWithDiscrepancy.map(i => i.name).join(', ')}</strong>. 
+                Gunakan tombol di samping untuk menyelaraskan seluruh sirkulasi menjadi 100% bersih di lemari.
               </p>
             </div>
           </div>
           <button
             onClick={handleWhitewash}
             disabled={whitewashing}
-            className="px-3.5 py-2 bg-amber-600 hover:bg-amber-700 active:scale-95 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center gap-1.5 shrink-0 disabled:opacity-50"
+            className="px-4 py-2.5 bg-amber-600 hover:bg-amber-700 active:scale-95 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-2 shrink-0 disabled:opacity-50 cursor-pointer"
           >
-            <FaBroom size={13} />
-            <span>{whitewashing ? 'Memutihkan...' : 'Pemutihan / Selaraskan'}</span>
+            <FaBroom size={14} />
+            <span>{whitewashing ? 'Memutihkan...' : 'Pemutihan / Selaraskan Stok'}</span>
           </button>
         </div>
       ) : (
-        <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 flex items-center justify-between shadow-xs">
-          <div className="flex items-center gap-3">
-            <FaCheckCircle className="text-emerald-600 shrink-0" size={20} />
+        <div className="p-5 rounded-3xl bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-emerald-500/10 border border-emerald-300/80 text-emerald-900 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
+          <div className="flex items-start sm:items-center gap-3.5">
+            <div className="w-11 h-11 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 shadow-2xs">
+              <FaCheckCircle size={24} />
+            </div>
             <div>
-              <h4 className="font-bold text-sm">Status Inventaris Sinkron (Single Source of Truth)</h4>
-              <p className="text-xs text-emerald-700 mt-0.5">
-                Seluruh siklus linen {unitName} lengkap dan tepat berjumlah sesuai master kepemilikan.
+              <div className="flex items-center gap-2">
+                <h4 className="font-black text-base text-emerald-950">Status Inventaris Sinkron (Single Source of Truth)</h4>
+                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-200 text-emerald-900">
+                  100% Sinkron
+                </span>
+              </div>
+              <p className="text-xs text-emerald-800 mt-0.5">
+                Seluruh sirkulasi fisik ({totalPhysical} pcs) lengkap dan selaras dengan target kepemilikan master unit {unitName}. Tidak ada selisih.
               </p>
             </div>
           </div>
           <button
             onClick={handleWhitewash}
             disabled={whitewashing}
-            className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center gap-1.5 shrink-0 disabled:opacity-50"
+            className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-2 shrink-0 disabled:opacity-50 cursor-pointer"
+            title="Reset dan selaraskan seluruh sirkulasi menjadi 100% di lemari bersih"
           >
-            <FaBroom size={13} />
+            <FaBroom size={14} />
             <span>{whitewashing ? 'Memutihkan...' : 'Pemutihan / Selaraskan Stok'}</span>
           </button>
         </div>
       )}
 
-      {/* 4 Status Circulation Table */}
+      {/* 3. Real-time Complete Circulation Matrix Table (All 6 statuses) */}
       <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-        <div className="p-5 bg-slate-900 text-white flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <FaSlidersH className="text-blue-400" />
-            <h3 className="font-bold text-base">Matriks Sirkulasi 4 Status ({unitName})</h3>
+        <div className="p-5 bg-slate-900 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-blue-600/60 text-blue-300 flex items-center justify-center">
+                <FaSlidersH size={15} />
+              </div>
+              <h3 className="font-black text-base tracking-tight">Matriks Distribusi & Sirkulasi Real-time ({unitName})</h3>
+            </div>
+            <p className="text-xs text-slate-400 mt-1">
+              Tracking siklus lengkap: Bersih di Lemari, Dipakai, Kotor di IGD, Transit Pengiriman, dan Gudang Laundry.
+            </p>
           </div>
-          <div className="flex items-center gap-2 sm:gap-3">
-            <button
-              onClick={() => setIsReportModalOpen(true)}
-              className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center gap-1.5 border border-white/10 active:scale-95 cursor-pointer"
-              title="Unduh Laporan Mutasi & Distribusi Linen Harian / Bulanan (PDF & Excel)"
-            >
-              <FaDownload size={12} className="text-blue-400" />
-              <span>Unduh Laporan</span>
-            </button>
-            <button
-              onClick={handleWhitewash}
-              disabled={whitewashing}
-              className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
-              title="Selaraskan semua status menjadi 100% bersih di lemari"
-            >
-              <FaBroom size={12} />
-              <span>{whitewashing ? 'Memutihkan...' : 'Pemutihan Stok'}</span>
-            </button>
-            <span className="text-xs text-slate-300 hidden sm:inline">
-              Total Kepemilikan & Distribusi Aktif
+          <div className="flex items-center gap-2 self-start sm:self-auto">
+            <span className="text-[11px] font-bold px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 border border-blue-400/30 flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span>Live Real-time Sync</span>
             </span>
           </div>
         </div>
@@ -216,15 +313,17 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({
           <table className="w-full text-left text-sm">
             <thead className="bg-slate-50 text-slate-600 text-xs font-bold uppercase tracking-wider border-b border-slate-200">
               <tr>
-                <th className="py-3.5 px-4">Jenis Linen</th>
-                <th className="py-3.5 px-3 text-center bg-emerald-50/70 text-emerald-900">🟢 Bersih</th>
-                <th className="py-3.5 px-3 text-center bg-amber-50/70 text-amber-900">🟡 Digunakan</th>
-                <th className="py-3.5 px-3 text-center bg-rose-50/70 text-rose-900">🔴 Kotor</th>
-                <th className="py-3.5 px-3 text-center bg-blue-50/70 text-blue-900">🔵 Laundry</th>
-                <th className="py-3.5 px-3 text-center font-black">Total Fisik</th>
-                <th className="py-3.5 px-3 text-center">Master Milik</th>
-                <th className="py-3.5 px-3 text-center">Status</th>
-                <th className="py-3.5 px-4 text-center">Aksi</th>
+                <th className="py-4 px-4">Jenis Linen</th>
+                <th className="py-4 px-3 text-center bg-emerald-50/60 text-emerald-900">🟢 Bersih</th>
+                <th className="py-4 px-3 text-center bg-amber-50/60 text-amber-900">🟡 Digunakan</th>
+                <th className="py-4 px-3 text-center bg-rose-50/60 text-rose-900">🔴 Kotor</th>
+                <th className="py-4 px-3 text-center bg-orange-50/60 text-orange-900">🚚 Kirim Cuci</th>
+                <th className="py-4 px-3 text-center bg-blue-50/60 text-blue-900">⚙️ Gudang</th>
+                <th className="py-4 px-3 text-center bg-teal-50/60 text-teal-900">🚚 Kirim IGD</th>
+                <th className="py-4 px-3 text-center font-black">Total Riil</th>
+                <th className="py-4 px-3 text-center">Target Milik</th>
+                <th className="py-4 px-3 text-center">Status</th>
+                <th className="py-4 px-4 text-center">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -232,58 +331,100 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({
                 const clean = item.clean || 0;
                 const used = item.used || 0;
                 const dirty = item.dirty || 0;
+                const inTransitDirty = item.inTransitDirty || 0;
                 const laundry = item.laundry || 0;
-                const totalCalculated = clean + used + dirty + laundry;
+                const inTransitClean = item.inTransitClean || 0;
+                const totalCalculated = clean + used + dirty + inTransitDirty + laundry + inTransitClean;
                 const isDiscrepant = totalCalculated !== item.totalOwned;
                 const statusLevel = getLinenStatusLevel(clean, item.minStock, item.criticalStock);
+                const isSelimut = item.name.toLowerCase().includes('selimut');
 
                 return (
                   <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
                     <td className="py-4 px-4 font-bold text-slate-900">
-                      <div>{item.name}</div>
-                      <div className="text-[11px] text-slate-400 font-normal">
-                        Min: {item.minStock} • Kritis: {item.criticalStock}
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                          {isSelimut ? <FaBed size={14} /> : <FaLayerGroup size={14} />}
+                        </div>
+                        <div>
+                          <div className="font-black text-sm text-slate-900">{item.name}</div>
+                          <div className="text-[10px] text-slate-400 font-medium">
+                            Ambang Aman: {item.minStock} • Kritis: {item.criticalStock} {item.unitLabel}
+                          </div>
+                        </div>
                       </div>
                     </td>
-                    <td className="py-4 px-3 text-center font-bold text-emerald-700 bg-emerald-50/30 text-base">
-                      {clean}
+                    <td className="py-4 px-3 text-center">
+                      <span className="inline-block px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-800 font-black text-sm border border-emerald-200">
+                        {clean}
+                      </span>
                     </td>
-                    <td className="py-4 px-3 text-center font-bold text-amber-700 bg-amber-50/30 text-base">
-                      {used}
+                    <td className="py-4 px-3 text-center">
+                      <span className={`inline-block px-3 py-1.5 rounded-xl font-black text-sm border ${
+                        used > 0 ? 'bg-amber-50 text-amber-800 border-amber-200' : 'bg-slate-50 text-slate-400 border-slate-200/60'
+                      }`}>
+                        {used}
+                      </span>
                     </td>
-                    <td className="py-4 px-3 text-center font-bold text-rose-700 bg-rose-50/30 text-base">
-                      {dirty}
+                    <td className="py-4 px-3 text-center">
+                      <span className={`inline-block px-3 py-1.5 rounded-xl font-black text-sm border ${
+                        dirty > 0 ? 'bg-rose-50 text-rose-800 border-rose-200' : 'bg-slate-50 text-slate-400 border-slate-200/60'
+                      }`}>
+                        {dirty}
+                      </span>
                     </td>
-                    <td className="py-4 px-3 text-center font-bold text-blue-700 bg-blue-50/30 text-base">
-                      {laundry}
+                    <td className="py-4 px-3 text-center">
+                      <span className={`inline-block px-3 py-1.5 rounded-xl font-black text-sm border ${
+                        inTransitDirty > 0 ? 'bg-orange-50 text-orange-800 border-orange-200 animate-pulse' : 'bg-slate-50 text-slate-400 border-slate-200/60'
+                      }`}>
+                        {inTransitDirty}
+                      </span>
+                    </td>
+                    <td className="py-4 px-3 text-center">
+                      <span className={`inline-block px-3 py-1.5 rounded-xl font-black text-sm border ${
+                        laundry > 0 ? 'bg-blue-50 text-blue-800 border-blue-200' : 'bg-slate-50 text-slate-400 border-slate-200/60'
+                      }`}>
+                        {laundry}
+                      </span>
+                    </td>
+                    <td className="py-4 px-3 text-center">
+                      <span className={`inline-block px-3 py-1.5 rounded-xl font-black text-sm border ${
+                        inTransitClean > 0 ? 'bg-teal-50 text-teal-800 border-teal-200 animate-pulse' : 'bg-slate-50 text-slate-400 border-slate-200/60'
+                      }`}>
+                        {inTransitClean}
+                      </span>
                     </td>
                     <td className="py-4 px-3 text-center font-black text-slate-900 text-base">
-                      {totalCalculated}
-                      {isDiscrepant && (
-                        <div className="text-[10px] text-rose-600 font-bold">
+                      <div>{totalCalculated}</div>
+                      {isDiscrepant ? (
+                        <div className="text-[10px] text-rose-600 font-bold mt-0.5">
                           Selisih {totalCalculated - item.totalOwned > 0 ? `+${totalCalculated - item.totalOwned}` : totalCalculated - item.totalOwned}
+                        </div>
+                      ) : (
+                        <div className="text-[9px] text-emerald-600 font-bold uppercase tracking-wider mt-0.5">
+                          ✓ Sinkron
                         </div>
                       )}
                     </td>
-                    <td className="py-4 px-3 text-center font-semibold text-slate-600">
-                      {item.totalOwned} {item.unitLabel}
+                    <td className="py-4 px-3 text-center font-bold text-slate-700">
+                      {item.totalOwned} <span className="text-xs text-slate-400 font-normal">{item.unitLabel}</span>
                     </td>
                     <td className="py-4 px-3 text-center">
-                      <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-bold ${
+                      <span className={`inline-block px-3 py-1 rounded-full text-xs font-black ${
                         statusLevel === 'SAFE'
-                          ? 'bg-emerald-100 text-emerald-800'
+                          ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
                           : statusLevel === 'WARNING'
-                          ? 'bg-amber-100 text-amber-800'
-                          : 'bg-rose-100 text-rose-800'
+                          ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                          : 'bg-rose-100 text-rose-800 border border-rose-200'
                       }`}>
                         {statusLevel === 'SAFE' ? '🟢 AMAN' : statusLevel === 'WARNING' ? '🟡 MENIPIS' : '🔴 KRITIS'}
                       </span>
                     </td>
                     <td className="py-4 px-4 text-center">
-                      <div className="flex items-center justify-center gap-1.5">
+                      <div className="flex items-center justify-center gap-2">
                         <button
                           onClick={() => setAdjustingItem(item)}
-                          className="py-1.5 px-2.5 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold rounded-xl transition-colors inline-flex items-center gap-1"
+                          className="py-1.5 px-3 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold rounded-xl transition-all border border-blue-200/80 shadow-2xs inline-flex items-center gap-1.5 active:scale-95 cursor-pointer"
                           title="Koreksi / Input stok baru bersih lemari"
                         >
                           <FaClipboardCheck size={12} />
@@ -291,11 +432,11 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({
                         </button>
                         <button
                           onClick={() => handleOpenEdit(item)}
-                          className="py-1.5 px-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-colors inline-flex items-center gap-1"
+                          className="py-1.5 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-all border border-slate-200 shadow-2xs inline-flex items-center gap-1.5 active:scale-95 cursor-pointer"
                           title="Edit total kepemilikan master & batas aman"
                         >
                           <FaEdit size={12} />
-                          <span>Master</span>
+                          <span>Edit Master</span>
                         </button>
                       </div>
                     </td>
@@ -307,21 +448,32 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({
         </div>
       </div>
 
-      {/* Transaction History Log */}
+      {/* 4. Transaction History Log with High-Polish Empty State */}
       <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
         <div className="p-5 border-b border-slate-100 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <FaHistory className="text-slate-600" />
-            <h3 className="font-bold text-base text-slate-900">Riwayat Mutasi & Sirkulasi Terakhir</h3>
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center">
+              <FaHistory size={15} />
+            </div>
+            <div>
+              <h3 className="font-black text-base text-slate-900">Riwayat Mutasi & Audit Sirkulasi</h3>
+              <p className="text-xs text-slate-400 mt-0.5">Catatan log aktivitas real-time pergerakan linen</p>
+            </div>
           </div>
-          <span className="text-xs text-slate-500">
-            {transactions.length} transaksi terakhir
+          <span className="text-xs font-bold text-slate-600 bg-slate-100 px-3 py-1 rounded-full">
+            {transactions.length} transaksi tercatat
           </span>
         </div>
 
         {transactions.length === 0 ? (
-          <div className="p-8 text-center text-slate-400 text-sm">
-            Belum ada catatan mutasi transaksi hari ini.
+          <div className="p-12 text-center flex flex-col items-center justify-center">
+            <div className="w-16 h-16 rounded-3xl bg-slate-100 text-slate-400 flex items-center justify-center mb-3 shadow-inner">
+              <FaHistory size={26} />
+            </div>
+            <h5 className="font-black text-sm text-slate-700">Belum Ada Catatan Mutasi Hari Ini</h5>
+            <p className="text-xs text-slate-400 mt-1 max-w-sm leading-relaxed">
+              Seluruh aktivitas mutasi seperti serah kotor, terima bersih, atau koreksi master data akan tampil secara otomatis di sini.
+            </p>
           </div>
         ) : (
           <div className="divide-y divide-slate-100">
@@ -613,15 +765,6 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({
         isOpen={!!adjustingItem}
         onClose={() => setAdjustingItem(null)}
         item={adjustingItem}
-      />
-
-      {/* Linen Report Download Modal (PDF & Excel) */}
-      <LinenReportModal
-        isOpen={isReportModalOpen}
-        onClose={() => setIsReportModalOpen(false)}
-        items={items}
-        unitId={unitId}
-        unitName={unitName}
       />
     </div>
   );
