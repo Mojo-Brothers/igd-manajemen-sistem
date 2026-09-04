@@ -23,7 +23,10 @@ import {
   FaArrowLeft,
   FaEdit,
   FaBroom,
-  FaHistory
+  FaHistory,
+  FaThLarge,
+  FaTh,
+  FaList
 } from 'react-icons/fa';
 
 interface LinenFlowPageProps {
@@ -55,6 +58,16 @@ export const LinenFlowPage: React.FC<LinenFlowPageProps> = ({ initialRole }) => 
   const [actionModalItemId, setActionModalItemId] = useState<string | undefined>();
   const [isQrModalOpen, setIsQrModalOpen] = useState<boolean>(false);
   const [adjustingItem, setAdjustingItem] = useState<LinenItem | null>(null);
+
+  // View mode switcher: card, grid, list
+  const [viewMode, setViewMode] = useState<'card' | 'grid' | 'list'>(() => {
+    return (localStorage.getItem('linen_view_mode') as 'card' | 'grid' | 'list') || 'card';
+  });
+
+  const handleViewModeChange = (mode: 'card' | 'grid' | 'list') => {
+    setViewMode(mode);
+    localStorage.setItem('linen_view_mode', mode);
+  };
 
   // Laundry batch confirmation loading
   const [laundryReturning, setLaundryReturning] = useState<boolean>(false);
@@ -273,102 +286,354 @@ export const LinenFlowPage: React.FC<LinenFlowPageProps> = ({ initialRole }) => 
               </div>
             </div>
 
-            {/* Section 1: STOK LINEN BERSIH DI LEMARI IGD */}
+            {/* Section 1: STOK LINEN BERSIH DI LEMARI IGD DENGAN PILIHAN TAMPILAN (CARD, GRID, LIST) */}
             <section className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xs font-black uppercase tracking-wider text-slate-500">
-                  Stok Bersih di Lemari IGD
-                </h3>
-                <span className="text-xs text-slate-400">
-                  Real-time Sync
-                </span>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-xs font-black uppercase tracking-wider text-slate-500">
+                    Stok Bersih di Lemari IGD
+                  </h3>
+                  <span className="text-[11px] text-slate-400 hidden sm:inline">• Real-time Sync</span>
+                </div>
+
+                {/* View Switcher Controls */}
+                <div className="inline-flex items-center p-1 bg-slate-200/80 rounded-2xl border border-slate-300 shadow-2xs self-start sm:self-auto gap-1">
+                  <button
+                    type="button"
+                    onClick={() => handleViewModeChange('card')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
+                      viewMode === 'card'
+                        ? 'bg-white text-blue-700 shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                    title="Tampilan Card Detail"
+                  >
+                    <FaThLarge size={12} />
+                    <span>Card</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleViewModeChange('grid')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
+                      viewMode === 'grid'
+                        ? 'bg-white text-blue-700 shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                    title="Tampilan Grid Kompak"
+                  >
+                    <FaTh size={12} />
+                    <span>Grid</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleViewModeChange('list')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
+                      viewMode === 'list'
+                        ? 'bg-white text-blue-700 shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                    title="Tampilan List / Tabel"
+                  >
+                    <FaList size={12} />
+                    <span>List</span>
+                  </button>
+                </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {items.map((item) => {
-                  const statusLevel = getLinenStatusLevel(item.clean, item.minStock, item.criticalStock);
-                  const percent = Math.min(100, Math.round(((item.clean || 0) / (item.totalOwned || 1)) * 100));
+              {/* TAMPILAN 1: CARD VIEW */}
+              {viewMode === 'card' && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {items.map((item) => {
+                    const statusLevel = getLinenStatusLevel(item.clean, item.minStock, item.criticalStock);
+                    const percent = Math.min(100, Math.round(((item.clean || 0) / (item.totalOwned || 1)) * 100));
 
-                  return (
-                    <div 
-                      key={item.id}
-                      className="bg-white rounded-3xl p-5 shadow-xs border border-slate-200 hover:shadow-md transition-all relative overflow-hidden flex flex-col justify-between"
-                    >
-                      {/* Top status indicator */}
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
-                            {item.name.toLowerCase().includes('selimut') ? <FaBed size={16} /> : <FaLayerGroup size={16} />}
+                    return (
+                      <div 
+                        key={item.id}
+                        className="bg-white rounded-3xl p-5 shadow-xs border border-slate-200 hover:shadow-md transition-all relative overflow-hidden flex flex-col justify-between"
+                      >
+                        {/* Top status indicator */}
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                              {item.name.toLowerCase().includes('selimut') ? <FaBed size={16} /> : <FaLayerGroup size={16} />}
+                            </div>
+                            <div>
+                              <h4 className="font-black text-base text-slate-900">{item.name}</h4>
+                              <span className="text-[11px] text-slate-400">Total Milik: {item.totalOwned} {item.unitLabel}</span>
+                            </div>
                           </div>
+
+                          <span className={`px-2.5 py-1 rounded-full text-xs font-black ${
+                            statusLevel === 'SAFE'
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : statusLevel === 'WARNING'
+                              ? 'bg-amber-100 text-amber-800'
+                              : 'bg-rose-100 text-rose-800'
+                          }`}>
+                            {statusLevel === 'SAFE' ? '🟢 AMAN' : statusLevel === 'WARNING' ? '🟡 MENIPIS' : '🔴 KRITIS'}
+                          </span>
+                        </div>
+
+                        {/* Giant Number & Quick Adjust Button */}
+                        <div className="my-2 flex items-center justify-between">
                           <div>
-                            <h4 className="font-black text-base text-slate-900">{item.name}</h4>
-                            <span className="text-[11px] text-slate-400">Total Milik: {item.totalOwned} {item.unitLabel}</span>
+                            <span className="text-4xl sm:text-5xl font-black tracking-tight text-slate-900">
+                              {item.clean}
+                            </span>
+                            <span className="ml-2 text-sm font-bold text-slate-400 uppercase">
+                              {item.unitLabel} Bersih
+                            </span>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => setAdjustingItem(item)}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-700 rounded-xl text-xs font-bold border border-slate-200 transition-all hover:border-blue-300 active:scale-95 shadow-2xs"
+                            title={`Koreksi / Input Stok Baru ${item.name}`}
+                          >
+                            <FaEdit size={13} className="text-blue-600" />
+                            <span>Koreksi Stok</span>
+                          </button>
+                        </div>
+
+                        {/* Mini Distribution Bar */}
+                        <div className="mt-3 pt-3 border-t border-slate-100 space-y-1.5">
+                          <div className="flex justify-between text-[11px] text-slate-500 font-semibold">
+                            <span>Distribusi Status:</span>
+                            <span>{percent}% di Lemari</span>
+                          </div>
+                          <div className="h-2.5 w-full bg-slate-100 rounded-full overflow-hidden flex">
+                            <div style={{ width: `${(item.clean / item.totalOwned) * 100}%` }} className="bg-emerald-500 h-full" title={`Bersih di Lemari: ${item.clean}`} />
+                            <div style={{ width: `${((item.used || 0) / item.totalOwned) * 100}%` }} className="bg-amber-400 h-full" title={`Digunakan: ${item.used || 0}`} />
+                            <div style={{ width: `${((item.dirty || 0) / item.totalOwned) * 100}%` }} className="bg-rose-400 h-full" title={`Kotor di IGD: ${item.dirty || 0}`} />
+                            <div style={{ width: `${((item.inTransitDirty || 0) / item.totalOwned) * 100}%` }} className="bg-orange-400 h-full" title={`Kirim ke Laundry: ${item.inTransitDirty || 0}`} />
+                            <div style={{ width: `${((item.laundry || 0) / item.totalOwned) * 100}%` }} className="bg-blue-400 h-full" title={`Dikerjakan di Laundry: ${item.laundry || 0}`} />
+                            <div style={{ width: `${((item.inTransitClean || 0) / item.totalOwned) * 100}%` }} className="bg-teal-400 h-full" title={`Kirim ke IGD: ${item.inTransitClean || 0}`} />
+                          </div>
+                          <div className="flex flex-wrap gap-x-2.5 gap-y-1 text-[10px] text-slate-400 pt-0.5">
+                            <span className="text-amber-600 font-medium">Dipakai: {item.used || 0}</span>
+                            <span className="text-rose-600 font-medium">Kotor: {item.dirty || 0}</span>
+                            {(item.inTransitDirty || 0) > 0 && (
+                              <span className="text-orange-600 font-bold">Kirim Laundry: {item.inTransitDirty}</span>
+                            )}
+                            <span className="text-blue-600 font-medium">Di Laundry: {item.laundry || 0}</span>
+                            {(item.inTransitClean || 0) > 0 && (
+                              <span className="text-teal-600 font-bold">Kirim IGD: {item.inTransitClean}</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* TAMPILAN 2: GRID VIEW KOMPAK */}
+              {viewMode === 'grid' && (
+                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                  {items.map((item) => {
+                    const statusLevel = getLinenStatusLevel(item.clean, item.minStock, item.criticalStock);
+                    const percent = Math.min(100, Math.round(((item.clean || 0) / (item.totalOwned || 1)) * 100));
+
+                    return (
+                      <div 
+                        key={item.id}
+                        className="bg-white rounded-3xl p-4 shadow-xs border border-slate-200 hover:shadow-md transition-all flex flex-col justify-between relative overflow-hidden"
+                      >
+                        <div>
+                          {/* Header */}
+                          <div className="flex items-center justify-between gap-1 mb-2">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <div className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                                {item.name.toLowerCase().includes('selimut') ? <FaBed size={13} /> : <FaLayerGroup size={13} />}
+                              </div>
+                              <h4 className="font-bold text-xs sm:text-sm text-slate-900 truncate" title={item.name}>
+                                {item.name}
+                              </h4>
+                            </div>
+                            <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-black shrink-0 ${
+                              statusLevel === 'SAFE'
+                                ? 'bg-emerald-100 text-emerald-800'
+                                : statusLevel === 'WARNING'
+                                ? 'bg-amber-100 text-amber-800'
+                                : 'bg-rose-100 text-rose-800'
+                            }`}>
+                              {statusLevel === 'SAFE' ? '🟢 AMAN' : statusLevel === 'WARNING' ? '🟡 MENIPIS' : '🔴 KRITIS'}
+                            </span>
+                          </div>
+
+                          {/* Giant Number Center */}
+                          <div className="my-2 text-center py-2.5 bg-slate-50/80 rounded-2xl border border-slate-100">
+                            <span className="text-3xl sm:text-4xl font-black text-slate-900 leading-none">
+                              {item.clean}
+                            </span>
+                            <span className="text-[11px] font-bold text-slate-400 block uppercase mt-0.5">
+                              {item.unitLabel} Bersih
+                            </span>
+                          </div>
+
+                          {/* Mini Progress */}
+                          <div className="space-y-1 my-2">
+                            <div className="flex justify-between text-[10px] text-slate-500 font-semibold">
+                              <span>Di Lemari</span>
+                              <span className="font-bold text-slate-700">{percent}% ({item.clean}/{item.totalOwned})</span>
+                            </div>
+                            <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden flex">
+                              <div style={{ width: `${(item.clean / item.totalOwned) * 100}%` }} className="bg-emerald-500 h-full" />
+                              <div style={{ width: `${((item.used || 0) / item.totalOwned) * 100}%` }} className="bg-amber-400 h-full" />
+                              <div style={{ width: `${((item.dirty || 0) / item.totalOwned) * 100}%` }} className="bg-rose-400 h-full" />
+                              <div style={{ width: `${((item.inTransitDirty || 0) / item.totalOwned) * 100}%` }} className="bg-orange-400 h-full" />
+                              <div style={{ width: `${((item.laundry || 0) / item.totalOwned) * 100}%` }} className="bg-blue-400 h-full" />
+                              <div style={{ width: `${((item.inTransitClean || 0) / item.totalOwned) * 100}%` }} className="bg-teal-400 h-full" />
+                            </div>
+                          </div>
+
+                          {/* Circulation Badges */}
+                          <div className="flex flex-wrap gap-1 text-[9px] pt-1">
+                            {(item.dirty || 0) > 0 && (
+                              <span className="px-1.5 py-0.5 rounded-md bg-rose-50 text-rose-700 border border-rose-200 font-semibold">
+                                Kotor: {item.dirty}
+                              </span>
+                            )}
+                            {(item.inTransitDirty || 0) > 0 && (
+                              <span className="px-1.5 py-0.5 rounded-md bg-orange-50 text-orange-700 border border-orange-200 font-semibold">
+                                Kirim: {item.inTransitDirty}
+                              </span>
+                            )}
+                            {(item.laundry || 0) > 0 && (
+                              <span className="px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200 font-semibold">
+                                Cuci: {item.laundry}
+                              </span>
+                            )}
+                            {(item.inTransitClean || 0) > 0 && (
+                              <span className="px-1.5 py-0.5 rounded-md bg-teal-50 text-teal-700 border border-teal-200 font-semibold">
+                                Bersih Kirim: {item.inTransitClean}
+                              </span>
+                            )}
                           </div>
                         </div>
 
-                        <span className={`px-2.5 py-1 rounded-full text-xs font-black ${
-                          statusLevel === 'SAFE'
-                            ? 'bg-emerald-100 text-emerald-800'
-                            : statusLevel === 'WARNING'
-                            ? 'bg-amber-100 text-amber-800'
-                            : 'bg-rose-100 text-rose-800'
-                        }`}>
-                          {statusLevel === 'SAFE' ? '🟢 AMAN' : statusLevel === 'WARNING' ? '🟡 MENIPIS' : '🔴 KRITIS'}
-                        </span>
-                      </div>
-
-                      {/* Giant Number & Quick Adjust Button */}
-                      <div className="my-2 flex items-center justify-between">
-                        <div>
-                          <span className="text-4xl sm:text-5xl font-black tracking-tight text-slate-900">
-                            {item.clean}
-                          </span>
-                          <span className="ml-2 text-sm font-bold text-slate-400 uppercase">
-                            {item.unitLabel} Bersih
-                          </span>
-                        </div>
-
+                        {/* Quick Adjust Button */}
                         <button
                           type="button"
                           onClick={() => setAdjustingItem(item)}
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-700 rounded-xl text-xs font-bold border border-slate-200 transition-all hover:border-blue-300 active:scale-95 shadow-2xs"
-                          title={`Koreksi / Input Stok Baru ${item.name}`}
+                          className="w-full mt-3 py-2 bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-700 rounded-xl text-xs font-bold border border-slate-200 transition-all flex items-center justify-center gap-1.5 shadow-2xs active:scale-95"
+                          title={`Koreksi Stok ${item.name}`}
                         >
-                          <FaEdit size={13} className="text-blue-600" />
-                          <span>Koreksi Stok</span>
+                          <FaEdit size={12} className="text-blue-600" />
+                          <span>Koreksi</span>
                         </button>
                       </div>
+                    );
+                  })}
+                </div>
+              )}
 
-                      {/* Mini Distribution Bar */}
-                      <div className="mt-3 pt-3 border-t border-slate-100 space-y-1.5">
-                        <div className="flex justify-between text-[11px] text-slate-500 font-semibold">
-                          <span>Distribusi Status:</span>
-                          <span>{percent}% di Lemari</span>
-                        </div>
-                        <div className="h-2.5 w-full bg-slate-100 rounded-full overflow-hidden flex">
-                          <div style={{ width: `${(item.clean / item.totalOwned) * 100}%` }} className="bg-emerald-500 h-full" title={`Bersih di Lemari: ${item.clean}`} />
-                          <div style={{ width: `${((item.used || 0) / item.totalOwned) * 100}%` }} className="bg-amber-400 h-full" title={`Digunakan: ${item.used || 0}`} />
-                          <div style={{ width: `${((item.dirty || 0) / item.totalOwned) * 100}%` }} className="bg-rose-400 h-full" title={`Kotor di IGD: ${item.dirty || 0}`} />
-                          <div style={{ width: `${((item.inTransitDirty || 0) / item.totalOwned) * 100}%` }} className="bg-orange-400 h-full" title={`Kirim ke Laundry: ${item.inTransitDirty || 0}`} />
-                          <div style={{ width: `${((item.laundry || 0) / item.totalOwned) * 100}%` }} className="bg-blue-400 h-full" title={`Dikerjakan di Laundry: ${item.laundry || 0}`} />
-                          <div style={{ width: `${((item.inTransitClean || 0) / item.totalOwned) * 100}%` }} className="bg-teal-400 h-full" title={`Kirim ke IGD: ${item.inTransitClean || 0}`} />
-                        </div>
-                        <div className="flex flex-wrap gap-x-2.5 gap-y-1 text-[10px] text-slate-400 pt-0.5">
-                          <span className="text-amber-600 font-medium">Dipakai: {item.used || 0}</span>
-                          <span className="text-rose-600 font-medium">Kotor: {item.dirty || 0}</span>
-                          {(item.inTransitDirty || 0) > 0 && (
-                            <span className="text-orange-600 font-bold">Kirim Laundry: {item.inTransitDirty}</span>
-                          )}
-                          <span className="text-blue-600 font-medium">Di Laundry: {item.laundry || 0}</span>
-                          {(item.inTransitClean || 0) > 0 && (
-                            <span className="text-teal-600 font-bold">Kirim IGD: {item.inTransitClean}</span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+              {/* TAMPILAN 3: LIST / TABEL VIEW */}
+              {viewMode === 'list' && (
+                <div className="bg-white rounded-3xl border border-slate-200 shadow-xs overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-black uppercase tracking-wider text-slate-500">
+                          <th className="py-3.5 px-4">Jenis Linen</th>
+                          <th className="py-3.5 px-4 text-center">Stok Bersih</th>
+                          <th className="py-3.5 px-4">Status</th>
+                          <th className="py-3.5 px-4 hidden md:table-cell">Proporsi Lemari</th>
+                          <th className="py-3.5 px-4 hidden sm:table-cell">Sirkulasi</th>
+                          <th className="py-3.5 px-4 text-right">Aksi</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 text-xs">
+                        {items.map((item) => {
+                          const statusLevel = getLinenStatusLevel(item.clean, item.minStock, item.criticalStock);
+                          const percent = Math.min(100, Math.round(((item.clean || 0) / (item.totalOwned || 1)) * 100));
+
+                          return (
+                            <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
+                              <td className="py-3.5 px-4">
+                                <div className="flex items-center gap-2.5">
+                                  <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                                    {item.name.toLowerCase().includes('selimut') ? <FaBed size={14} /> : <FaLayerGroup size={14} />}
+                                  </div>
+                                  <div>
+                                    <div className="font-bold text-slate-900 text-sm">{item.name}</div>
+                                    <div className="text-[11px] text-slate-400">Total Milik: {item.totalOwned} {item.unitLabel}</div>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="py-3.5 px-4 text-center">
+                                <span className="text-2xl font-black text-slate-900 leading-none">{item.clean}</span>
+                                <span className="text-[10px] text-slate-400 font-bold block uppercase mt-0.5">{item.unitLabel}</span>
+                              </td>
+                              <td className="py-3.5 px-4">
+                                <span className={`px-2.5 py-1 rounded-full text-[11px] font-black inline-block whitespace-nowrap ${
+                                  statusLevel === 'SAFE'
+                                    ? 'bg-emerald-100 text-emerald-800'
+                                    : statusLevel === 'WARNING'
+                                    ? 'bg-amber-100 text-amber-800'
+                                    : 'bg-rose-100 text-rose-800'
+                                }`}>
+                                  {statusLevel === 'SAFE' ? '🟢 AMAN' : statusLevel === 'WARNING' ? '🟡 MENIPIS' : '🔴 KRITIS'}
+                                </span>
+                              </td>
+                              <td className="py-3.5 px-4 hidden md:table-cell min-w-[140px]">
+                                <div className="space-y-1">
+                                  <div className="flex justify-between text-[10px] text-slate-500 font-semibold">
+                                    <span>{percent}% di Lemari</span>
+                                  </div>
+                                  <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden flex">
+                                    <div style={{ width: `${(item.clean / item.totalOwned) * 100}%` }} className="bg-emerald-500 h-full" />
+                                    <div style={{ width: `${((item.used || 0) / item.totalOwned) * 100}%` }} className="bg-amber-400 h-full" />
+                                    <div style={{ width: `${((item.dirty || 0) / item.totalOwned) * 100}%` }} className="bg-rose-400 h-full" />
+                                    <div style={{ width: `${((item.inTransitDirty || 0) / item.totalOwned) * 100}%` }} className="bg-orange-400 h-full" />
+                                    <div style={{ width: `${((item.laundry || 0) / item.totalOwned) * 100}%` }} className="bg-blue-400 h-full" />
+                                    <div style={{ width: `${((item.inTransitClean || 0) / item.totalOwned) * 100}%` }} className="bg-teal-400 h-full" />
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="py-3.5 px-4 hidden sm:table-cell">
+                                <div className="flex flex-wrap gap-1.5 text-[10px]">
+                                  <span className="px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 border border-amber-200 font-medium">
+                                    Dipakai: {item.used || 0}
+                                  </span>
+                                  <span className="px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 border border-rose-200 font-medium">
+                                    Kotor: {item.dirty || 0}
+                                  </span>
+                                  {(item.inTransitDirty || 0) > 0 && (
+                                    <span className="px-2 py-0.5 rounded-md bg-orange-50 text-orange-700 border border-orange-200 font-bold">
+                                      Kirim Laundry: {item.inTransitDirty}
+                                    </span>
+                                  )}
+                                  <span className="px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200 font-medium">
+                                    Laundry: {item.laundry || 0}
+                                  </span>
+                                  {(item.inTransitClean || 0) > 0 && (
+                                    <span className="px-2 py-0.5 rounded-md bg-teal-50 text-teal-700 border border-teal-200 font-bold">
+                                      Kirim IGD: {item.inTransitClean}
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                                <button
+                                  type="button"
+                                  onClick={() => setAdjustingItem(item)}
+                                  className="px-3 py-1.5 bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-700 rounded-xl text-xs font-bold border border-slate-200 transition-all inline-flex items-center gap-1.5 shadow-2xs active:scale-95"
+                                >
+                                  <FaEdit size={12} className="text-blue-600" />
+                                  <span>Koreksi</span>
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
             </section>
 
             {/* Section 2: DUA TOMBOL AKSI OPERASIONAL */}
