@@ -479,7 +479,7 @@ export const LinenFlowPage: React.FC<LinenFlowPageProps> = ({ initialRole }) => 
                           </span>
                         </div>
 
-                        {/* Giant Number & Quick Adjust Button */}
+                        {/* Giant Number & Quick Adjust Button (Hanya tampil di IGD, disembunyikan di Laundry) */}
                         <div className="my-2 flex items-center justify-between">
                           <div>
                             <span className="text-4xl sm:text-5xl font-black tracking-tight text-slate-900">
@@ -490,15 +490,17 @@ export const LinenFlowPage: React.FC<LinenFlowPageProps> = ({ initialRole }) => 
                             </span>
                           </div>
 
-                          <button
-                            type="button"
-                            onClick={() => setAdjustingItem(item)}
-                            className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-700 rounded-xl text-xs font-bold border border-slate-200 transition-all hover:border-blue-300 active:scale-95 shadow-2xs"
-                            title={`Koreksi / Input Stok Baru ${item.name}`}
-                          >
-                            <FaEdit size={13} className="text-blue-600" />
-                            <span>Koreksi Stok</span>
-                          </button>
+                          {operationalRole !== 'LAUNDRY' && (
+                            <button
+                              type="button"
+                              onClick={() => setAdjustingItem(item)}
+                              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-700 rounded-xl text-xs font-bold border border-slate-200 transition-all hover:border-blue-300 active:scale-95 shadow-2xs cursor-pointer"
+                              title={`Koreksi / Input Stok Baru ${item.name}`}
+                            >
+                              <FaEdit size={13} className="text-blue-600" />
+                              <span>Koreksi Stok</span>
+                            </button>
+                          )}
                         </div>
 
                         {/* Mini Distribution Bar */}
@@ -618,16 +620,18 @@ export const LinenFlowPage: React.FC<LinenFlowPageProps> = ({ initialRole }) => 
                           </div>
                         </div>
 
-                        {/* Quick Adjust Button */}
-                        <button
-                          type="button"
-                          onClick={() => setAdjustingItem(item)}
-                          className="w-full mt-3 py-2 bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-700 rounded-xl text-xs font-bold border border-slate-200 transition-all flex items-center justify-center gap-1.5 shadow-2xs active:scale-95"
-                          title={`Koreksi Stok ${item.name}`}
-                        >
-                          <FaEdit size={12} className="text-blue-600" />
-                          <span>Koreksi</span>
-                        </button>
+                        {/* Quick Adjust Button: Hanya untuk IGD, disembunyikan di stasiun Laundry */}
+                        {operationalRole !== 'LAUNDRY' && (
+                          <button
+                            type="button"
+                            onClick={() => setAdjustingItem(item)}
+                            className="w-full mt-3 py-2 bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-700 rounded-xl text-xs font-bold border border-slate-200 transition-all flex items-center justify-center gap-1.5 shadow-2xs active:scale-95 cursor-pointer"
+                            title={`Koreksi Stok ${item.name}`}
+                          >
+                            <FaEdit size={12} className="text-blue-600" />
+                            <span>Koreksi</span>
+                          </button>
+                        )}
                       </div>
                     );
                   })}
@@ -646,7 +650,9 @@ export const LinenFlowPage: React.FC<LinenFlowPageProps> = ({ initialRole }) => 
                           <th className="py-3.5 px-4">Status</th>
                           <th className="py-3.5 px-4 hidden md:table-cell">Proporsi Lemari</th>
                           <th className="py-3.5 px-4 hidden sm:table-cell">Sirkulasi</th>
-                          <th className="py-3.5 px-4 text-right">Aksi</th>
+                          {operationalRole !== 'LAUNDRY' && (
+                            <th className="py-3.5 px-4 text-right">Aksi</th>
+                          )}
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 text-xs">
@@ -720,16 +726,18 @@ export const LinenFlowPage: React.FC<LinenFlowPageProps> = ({ initialRole }) => 
                                   )}
                                 </div>
                               </td>
-                              <td className="py-3.5 px-4 text-right whitespace-nowrap">
-                                <button
-                                  type="button"
-                                  onClick={() => setAdjustingItem(item)}
-                                  className="px-3 py-1.5 bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-700 rounded-xl text-xs font-bold border border-slate-200 transition-all inline-flex items-center gap-1.5 shadow-2xs active:scale-95"
-                                >
-                                  <FaEdit size={12} className="text-blue-600" />
-                                  <span>Koreksi</span>
-                                </button>
-                              </td>
+                              {operationalRole !== 'LAUNDRY' && (
+                                <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                                  <button
+                                    type="button"
+                                    onClick={() => setAdjustingItem(item)}
+                                    className="px-3 py-1.5 bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-700 rounded-xl text-xs font-bold border border-slate-200 transition-all inline-flex items-center gap-1.5 shadow-2xs active:scale-95"
+                                  >
+                                    <FaEdit size={12} className="text-blue-600" />
+                                    <span>Koreksi</span>
+                                  </button>
+                                </td>
+                              )}
                             </tr>
                           );
                         })}
