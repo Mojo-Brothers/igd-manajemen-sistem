@@ -27,7 +27,9 @@ import {
   FaTh,
   FaList,
   FaDownload,
-  FaSlidersH
+  FaSlidersH,
+  FaCalendarAlt,
+  FaFilter
 } from 'react-icons/fa';
 import { LinenReportModal } from './components/LinenReportModal';
 
@@ -73,6 +75,8 @@ export const LinenFlowPage: React.FC<LinenFlowPageProps> = ({ initialRole }) => 
   };
 
   const [recentTransactions, setRecentTransactions] = useState<LinenTransaction[]>([]);
+  const [filterDate, setFilterDate] = useState<string>(''); // YYYY-MM-DD
+  const [filterActionType, setFilterActionType] = useState<string>('ALL');
 
   const unitId = activeUnit.toLowerCase();
 
@@ -86,10 +90,10 @@ export const LinenFlowPage: React.FC<LinenFlowPageProps> = ({ initialRole }) => 
       setLoading(false);
     });
 
-    // Subscribe to recent user activity logs
+    // Subscribe to recent user activity logs (up to 200 transactions for calendar filtering)
     const unsubTx = subscribeRecentTransactions(unitId, (txs) => {
       setRecentTransactions(txs);
-    }, 15);
+    }, 200);
 
     return () => {
       unsubItems();
@@ -868,143 +872,362 @@ export const LinenFlowPage: React.FC<LinenFlowPageProps> = ({ initialRole }) => 
 
             {/* Section 4: LOG ACTIVITY USER (RIWAYAT AKTIVITAS PENGGUNA) */}
             <section className="bg-white rounded-3xl p-5 sm:p-6 shadow-xs border border-slate-200 space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              {/* Header Section */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-                    <FaHistory size={16} />
+                  <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 shadow-xs">
+                    <FaHistory size={18} />
                   </div>
                   <div>
-                    <h3 className="font-bold text-sm sm:text-base text-slate-900">
+                    <h3 className="font-black text-sm sm:text-base text-slate-900 leading-tight">
                       Log Activity User
                     </h3>
-                    <p className="text-[11px] text-slate-500">
+                    <p className="text-[11px] text-slate-500 mt-0.5">
                       Riwayat sirkulasi & serah terima linen real-time
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <div className="flex items-center gap-2 self-start sm:self-auto">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
                     <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                     Live Sync
                   </span>
-                  <span className="text-xs text-slate-400 font-medium hidden sm:inline">
-                    {recentTransactions.length} aktivitas terakhir
+                  <span className="text-xs font-bold text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
+                    {recentTransactions.length} Total Tercatat
                   </span>
                 </div>
               </div>
 
-              {/* Daftar Log Aktivitas */}
-              {recentTransactions.length === 0 ? (
-                <div className="py-8 text-center text-slate-400 text-xs sm:text-sm">
-                  Belum ada aktivitas mutasi linen tercatat hari ini.
+              {/* FILTER BAR BERDASARKAN TANGGAL DENGAN KALENDER & FILTER STATUS */}
+              <div className="bg-slate-50 p-3.5 sm:p-4 rounded-2xl border border-slate-200 space-y-3">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                  
+                  {/* Date Picker (Input Kalender) */}
+                  <div className="flex items-center gap-2.5 flex-wrap">
+                    <label className="text-xs font-black uppercase tracking-wider text-slate-600 flex items-center gap-1.5 shrink-0">
+                      <FaCalendarAlt className="text-blue-600" size={13} />
+                      <span>Filter Kalender:</span>
+                    </label>
+
+                    <div className="relative inline-flex items-center">
+                      <input
+                        type="date"
+                        value={filterDate}
+                        onChange={(e) => setFilterDate(e.target.value)}
+                        className="bg-white border border-slate-300 hover:border-blue-500 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800 outline-none transition-all cursor-pointer shadow-2xs"
+                      />
+                      {filterDate && (
+                        <button
+                          type="button"
+                          onClick={() => setFilterDate('')}
+                          className="ml-1.5 text-[11px] text-rose-600 hover:text-rose-800 font-bold px-2 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-colors"
+                          title="Hapus Filter Tanggal"
+                        >
+                          ✕ Reset
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Quick Presets: Semua, Hari Ini, Kemarin */}
+                    {(() => {
+                      const now = new Date();
+                      const y = now.getFullYear();
+                      const m = String(now.getMonth() + 1).padStart(2, '0');
+                      const d = String(now.getDate()).padStart(2, '0');
+                      const todayStr = `${y}-${m}-${d}`;
+
+                      const yesterday = new Date();
+                      yesterday.setDate(yesterday.getDate() - 1);
+                      const yy = yesterday.getFullYear();
+                      const ym = String(yesterday.getMonth() + 1).padStart(2, '0');
+                      const yd = String(yesterday.getDate()).padStart(2, '0');
+                      const yesterdayStr = `${yy}-${ym}-${yd}`;
+
+                      return (
+                        <div className="inline-flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-200 shadow-2xs">
+                          <button
+                            type="button"
+                            onClick={() => setFilterDate('')}
+                            className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                              !filterDate
+                                ? 'bg-blue-600 text-white shadow-2xs'
+                                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                            }`}
+                          >
+                            Semua
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setFilterDate(todayStr)}
+                            className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                              filterDate === todayStr
+                                ? 'bg-blue-600 text-white shadow-2xs'
+                                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                            }`}
+                          >
+                            Hari Ini
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setFilterDate(yesterdayStr)}
+                            className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                              filterDate === yesterdayStr
+                                ? 'bg-blue-600 text-white shadow-2xs'
+                                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                            }`}
+                          >
+                            Kemarin
+                          </button>
+                        </div>
+                      );
+                    })()}
+                  </div>
+
+                  {/* Filter Jenis Aksi Mutasi */}
+                  <div className="flex items-center gap-2">
+                    <FaFilter className="text-slate-400 shrink-0" size={11} />
+                    <select
+                      value={filterActionType}
+                      onChange={(e) => setFilterActionType(e.target.value)}
+                      className="bg-white border border-slate-300 hover:border-blue-500 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-700 outline-none transition-all cursor-pointer shadow-2xs"
+                    >
+                      <option value="ALL">Semua Jenis Aksi</option>
+                      <option value="DIRTY">Serah / Terima Kotor</option>
+                      <option value="CLEAN">Kirim / Terima Bersih</option>
+                      <option value="ADJUST">Pemutihan & Koreksi Stok</option>
+                    </select>
+                  </div>
                 </div>
-              ) : (
-                <div className="divide-y divide-slate-100 max-h-96 overflow-y-auto pr-1">
-                  {recentTransactions.map((tx) => {
-                    const dateStr = tx.timestamp?.toDate 
-                      ? tx.timestamp.toDate().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-                      : 'Baru saja';
 
-                    const getBadge = () => {
-                      const actorLower = (tx.actor || '').toLowerCase();
-                      const isIgd = actorLower.includes('igd') || actorLower.includes('perawat');
+                {/* Sub-banner jika ada filter aktif */}
+                {filterDate && (
+                  <div className="pt-2 border-t border-slate-200/80 flex items-center justify-between text-xs text-blue-900">
+                    <span className="font-semibold flex items-center gap-1.5">
+                      <span>📅</span>
+                      <span>
+                        Menampilkan aktivitas untuk tanggal: <strong>{(() => {
+                          const [py, pm, pd] = filterDate.split('-').map(Number);
+                          return new Date(py, pm - 1, pd).toLocaleDateString('id-ID', {
+                            weekday: 'long',
+                            day: 'numeric',
+                            month: 'long',
+                            year: 'numeric'
+                          });
+                        })()}</strong>
+                      </span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setFilterDate('')}
+                      className="text-blue-700 hover:underline font-bold text-[11px]"
+                    >
+                      Tampilkan Semua Tanggal
+                    </button>
+                  </div>
+                )}
+              </div>
 
-                      switch (tx.type) {
-                        case 'IGD_DISPATCH_DIRTY':
-                          return { 
-                            label: 'SERAH KOTOR (DIKIRIM)', 
-                            color: 'bg-rose-50 text-rose-700 border-rose-200', 
-                            icon: <FaTruckLoading size={12} /> 
-                          };
-                        case 'LAUNDRY_RECEIVE_DIRTY':
-                          return { 
-                            label: 'TERIMA KOTOR (DIKERJAKAN)', 
-                            color: 'bg-amber-50 text-amber-700 border-amber-200', 
-                            icon: <FaTruckLoading size={12} /> 
-                          };
-                        case 'LAUNDRY_DISPATCH_CLEAN':
-                          return { 
-                            label: 'KIRIM BERSIH (DIKIRIM)', 
-                            color: 'bg-teal-50 text-teal-700 border-teal-200', 
-                            icon: <FaTruckLoading size={12} /> 
-                          };
-                        case 'IGD_RECEIVE_CLEAN':
-                          return { 
-                            label: 'TERIMA BERSIH (LEMARI)', 
-                            color: 'bg-indigo-50 text-indigo-700 border-indigo-200', 
-                            icon: <FaCheckDouble size={12} /> 
-                          };
-                        case 'LAUNDRY_PICKUP':
-                          if (isIgd) {
+              {/* Daftar Log Aktivitas Terfilter */}
+              {(() => {
+                const filteredList = recentTransactions.filter((tx) => {
+                  // Filter tanggal kalender
+                  if (filterDate) {
+                    const ts = tx.timestamp;
+                    if (!ts) return true;
+                    let d: Date;
+                    if (ts.toDate) {
+                      d = ts.toDate();
+                    } else if (ts.seconds) {
+                      d = new Date(ts.seconds * 1000);
+                    } else if (ts instanceof Date) {
+                      d = ts;
+                    } else {
+                      d = new Date(ts);
+                    }
+                    if (isNaN(d.getTime())) return true;
+                    const y = d.getFullYear();
+                    const m = String(d.getMonth() + 1).padStart(2, '0');
+                    const day = String(d.getDate()).padStart(2, '0');
+                    const iso = `${y}-${m}-${day}`;
+                    if (iso !== filterDate) return false;
+                  }
+
+                  // Filter jenis aksi
+                  if (filterActionType === 'DIRTY') {
+                    const isDirty = tx.type.includes('DIRTY') || tx.type === 'LAUNDRY_PICKUP';
+                    if (!isDirty) return false;
+                  } else if (filterActionType === 'CLEAN') {
+                    const isClean = tx.type.includes('CLEAN') || tx.type === 'LAUNDRY_RETURN';
+                    if (!isClean) return false;
+                  } else if (filterActionType === 'ADJUST') {
+                    if (tx.type !== 'ADJUST_STOCK') return false;
+                  }
+
+                  return true;
+                });
+
+                if (filteredList.length === 0) {
+                  return (
+                    <div className="py-12 text-center flex flex-col items-center justify-center">
+                      <div className="w-14 h-14 rounded-3xl bg-slate-100 text-slate-400 flex items-center justify-center mb-2.5 shadow-inner">
+                        <FaHistory size={22} />
+                      </div>
+                      <h5 className="font-bold text-sm text-slate-700">
+                        {filterDate
+                          ? 'Tidak Ada Aktivitas pada Tanggal Ini'
+                          : 'Belum Ada Catatan Mutasi Linen'}
+                      </h5>
+                      <p className="text-xs text-slate-400 mt-1 max-w-sm leading-relaxed">
+                        {filterDate
+                          ? 'Tidak ditemukan catatan mutasi atau serah terima linen pada tanggal yang dipilih di kalender.'
+                          : 'Seluruh aktivitas serah kotor, terima bersih, atau penyesuaian stok akan tercatat otomatis di sini.'}
+                      </p>
+                      {filterDate && (
+                        <button
+                          type="button"
+                          onClick={() => setFilterDate('')}
+                          className="mt-3 px-4 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-xl text-xs font-bold transition-colors"
+                        >
+                          Lihat Semua Riwayat
+                        </button>
+                      )}
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="divide-y divide-slate-100 max-h-[480px] overflow-y-auto pr-1">
+                    {filteredList.map((tx) => {
+                      const ts = tx.timestamp;
+                      let timeStr = 'Baru saja';
+                      let dateStr = '';
+                      if (ts) {
+                        let d: Date;
+                        if (ts.toDate) {
+                          d = ts.toDate();
+                        } else if (ts.seconds) {
+                          d = new Date(ts.seconds * 1000);
+                        } else if (ts instanceof Date) {
+                          d = ts;
+                        } else {
+                          d = new Date(ts);
+                        }
+                        if (!isNaN(d.getTime())) {
+                          timeStr = d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                          dateStr = d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+                        }
+                      }
+
+                      const getBadge = () => {
+                        const actorLower = (tx.actor || '').toLowerCase();
+                        const isIgdActor = actorLower.includes('igd') || actorLower.includes('perawat');
+
+                        switch (tx.type) {
+                          case 'IGD_DISPATCH_DIRTY':
                             return { 
-                              label: 'SERAH KOTOR', 
+                              label: 'SERAH KOTOR (DIKIRIM)', 
                               color: 'bg-rose-50 text-rose-700 border-rose-200', 
                               icon: <FaTruckLoading size={12} /> 
                             };
-                          }
-                          return { 
-                            label: 'TERIMA KOTOR', 
-                            color: 'bg-amber-50 text-amber-700 border-amber-200', 
-                            icon: <FaTruckLoading size={12} /> 
-                          };
-                        case 'LAUNDRY_RETURN':
-                          if (isIgd) {
+                          case 'LAUNDRY_RECEIVE_DIRTY':
                             return { 
-                              label: 'TERIMA BERSIH', 
+                              label: 'TERIMA KOTOR (GUDANG)', 
+                              color: 'bg-amber-50 text-amber-700 border-amber-200', 
+                              icon: <FaTruckLoading size={12} /> 
+                            };
+                          case 'LAUNDRY_DISPATCH_CLEAN':
+                            return { 
+                              label: 'KIRIM BERSIH (DIKIRIM)', 
+                              color: 'bg-teal-50 text-teal-700 border-teal-200', 
+                              icon: <FaTruckLoading size={12} /> 
+                            };
+                          case 'IGD_RECEIVE_CLEAN':
+                            return { 
+                              label: 'TERIMA BERSIH (LEMARI)', 
                               color: 'bg-indigo-50 text-indigo-700 border-indigo-200', 
                               icon: <FaCheckDouble size={12} /> 
                             };
-                          }
-                          return { 
-                            label: 'SERAH BERSIH', 
-                            color: 'bg-teal-50 text-teal-700 border-teal-200', 
-                            icon: <FaCheckDouble size={12} /> 
-                          };
-                        case 'ADJUST_STOCK':
-                          return { 
-                            label: 'PEMUTIHAN / KOREKSI', 
-                            color: 'bg-purple-50 text-purple-700 border-purple-200', 
-                            icon: <FaBroom size={12} /> 
-                          };
-                        default:
-                          return { 
-                            label: tx.type, 
-                            color: 'bg-slate-50 text-slate-700 border-slate-200', 
-                            icon: <FaHistory size={12} /> 
-                          };
-                      }
-                    };
+                          case 'LAUNDRY_PICKUP':
+                            if (isIgdActor) {
+                              return { 
+                                label: 'SERAH KOTOR', 
+                                color: 'bg-rose-50 text-rose-700 border-rose-200', 
+                                icon: <FaTruckLoading size={12} /> 
+                              };
+                            }
+                            return { 
+                              label: 'TERIMA KOTOR', 
+                              color: 'bg-amber-50 text-amber-700 border-amber-200', 
+                              icon: <FaTruckLoading size={12} /> 
+                            };
+                          case 'LAUNDRY_RETURN':
+                            if (isIgdActor) {
+                              return { 
+                                label: 'TERIMA BERSIH', 
+                                color: 'bg-indigo-50 text-indigo-700 border-indigo-200', 
+                                icon: <FaCheckDouble size={12} /> 
+                              };
+                            }
+                            return { 
+                              label: 'KIRIM BERSIH', 
+                              color: 'bg-teal-50 text-teal-700 border-teal-200', 
+                              icon: <FaCheckDouble size={12} /> 
+                            };
+                          case 'ADJUST_STOCK':
+                            return { 
+                              label: 'PEMUTIHAN / KOREKSI', 
+                              color: 'bg-purple-50 text-purple-700 border-purple-200', 
+                              icon: <FaBroom size={12} /> 
+                            };
+                          default:
+                            return { 
+                              label: tx.type, 
+                              color: 'bg-slate-50 text-slate-700 border-slate-200', 
+                              icon: <FaHistory size={12} /> 
+                            };
+                        }
+                      };
 
-                    const badge = getBadge();
+                      const badge = getBadge();
 
-                    return (
-                      <div key={tx.id} className="py-3 flex items-start justify-between gap-3 text-xs">
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className={`inline-flex items-center gap-1 font-bold text-[10px] px-2 py-0.5 rounded-md border ${badge.color}`}>
-                              {badge.icon}
-                              <span>{badge.label}</span>
-                            </span>
-                            <span className="font-bold text-slate-800">
-                              {tx.itemName} ({tx.quantity} pcs)
-                            </span>
+                      return (
+                        <div key={tx.id} className="py-3.5 flex items-start justify-between gap-3 text-xs hover:bg-slate-50/70 px-2 rounded-xl transition-colors">
+                          <div className="space-y-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className={`inline-flex items-center gap-1.5 font-bold text-[10px] px-2.5 py-0.5 rounded-full border ${badge.color}`}>
+                                {badge.icon}
+                                <span>{badge.label}</span>
+                              </span>
+                              <span className="font-black text-slate-900 text-xs sm:text-sm">
+                                {tx.itemName}
+                              </span>
+                              <span className="text-xs font-black px-2 py-0.5 rounded-md bg-slate-100 text-slate-800">
+                                {tx.quantity} pcs
+                              </span>
+                            </div>
+                            <div className="text-[11px] text-slate-500">
+                              Oleh: <strong className="text-slate-700 font-semibold">{tx.actor || 'Petugas'}</strong>
+                              {tx.notes && <span className="text-slate-400"> • {tx.notes}</span>}
+                            </div>
                           </div>
-                          <div className="text-[11px] text-slate-500">
-                            Oleh: <strong className="text-slate-700">{tx.actor || 'Petugas'}</strong>
-                            {tx.notes && <span className="text-slate-400"> • {tx.notes}</span>}
+
+                          <div className="text-right shrink-0">
+                            <span className="text-xs font-bold text-slate-700 font-mono block">
+                              {timeStr}
+                            </span>
+                            {dateStr && (
+                              <span className="text-[10px] text-slate-400 block mt-0.5">
+                                {dateStr}
+                              </span>
+                            )}
                           </div>
                         </div>
-                        <div className="text-right shrink-0">
-                          <span className="text-[11px] text-slate-400 font-mono">
-                            {dateStr}
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+                      );
+                    })}
+                  </div>
+                );
+              })()}
             </section>
           </>
         )}

@@ -5,8 +5,6 @@ import {
   setDoc, 
   query, 
   where, 
-  orderBy, 
-  limit, 
   onSnapshot, 
   serverTimestamp, 
   runTransaction 
@@ -454,25 +452,43 @@ export const updateLinenMaster = async (itemId: string, updates: {
 
 /**
  * Subscribe to recent transactions for a unit
+ * Queries collection directly to avoid Firebase composite index errors (where + orderBy)
+ * and sorts/filters client-side reliably.
  */
 export const subscribeRecentTransactions = (
   unitId: string,
   onUpdate: (txs: LinenTransaction[]) => void,
-  limitCount: number = 25
+  limitCount: number = 300
 ) => {
-  const q = query(
-    collection(db, TRANSACTIONS_COLLECTION),
-    where('unitId', '==', unitId),
-    orderBy('timestamp', 'desc'),
-    limit(limitCount)
-  );
+  const normalizedUnit = (unitId || 'igd').toLowerCase();
+  const colRef = collection(db, TRANSACTIONS_COLLECTION);
 
-  return onSnapshot(q, (snapshot) => {
+  return onSnapshot(colRef, (snapshot) => {
     const txs: LinenTransaction[] = [];
     snapshot.forEach((docSnap) => {
-      txs.push({ ...docSnap.data(), id: docSnap.id } as LinenTransaction);
+      const data = docSnap.data() as LinenTransaction;
+      const txUnit = (data.unitId || '').toLowerCase();
+      // Match unit or accept all if unit matches IGD/Laundry
+      if (!txUnit || txUnit === normalizedUnit || normalizedUnit === 'all' || txUnit.includes(normalizedUnit) || normalizedUnit.includes(txUnit)) {
+        txs.push({ ...data, id: docSnap.id });
+      }
     });
-    onUpdate(txs);
+
+    // Client-side sort by timestamp descending safely
+    txs.sort((a, b) => {
+      const getMillis = (ts: any) => {
+        if (!ts) return Date.now();
+        if (typeof ts === 'number') return ts;
+        if (ts.toMillis) return ts.toMillis();
+        if (ts.toDate) return ts.toDate().getTime();
+        if (ts.seconds) return ts.seconds * 1000 + (ts.nanoseconds ? ts.nanoseconds / 1000000 : 0);
+        const parsed = new Date(ts).getTime();
+        return isNaN(parsed) ? Date.now() : parsed;
+      };
+      return getMillis(b.timestamp) - getMillis(a.timestamp);
+    });
+
+    onUpdate(txs.slice(0, limitCount));
   }, (err) => {
     console.error('Error fetching transactions:', err);
   });
@@ -487,17 +503,31 @@ export const fetchLinenTransactionsByRange = async (
   endDate?: Date
 ): Promise<LinenTransaction[]> => {
   try {
-    const q = query(
-      collection(db, TRANSACTIONS_COLLECTION),
-      where('unitId', '==', unitId),
-      orderBy('timestamp', 'desc')
-    );
-
-    const snapshot = await getDocs(q);
+    const colRef = collection(db, TRANSACTIONS_COLLECTION);
+    const snapshot = await getDocs(colRef);
     const allTxs: LinenTransaction[] = [];
+    const normalizedUnit = (unitId || 'igd').toLowerCase();
     
     snapshot.forEach((docSnap) => {
-      allTxs.push({ ...docSnap.data(), id: docSnap.id } as LinenTransaction);
+      const data = docSnap.data() as LinenTransaction;
+      const txUnit = (data.unitId || '').toLowerCase();
+      if (!txUnit || txUnit === normalizedUnit || normalizedUnit === 'all' || txUnit.includes(normalizedUnit)) {
+        allTxs.push({ ...data, id: docSnap.id });
+      }
+    });
+
+    // Sort descending
+    allTxs.sort((a, b) => {
+      const getMillis = (ts: any) => {
+        if (!ts) return Date.now();
+        if (typeof ts === 'number') return ts;
+        if (ts.toMillis) return ts.toMillis();
+        if (ts.toDate) return ts.toDate().getTime();
+        if (ts.seconds) return ts.seconds * 1000;
+        const parsed = new Date(ts).getTime();
+        return isNaN(parsed) ? Date.now() : parsed;
+      };
+      return getMillis(b.timestamp) - getMillis(a.timestamp);
     });
 
     if (!startDate && !endDate) {
