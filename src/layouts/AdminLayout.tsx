@@ -137,16 +137,16 @@ const AdminLayout = () => {
               </button>
 
               <Link 
-                to={location.search.includes('tab=coordinator') ? '/linen' : '/admin/linen?tab=coordinator'}
+                to={location.search.includes('tab=coordinator') || location.search.includes('tab=admin') ? '/linen' : '/admin/linen?tab=admin'}
                 target="_blank"
                 rel="noopener noreferrer"
                 className={`text-xs md:text-sm font-bold px-3.5 py-2 rounded-xl border transition-all flex items-center justify-center ${
-                  location.search.includes('tab=coordinator')
+                  location.search.includes('tab=coordinator') || location.search.includes('tab=admin')
                     ? 'bg-blue-600 text-white border-blue-600 shadow-xs hover:bg-blue-700'
                     : 'bg-white text-slate-700 border-slate-300 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 shadow-2xs'
                 }`}
               >
-                {location.search.includes('tab=coordinator') ? (
+                {location.search.includes('tab=coordinator') || location.search.includes('tab=admin') ? (
                   <span>Mode Operasional Lemari</span>
                 ) : (
                   <span>Dashboard Admin Manajemen Linen</span>

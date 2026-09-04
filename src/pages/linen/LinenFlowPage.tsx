@@ -43,7 +43,8 @@ export const LinenFlowPage: React.FC<LinenFlowPageProps> = ({ initialRole }) => 
   const [searchParams] = useSearchParams();
   const unitParam = (searchParams.get('unit') || 'IGD').toUpperCase();
   const tabParam = searchParams.get('tab');
-  const activeTab: 'OPERATIONAL' | 'COORDINATOR' = tabParam === 'coordinator' ? 'COORDINATOR' : 'OPERATIONAL';
+  const isAdministratorTab = tabParam === 'coordinator' || tabParam === 'admin' || tabParam === 'administrator';
+  const activeTab: 'OPERATIONAL' | 'ADMIN' = isAdministratorTab ? 'ADMIN' : 'OPERATIONAL';
 
   // Determine if this is the dedicated Laundry page or IGD page
   const isLaundry = Boolean(
@@ -203,7 +204,7 @@ export const LinenFlowPage: React.FC<LinenFlowPageProps> = ({ initialRole }) => 
               <div>
                 <div className="flex items-center gap-2">
                   <h2 className="text-base sm:text-lg font-black text-slate-900 tracking-tight">
-                    {activeTab === 'COORDINATOR' ? 'Dashboard Koordinator Linen' : 'Mode Operasional Stasiun Kerja'}
+                    {activeTab === 'ADMIN' ? 'Dashboard Administrator Linen' : 'Mode Operasional Stasiun Kerja'}
                   </h2>
                   <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-blue-100 text-blue-800">
                     {unitParam}
@@ -215,19 +216,19 @@ export const LinenFlowPage: React.FC<LinenFlowPageProps> = ({ initialRole }) => 
               </div>
             </div>
 
-            {/* In-Page Navigation Switcher (Coordinator vs Operational) */}
+            {/* In-Page Navigation Switcher (Administrator vs Operational) */}
             <div className="flex items-center gap-2.5 self-start sm:self-auto">
               <div className="inline-flex p-1 bg-slate-100 rounded-2xl border border-slate-200 shadow-2xs">
                 <Link
-                  to="/admin/linen?tab=coordinator"
+                  to="/admin/linen?tab=admin"
                   className={`px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
-                    activeTab === 'COORDINATOR'
+                    activeTab === 'ADMIN'
                       ? 'bg-blue-600 text-white shadow-xs'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
                   <FaSlidersH size={12} />
-                  <span>Matriks Koordinator</span>
+                  <span>Matriks Administrator</span>
                 </Link>
                 <Link
                   to="/admin/linen"
@@ -259,8 +260,8 @@ export const LinenFlowPage: React.FC<LinenFlowPageProps> = ({ initialRole }) => 
             <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
             <p className="text-sm font-semibold text-slate-500">Memuat inventaris linen {activeUnit}...</p>
           </div>
-        ) : activeTab === 'COORDINATOR' ? (
-          /* TAB 2: COORDINATOR DASHBOARD */
+        ) : activeTab === 'ADMIN' ? (
+          /* TAB 2: ADMINISTRATOR DASHBOARD */
           <CoordinatorDashboard 
             items={items} 
             unitId={unitId} 

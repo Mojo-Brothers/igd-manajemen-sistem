@@ -34,7 +34,7 @@ export const LinenReportModal: React.FC<LinenReportModalProps> = ({
   const [customEndDate, setCustomEndDate] = useState<string>(todayStr);
 
   const [includeSignatures, setIncludeSignatures] = useState<boolean>(true);
-  const [printedByName, setPrintedByName] = useState<string>('Koordinator Linen IGD');
+  const [printedByName, setPrintedByName] = useState<string>('Administrator Linen IGD');
   const [loading, setLoading] = useState<boolean>(false);
 
   if (!isOpen) return null;
@@ -93,7 +93,7 @@ export const LinenReportModal: React.FC<LinenReportModalProps> = ({
         endDate,
         unitName,
         hospitalName: 'PRIMAYA HOSPITAL',
-        printedBy: printedByName.trim() || 'Koordinator Linen IGD',
+        printedBy: printedByName.trim() || 'Administrator Linen IGD',
         items,
         transactions,
         includeSignatures
@@ -348,7 +348,7 @@ export const LinenReportModal: React.FC<LinenReportModalProps> = ({
                 type="text"
                 value={printedByName}
                 onChange={(e) => setPrintedByName(e.target.value)}
-                placeholder="Contoh: Koordinator Linen IGD"
+                placeholder="Contoh: Administrator Linen IGD"
                 className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 text-xs font-semibold outline-none"
               />
             </div>

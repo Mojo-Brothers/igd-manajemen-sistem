@@ -40,7 +40,7 @@ export type TransactionType =
   | 'LAUNDRY_PICKUP'        // Legacy alias / direct Dirty -> Laundry
   | 'LAUNDRY_RETURN'        // Legacy alias / direct Laundry -> Clean
   | 'DIRECT_DIRTY'          // Clean -> Dirty (Misal kena tumpahan sebelum dipakai)
-  | 'ADJUST_STOCK';         // Penyesuaian / Koreksi oleh Koordinator
+  | 'ADJUST_STOCK';         // Penyesuaian / Koreksi oleh Administrator
 
 export interface LinenTransaction {
   id: string;
@@ -51,7 +51,7 @@ export interface LinenTransaction {
   quantity: number;
   sourceStatus: 'clean' | 'used' | 'dirty' | 'inTransitDirty' | 'laundry' | 'inTransitClean' | 'system';
   targetStatus: 'clean' | 'used' | 'dirty' | 'inTransitDirty' | 'laundry' | 'inTransitClean' | 'system';
-  actor: string; // e.g. 'Perawat IGD', 'Petugas Laundry', 'Koordinator'
+  actor: string; // e.g. 'Perawat IGD', 'Petugas Laundry', 'Administrator'
   actorName?: string;
   notes?: string;
   timestamp: any;

@@ -94,7 +94,7 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({
         totalOwned: editTotal,
         minStock: editMin,
         criticalStock: editCritical,
-        notes: editNotes || `Penyesuaian master oleh Koordinator: Total ${editTotal}`,
+        notes: editNotes || `Penyesuaian master oleh Administrator: Total ${editTotal}`,
         resetToClean: resetToClean
       });
       toast.success(
@@ -118,7 +118,7 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({
     }
     setWhitewashing(true);
     try {
-      await reconcileAndWhitewashStock(unitId, `Koordinator ${unitName} (Pemutihan)`);
+      await reconcileAndWhitewashStock(unitId, `Administrator ${unitName} (Pemutihan)`);
       toast.success(`Pemutihan berhasil! Seluruh linen ${unitName} kini 100% selaras di lemari bersih.`);
     } catch (err: any) {
       toast.error(err.message || 'Gagal melakukan pemutihan stok');

@@ -439,7 +439,7 @@ export const updateLinenMaster = async (itemId: string, updates: {
       quantity: updates.resetToClean ? newTotal : Math.abs(newTotal - oldTotal),
       sourceStatus: 'system',
       targetStatus: 'clean',
-      actor: updates.actor || 'Koordinator IGD',
+      actor: updates.actor || 'Administrator IGD',
       notes: updates.resetToClean 
         ? `Pemutihan Master: Selaraskan seluruh kepemilikan (${newTotal} pcs) ke lemari bersih` 
         : (updates.notes || `Penyesuaian master: Total ${oldTotal} -> ${newTotal}`),
@@ -554,7 +554,7 @@ export const fetchLinenTransactionsByRange = async (
  */
 export const reconcileAndWhitewashStock = async (
   unitId: string = 'igd',
-  actor: string = 'Koordinator IGD (Pemutihan)',
+  actor: string = 'Administrator IGD (Pemutihan)',
   notes: string = 'Pemutihan / Penyelarasan stok 100% lemari bersih'
 ) => {
   const q = query(collection(db, ITEMS_COLLECTION), where('unitId', '==', unitId));

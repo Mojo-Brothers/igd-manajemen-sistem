@@ -54,7 +54,7 @@ export const generateLinenExcelReport = (params: LinenReportParams) => {
     periodLabel,
     unitName = 'Instalasi Gawat Darurat (IGD)',
     hospitalName = 'PRIMAYA HOSPITAL',
-    printedBy = 'Koordinator Linen IGD',
+    printedBy = 'Administrator Linen IGD',
     items,
     transactions,
     includeSignatures = true
@@ -279,7 +279,7 @@ export const generateLinenPdfReport = (params: LinenReportParams) => {
     periodLabel,
     unitName = 'Instalasi Gawat Darurat (IGD)',
     hospitalName = 'PRIMAYA HOSPITAL',
-    printedBy = 'Koordinator Linen IGD',
+    printedBy = 'Administrator Linen IGD',
     items,
     transactions,
     includeSignatures = true
