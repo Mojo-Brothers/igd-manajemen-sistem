@@ -675,15 +675,21 @@ export const LinenFlowPage: React.FC<LinenFlowPageProps> = ({ initialRole }) => 
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">IGD</span>
-                        {totalDirtyItems > 0 && (
+                        {totalDirtyItems > 0 ? (
                           <span className="text-[10px] bg-white text-rose-800 font-bold px-2 py-0.5 rounded-full">
                             {totalDirtyItems} pcs Kotor di IGD
                           </span>
-                        )}
+                        ) : totalInTransitDirty > 0 ? (
+                          <span className="text-[10px] bg-orange-400 text-orange-950 font-black px-2 py-0.5 rounded-full animate-pulse">
+                            {totalInTransitDirty} pcs Sedang Dikirim ke Laundry
+                          </span>
+                        ) : null}
                       </div>
                       <h4 className="font-black text-lg sm:text-xl leading-tight mt-1">SERAH KOTOR</h4>
                       <p className="text-xs text-rose-100 mt-0.5 font-medium">
-                        Serahkan linen kotor IGD ke petugas laundry
+                        {totalInTransitDirty > 0
+                          ? `${totalInTransitDirty} pcs dalam pengiriman ke laundry • Serahkan kotor baru`
+                          : 'Serahkan linen kotor IGD ke petugas laundry'}
                       </p>
                     </div>
                   </button>

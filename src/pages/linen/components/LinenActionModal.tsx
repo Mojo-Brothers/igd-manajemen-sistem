@@ -96,28 +96,38 @@ export const LinenActionModal: React.FC<LinenActionModalProps> = ({
     } else {
       // Peran Petugas IGD: Serah Kotor & Terima Bersih
       if (activeType === 'LAUNDRY_PICKUP' || activeType === 'IGD_DISPATCH_DIRTY') {
-        const dirtyAvailable = (currentItem?.dirty || 0) > 0 ? (currentItem?.dirty || 0) : ((currentItem?.clean || 0) + (currentItem?.used || 0));
+        const dirtyCount = currentItem?.dirty || 0;
+        const inTransitDirtyCount = currentItem?.inTransitDirty || 0;
+        const cleanCount = currentItem?.clean || 0;
+
+        // Sumber serah kotor: utamakan kotor di IGD jika ada, atau serah langsung dari stok lemari
+        const totalCanDispatch = dirtyCount > 0 ? dirtyCount : cleanCount;
+        const sourceTitle = dirtyCount > 0 ? 'Linen Kotor Siap Serah' : 'Stok Bersih Lemari (Siap Serah)';
+
         return {
           title: 'Serah Linen Kotor ke Laundry',
-          description: 'Petugas IGD menyerahkan linen kotor ke petugas laundry untuk dicuci.',
-          sourceName: 'Linen Kotor di IGD',
-          available: dirtyAvailable,
+          description: inTransitDirtyCount > 0
+            ? `Saat ini sudah ada ${inTransitDirtyCount} ${currentItem?.unitLabel || 'pcs'} sedang dalam pengiriman ke laundry. Pilih di bawah jika ingin menyerahkan linen kotor tambahan.`
+            : 'Petugas IGD menyerahkan linen kotor ke petugas laundry untuk dicuci.',
+          sourceName: sourceTitle,
+          available: totalCanDispatch,
           buttonText: 'Simpan Serah Kotor',
           buttonColor: 'bg-rose-600 hover:bg-rose-700',
           badge: 'IGD → Laundry (Serah Kotor)'
         };
       } else {
         const waitingClean = currentItem?.inTransitClean || 0;
+        const diLaundry = currentItem?.laundry || 0;
         return {
           title: 'Terima Linen Bersih dari Laundry',
           description: waitingClean > 0
             ? 'Petugas IGD menerima linen bersih dari laundry kembali ke lemari bersih.'
-            : (currentItem?.laundry || 0) > 0
+            : diLaundry > 0
             ? 'Linen masih sedang dikerjakan di laundry. Belum dikirim oleh laundry.'
             : (currentItem?.inTransitDirty || 0) > 0
             ? 'Linen masih sedang dikirim ke laundry.'
             : 'Tidak ada linen bersih yang sedang dikirim dari laundry.',
-          sourceName: waitingClean > 0 ? 'Sedang Dikirim ke IGD (Siap Diterima)' : (currentItem?.laundry || 0) > 0 ? 'Sedang di Laundry (Belum Dikirim)' : 'Semua Bersih di Lemari',
+          sourceName: waitingClean > 0 ? 'Sedang Dikirim ke IGD (Siap Diterima)' : diLaundry > 0 ? 'Sedang di Laundry (Belum Dikirim)' : 'Semua Bersih di Lemari',
           available: waitingClean,
           buttonText: 'Simpan Terima Bersih',
           buttonColor: 'bg-indigo-600 hover:bg-indigo-700',
@@ -290,20 +300,26 @@ export const LinenActionModal: React.FC<LinenActionModalProps> = ({
                   let stockSummary = '';
                   if (role === 'LAUNDRY') {
                     if (activeType === 'LAUNDRY_PICKUP') {
-                      const waitingKotor = (item.inTransitDirty || 0) > 0 ? item.inTransitDirty : (item.dirty || 0);
-                      stockSummary = `Kotor Menunggu: ${waitingKotor || 0} ${item.unitLabel}`;
+                      const kirimDariIgd = item.inTransitDirty || 0;
+                      const kotorIgd = item.dirty || 0;
+                      const diLaundry = item.laundry || 0;
+                      stockSummary = `Sedang Dikirim IGD: ${kirimDariIgd} ${item.unitLabel} • Kotor di IGD: ${kotorIgd} ${item.unitLabel} • Dicuci: ${diLaundry} ${item.unitLabel}`;
                     } else {
-                      stockSummary = `Siap Kirim: ${item.laundry || 0} ${item.unitLabel}`;
+                      const siapKirim = item.laundry || 0;
+                      const kirimKeIgd = item.inTransitClean || 0;
+                      stockSummary = `Siap Kirim: ${siapKirim} ${item.unitLabel} • Sedang Dikirim: ${kirimKeIgd} ${item.unitLabel}`;
                     }
                   } else {
                     if (activeType === 'LAUNDRY_PICKUP') {
                       const kotor = item.dirty || 0;
+                      const kirim = item.inTransitDirty || 0;
                       const bersih = item.clean || 0;
-                      stockSummary = `Kotor: ${kotor} ${item.unitLabel} • Bersih Lemari: ${bersih} ${item.unitLabel}`;
+                      stockSummary = `Kotor di IGD: ${kotor} ${item.unitLabel} • Sedang Dikirim: ${kirim} ${item.unitLabel} • Lemari Bersih: ${bersih} ${item.unitLabel}`;
                     } else {
                       const siapTerima = item.inTransitClean || 0;
                       const diLaundry = item.laundry || 0;
-                      stockSummary = `Siap Diterima: ${siapTerima} ${item.unitLabel} • Di Laundry: ${diLaundry} ${item.unitLabel}`;
+                      const bersih = item.clean || 0;
+                      stockSummary = `Siap Diterima: ${siapTerima} ${item.unitLabel} • Di Laundry: ${diLaundry} ${item.unitLabel} • Lemari: ${bersih} ${item.unitLabel}`;
                     }
                   }
                   return (
@@ -318,17 +334,61 @@ export const LinenActionModal: React.FC<LinenActionModalProps> = ({
               </div>
             </div>
 
-            {/* Quick stock status pill for selected item */}
+            {/* Quick stock status card for selected item */}
             {currentItem && (
-              <div className="mt-2.5 px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs flex items-center justify-between gap-2 text-slate-600">
-                <span className="font-bold text-slate-800 truncate">
-                  {currentItem.name}
-                </span>
-                <span className="text-[11px] shrink-0 font-medium">
-                  {config.sourceName}: <strong className="text-blue-700 font-bold">{config.available} {currentItem.unitLabel}</strong>
-                  <span className="text-slate-300 mx-1.5">•</span>
-                  Lemari: <strong className="text-emerald-700 font-bold">{currentItem.clean || 0} {currentItem.unitLabel}</strong>
-                </span>
+              <div className="mt-2.5 p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs space-y-2">
+                <div className="flex items-center justify-between font-bold text-slate-800">
+                  <span className="text-sm font-black">{currentItem.name}</span>
+                  <span className="text-[11px] text-slate-500 font-normal">
+                    Total Milik: <strong className="text-slate-700">{currentItem.totalOwned} {currentItem.unitLabel}</strong>
+                  </span>
+                </div>
+                
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 pt-1 text-[11px]">
+                  <div className="p-2 rounded-xl bg-emerald-50 border border-emerald-200">
+                    <span className="text-[10px] text-emerald-700 block font-semibold">Lemari Bersih</span>
+                    <strong className="text-sm text-emerald-900 font-black">{currentItem.clean || 0} {currentItem.unitLabel}</strong>
+                  </div>
+
+                  <div className={`p-2 rounded-xl border ${
+                    (currentItem.dirty || 0) > 0
+                      ? 'bg-rose-50 border-rose-200 text-rose-900'
+                      : 'bg-slate-100/70 border-slate-200 text-slate-600'
+                  }`}>
+                    <span className="text-[10px] block font-semibold">Kotor di IGD</span>
+                    <strong className="text-sm font-black">{currentItem.dirty || 0} {currentItem.unitLabel}</strong>
+                  </div>
+
+                  {(currentItem.inTransitDirty || 0) > 0 && (
+                    <div className="p-2 rounded-xl bg-orange-50 border border-orange-200 text-orange-900 col-span-2 sm:col-span-1">
+                      <span className="text-[10px] block font-semibold flex items-center gap-1">
+                        <span>🚚</span>
+                        <span>Kirim Laundry</span>
+                      </span>
+                      <strong className="text-sm font-black text-orange-700">{currentItem.inTransitDirty} {currentItem.unitLabel}</strong>
+                    </div>
+                  )}
+
+                  {(currentItem.laundry || 0) > 0 && (
+                    <div className="p-2 rounded-xl bg-blue-50 border border-blue-200 text-blue-900 col-span-2 sm:col-span-1">
+                      <span className="text-[10px] block font-semibold flex items-center gap-1">
+                        <span>⚙️</span>
+                        <span>Di Laundry</span>
+                      </span>
+                      <strong className="text-sm font-black text-blue-700">{currentItem.laundry} {currentItem.unitLabel}</strong>
+                    </div>
+                  )}
+
+                  {(currentItem.inTransitClean || 0) > 0 && (
+                    <div className="p-2 rounded-xl bg-teal-50 border border-teal-200 text-teal-900 col-span-2 sm:col-span-1">
+                      <span className="text-[10px] block font-semibold flex items-center gap-1">
+                        <span>🚚</span>
+                        <span>Kirim ke IGD</span>
+                      </span>
+                      <strong className="text-sm font-black text-teal-700">{currentItem.inTransitClean} {currentItem.unitLabel}</strong>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -340,7 +400,7 @@ export const LinenActionModal: React.FC<LinenActionModalProps> = ({
                 Jumlah ({currentItem?.unitLabel || 'pcs'})
               </label>
               <span className="text-xs text-slate-500 font-medium">
-                {config.sourceName}: <strong className="text-slate-800">{config.available}</strong>
+                {config.sourceName}: <strong className="text-slate-800 font-bold">{config.available} {currentItem?.unitLabel}</strong>
               </span>
             </div>
 
@@ -388,7 +448,9 @@ export const LinenActionModal: React.FC<LinenActionModalProps> = ({
                   onClick={() => setQuantity(config.available)}
                   className="py-1.5 px-3 bg-blue-100 hover:bg-blue-200 text-blue-800 text-xs font-bold rounded-xl transition-colors"
                 >
-                  Semua ({config.available})
+                  {role === 'IGD' && activeType === 'LAUNDRY_PICKUP' && (currentItem?.dirty || 0) > 0
+                    ? `Semua Kotor (${config.available})`
+                    : `Semua (${config.available})`}
                 </button>
               )}
             </div>
