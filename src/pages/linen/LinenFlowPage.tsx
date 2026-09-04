@@ -208,7 +208,7 @@ export const LinenFlowPage: React.FC<LinenFlowPageProps> = ({ initialRole }) => 
                 <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-md ${
                   operationalRole === 'IGD' ? 'bg-rose-500/30 text-rose-300' : 'bg-amber-500/30 text-amber-300'
                 }`}>
-                  {operationalRole === 'IGD' ? 'Khusus IGD' : 'Khusus Laundry'}
+                  {operationalRole === 'IGD' ? 'Stasiun Kerja IGD' : 'Stasiun Kerja Laundry'}
                 </span>
               </div>
               <p className="text-[11px] text-slate-400 font-medium">
@@ -656,8 +656,8 @@ export const LinenFlowPage: React.FC<LinenFlowPageProps> = ({ initialRole }) => 
                   </h3>
                   <p className="text-[11px] text-slate-400 mt-0.5">
                     {operationalRole === 'IGD' 
-                      ? 'Khusus meja perawat & lemari IGD: serahkan kotor atau terima bersih' 
-                      : 'Khusus petugas runner laundry: terima kotor atau serahkan bersih ke IGD'}
+                      ? 'Stasiun perawat & lemari IGD: serahkan kotor atau terima bersih' 
+                      : 'Stasiun runner laundry: terima kotor atau serahkan bersih ke IGD'}
                   </p>
                 </div>
 
@@ -667,7 +667,7 @@ export const LinenFlowPage: React.FC<LinenFlowPageProps> = ({ initialRole }) => 
                       ? 'bg-rose-50 text-rose-700 border-rose-200' 
                       : 'bg-amber-50 text-amber-800 border-amber-200'
                   }`}>
-                    <span>{operationalRole === 'IGD' ? '🏥 Halaman Khusus IGD' : '🧺 Halaman Khusus Laundry'}</span>
+                    <span>{operationalRole === 'IGD' ? '🏥 Stasiun Kerja IGD' : '🧺 Stasiun Kerja Laundry'}</span>
                   </span>
                 </div>
               </div>
@@ -880,7 +880,7 @@ export const LinenFlowPage: React.FC<LinenFlowPageProps> = ({ initialRole }) => 
                     </p>
                   </div>
                   <span className="text-[11px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-3 py-1 rounded-full self-start sm:self-auto">
-                    Khusus Meja Perawat IGD
+                    Stasiun Kerja IGD
                   </span>
                 </div>
 
@@ -1167,7 +1167,7 @@ export const LinenFlowPage: React.FC<LinenFlowPageProps> = ({ initialRole }) => 
                     </p>
                   </div>
                   <span className="text-[11px] font-bold text-teal-800 bg-teal-50 border border-teal-200 px-3 py-1 rounded-full self-start sm:self-auto">
-                    Khusus Petugas Laundry
+                    Stasiun Kerja Laundry
                   </span>
                 </div>
 

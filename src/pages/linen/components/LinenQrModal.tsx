@@ -75,7 +75,7 @@ export const LinenQrModal: React.FC<LinenQrModalProps> = ({
             </div>
             <div>
               <h3 className="font-bold text-base leading-tight">Pemisahan Akses QR Code</h3>
-              <p className="text-[11px] text-slate-400">Pilih QR khusus sesuai peran operasional</p>
+              <p className="text-[11px] text-slate-400">Pilih QR sesuai stasiun kerja operasional</p>
             </div>
           </div>
           <button
@@ -131,7 +131,7 @@ export const LinenQrModal: React.FC<LinenQrModalProps> = ({
             }`}
           >
             <FaHospital size={14} />
-            <span>1. QR Khusus IGD</span>
+            <span>1. QR Stasiun Kerja IGD</span>
           </button>
           <button
             type="button"
@@ -143,7 +143,7 @@ export const LinenQrModal: React.FC<LinenQrModalProps> = ({
             }`}
           >
             <FaTruckLoading size={14} />
-            <span>2. QR Khusus Laundry</span>
+            <span>2. QR Stasiun Kerja Laundry</span>
           </button>
         </div>
 
@@ -163,7 +163,7 @@ export const LinenQrModal: React.FC<LinenQrModalProps> = ({
             {activeTab === 'IGD' ? (
               <div className="my-1">
                 <span className="inline-block bg-rose-600 text-white px-3 py-0.5 rounded-full text-xs font-bold uppercase tracking-wide">
-                  🏥 KHUSUS PETUGAS IGD
+                  🏥 STASIUN KERJA IGD
                 </span>
                 <h4 className="text-xl font-black text-slate-900 leading-tight mt-1.5">
                   SERAH KOTOR & TERIMA BERSIH
@@ -175,7 +175,7 @@ export const LinenQrModal: React.FC<LinenQrModalProps> = ({
             ) : (
               <div className="my-1">
                 <span className="inline-block bg-amber-600 text-white px-3 py-0.5 rounded-full text-xs font-bold uppercase tracking-wide">
-                  🧺 KHUSUS PETUGAS LAUNDRY
+                  🧺 STASIUN KERJA LAUNDRY
                 </span>
                 <h4 className="text-xl font-black text-slate-900 leading-tight mt-1.5">
                   TERIMA KOTOR & SERAH BERSIH
