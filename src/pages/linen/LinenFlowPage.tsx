@@ -108,44 +108,71 @@ export const LinenFlowPage: React.FC<LinenFlowPageProps> = ({ initialRole }) => 
   };
 
 
+  // Real-time stock counts across flow stages
+  const totalDirtyItems = items.reduce((acc, curr) => acc + (curr.dirty || 0), 0);
+  const totalInTransitDirty = items.reduce((acc, curr) => acc + (curr.inTransitDirty || 0), 0);
+  const totalInLaundry = items.reduce((acc, curr) => acc + (curr.laundry || 0), 0);
+  const totalInTransitClean = items.reduce((acc, curr) => acc + (curr.inTransitClean || 0), 0);
+
   // Batch confirm all clean linen (Terima Bersih in IGD / Kirim Bersih in Laundry)
   const handleConfirmAllLaundryReturn = async () => {
-    const laundryItems = items.filter((i) => (i.laundry || 0) > 0);
-    if (laundryItems.length === 0) {
-      toast.error(
-        operationalRole === 'LAUNDRY'
-          ? 'Tidak ada linen yang siap dikirim di laundry.'
-          : 'Tidak ada linen bersih dari laundry yang menunggu diterima.'
-      );
-      return;
-    }
-
-    setLaundryReturning(true);
-    try {
-      for (const item of laundryItems) {
-        await executeLinenTransition({
-          itemId: item.id,
-          type: 'LAUNDRY_RETURN',
-          quantity: item.laundry,
-          actor: operationalRole === 'LAUNDRY' ? 'Petugas Laundry' : 'Perawat IGD',
-          notes: operationalRole === 'LAUNDRY'
-            ? 'Pengiriman serentak seluruh linen bersih dari laundry ke IGD'
-            : 'Penerimaan serentak seluruh linen bersih dari laundry ke lemari IGD'
-        });
+    if (operationalRole === 'LAUNDRY') {
+      const laundryItems = items.filter((i) => (i.laundry || 0) > 0);
+      if (laundryItems.length === 0) {
+        toast.error('Tidak ada linen yang sedang dikerjakan di laundry untuk dikirim.');
+        return;
       }
-      toast.success(
-        operationalRole === 'LAUNDRY'
-          ? 'Seluruh linen bersih berhasil dikirim & diserahkan ke IGD!'
-          : 'Seluruh linen bersih berhasil diterima kembali ke lemari IGD!'
-      );
-    } catch (err: any) {
-      toast.error(err.message || 'Gagal memproses transaksi');
-    } finally {
-      setLaundryReturning(false);
+
+      setLaundryReturning(true);
+      try {
+        for (const item of laundryItems) {
+          await executeLinenTransition({
+            itemId: item.id,
+            type: 'LAUNDRY_DISPATCH_CLEAN',
+            quantity: item.laundry,
+            actor: 'Petugas Laundry',
+            notes: 'Pengiriman serentak seluruh linen bersih dari laundry ke IGD (Sedang Dikirim)'
+          });
+        }
+        toast.success('Seluruh linen bersih berhasil dikirim ke IGD! Status berubah menjadi sedang dikirim.');
+      } catch (err: any) {
+        toast.error(err.message || 'Gagal memproses pengiriman bersih');
+      } finally {
+        setLaundryReturning(false);
+      }
+    } else {
+      // Role IGD: Terima Bersih
+      const cleanInTransitItems = items.filter((i) => (i.inTransitClean || 0) > 0);
+      if (cleanInTransitItems.length === 0) {
+        if (totalInLaundry > 0) {
+          toast.error('Linen masih sedang dikerjakan di laundry. Belum dikirim ke IGD.');
+        } else if (totalInTransitDirty > 0) {
+          toast.error('Linen kotor masih dalam perjalanan ke laundry.');
+        } else {
+          toast.error('Tidak ada linen bersih dari laundry yang menunggu diterima.');
+        }
+        return;
+      }
+
+      setLaundryReturning(true);
+      try {
+        for (const item of cleanInTransitItems) {
+          await executeLinenTransition({
+            itemId: item.id,
+            type: 'IGD_RECEIVE_CLEAN',
+            quantity: item.inTransitClean || 0,
+            actor: 'Perawat IGD',
+            notes: 'Penerimaan serentak seluruh linen bersih dari laundry ke lemari IGD'
+          });
+        }
+        toast.success('Seluruh linen bersih berhasil diterima kembali ke lemari IGD!');
+      } catch (err: any) {
+        toast.error(err.message || 'Gagal memproses penerimaan bersih');
+      } finally {
+        setLaundryReturning(false);
+      }
     }
   };
-
-  const totalLaundryItems = items.reduce((acc, curr) => acc + (curr.laundry || 0), 0);
 
   return (
     <div className="min-h-screen bg-slate-100 text-slate-900 pb-16 font-sans">
@@ -319,15 +346,23 @@ export const LinenFlowPage: React.FC<LinenFlowPageProps> = ({ initialRole }) => 
                           <span>{percent}% di Lemari</span>
                         </div>
                         <div className="h-2.5 w-full bg-slate-100 rounded-full overflow-hidden flex">
-                          <div style={{ width: `${(item.clean / item.totalOwned) * 100}%` }} className="bg-emerald-500 h-full" title={`Bersih: ${item.clean}`} />
-                          <div style={{ width: `${((item.used || 0) / item.totalOwned) * 100}%` }} className="bg-amber-400 h-full" title={`Digunakan: ${item.used}`} />
-                          <div style={{ width: `${((item.dirty || 0) / item.totalOwned) * 100}%` }} className="bg-rose-400 h-full" title={`Kotor: ${item.dirty}`} />
-                          <div style={{ width: `${((item.laundry || 0) / item.totalOwned) * 100}%` }} className="bg-blue-400 h-full" title={`Laundry: ${item.laundry}`} />
+                          <div style={{ width: `${(item.clean / item.totalOwned) * 100}%` }} className="bg-emerald-500 h-full" title={`Bersih di Lemari: ${item.clean}`} />
+                          <div style={{ width: `${((item.used || 0) / item.totalOwned) * 100}%` }} className="bg-amber-400 h-full" title={`Digunakan: ${item.used || 0}`} />
+                          <div style={{ width: `${((item.dirty || 0) / item.totalOwned) * 100}%` }} className="bg-rose-400 h-full" title={`Kotor di IGD: ${item.dirty || 0}`} />
+                          <div style={{ width: `${((item.inTransitDirty || 0) / item.totalOwned) * 100}%` }} className="bg-orange-400 h-full" title={`Kirim ke Laundry: ${item.inTransitDirty || 0}`} />
+                          <div style={{ width: `${((item.laundry || 0) / item.totalOwned) * 100}%` }} className="bg-blue-400 h-full" title={`Dikerjakan di Laundry: ${item.laundry || 0}`} />
+                          <div style={{ width: `${((item.inTransitClean || 0) / item.totalOwned) * 100}%` }} className="bg-teal-400 h-full" title={`Kirim ke IGD: ${item.inTransitClean || 0}`} />
                         </div>
-                        <div className="flex justify-between text-[10px] text-slate-400 pt-0.5">
+                        <div className="flex flex-wrap gap-x-2.5 gap-y-1 text-[10px] text-slate-400 pt-0.5">
                           <span className="text-amber-600 font-medium">Dipakai: {item.used || 0}</span>
                           <span className="text-rose-600 font-medium">Kotor: {item.dirty || 0}</span>
-                          <span className="text-blue-600 font-medium">Laundry: {item.laundry || 0}</span>
+                          {(item.inTransitDirty || 0) > 0 && (
+                            <span className="text-orange-600 font-bold">Kirim Laundry: {item.inTransitDirty}</span>
+                          )}
+                          <span className="text-blue-600 font-medium">Di Laundry: {item.laundry || 0}</span>
+                          {(item.inTransitClean || 0) > 0 && (
+                            <span className="text-teal-600 font-bold">Kirim IGD: {item.inTransitClean}</span>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -362,7 +397,7 @@ export const LinenFlowPage: React.FC<LinenFlowPageProps> = ({ initialRole }) => 
               </div>
 
               {operationalRole === 'IGD' ? (
-                /* Mode IGD: Hanya Serah Kotor & Terima Bersih */
+                /* Mode IGD: Serah Kotor & Terima Bersih */
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {/* 1. Serah Kotor */}
                   <button
@@ -373,7 +408,14 @@ export const LinenFlowPage: React.FC<LinenFlowPageProps> = ({ initialRole }) => 
                       <FaTruckLoading size={24} />
                     </div>
                     <div>
-                      <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">IGD</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">IGD</span>
+                        {totalDirtyItems > 0 && (
+                          <span className="text-[10px] bg-white text-rose-800 font-bold px-2 py-0.5 rounded-full">
+                            {totalDirtyItems} pcs Kotor di IGD
+                          </span>
+                        )}
+                      </div>
                       <h4 className="font-black text-lg sm:text-xl leading-tight mt-1">SERAH KOTOR</h4>
                       <p className="text-xs text-rose-100 mt-0.5 font-medium">
                         Serahkan linen kotor IGD ke petugas laundry
@@ -381,56 +423,159 @@ export const LinenFlowPage: React.FC<LinenFlowPageProps> = ({ initialRole }) => 
                     </div>
                   </button>
 
-                  {/* 2. Terima Bersih */}
+                  {/* 2. Terima Bersih: Hanya aktif jika totalInTransitClean > 0 */}
                   <button
-                    onClick={() => handleOpenAction('LAUNDRY_RETURN', undefined, 'IGD')}
-                    className="p-5 rounded-3xl bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white shadow-md hover:shadow-lg transition-all text-left flex items-center gap-4 min-h-[100px]"
+                    onClick={() => {
+                      if (totalInTransitClean === 0) {
+                        if (totalInLaundry > 0) {
+                          toast.error('Linen masih sedang dikerjakan di laundry. Belum ada linen bersih yang dikirim ke IGD.');
+                        } else if (totalInTransitDirty > 0) {
+                          toast.error('Linen kotor masih dalam perjalanan ke laundry.');
+                        } else {
+                          toast.error('Tidak ada linen bersih yang menunggu diterima.');
+                        }
+                        return;
+                      }
+                      handleOpenAction('LAUNDRY_RETURN', undefined, 'IGD');
+                    }}
+                    disabled={totalInTransitClean === 0}
+                    className={`p-5 rounded-3xl text-left flex items-center gap-4 min-h-[100px] transition-all ${
+                      totalInTransitClean > 0
+                        ? 'bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white shadow-md hover:shadow-lg'
+                        : 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none border border-slate-300'
+                    }`}
                   >
-                    <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center shrink-0">
+                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${
+                      totalInTransitClean > 0 ? 'bg-white/20 text-white' : 'bg-slate-300 text-slate-500'
+                    }`}>
                       <FaCheckDouble size={22} />
                     </div>
                     <div>
-                      <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">IGD</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
+                          totalInTransitClean > 0 ? 'bg-white/20 text-white' : 'bg-slate-300 text-slate-600'
+                        }`}>
+                          IGD
+                        </span>
+                        {totalInTransitClean > 0 && (
+                          <span className="text-[10px] bg-emerald-400 text-emerald-950 font-black px-2 py-0.5 rounded-full animate-pulse">
+                            {totalInTransitClean} pcs Siap Diterima
+                          </span>
+                        )}
+                      </div>
                       <h4 className="font-black text-lg sm:text-xl leading-tight mt-1">TERIMA BERSIH</h4>
-                      <p className="text-xs text-indigo-100 mt-0.5 font-medium">
-                        Terima linen bersih dari laundry masuk lemari
+                      <p className={`text-xs mt-0.5 font-medium ${totalInTransitClean > 0 ? 'text-indigo-100' : 'text-slate-500'}`}>
+                        {totalInTransitClean > 0
+                          ? `Terima ${totalInTransitClean} pcs linen bersih masuk lemari IGD`
+                          : totalInLaundry > 0
+                          ? `Nonaktif: Masih dikerjakan di laundry (${totalInLaundry} pcs)`
+                          : totalInTransitDirty > 0
+                          ? `Nonaktif: Sedang dikirim ke laundry (${totalInTransitDirty} pcs)`
+                          : 'Nonaktif: Semua linen bersih di lemari'}
                       </p>
                     </div>
                   </button>
                 </div>
               ) : (
-                /* Mode Laundry: Hanya Terima Kotor & Serah Bersih */
+                /* Mode Laundry: Terima Kotor & Kirim Bersih */
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {/* 1. Terima Kotor */}
-                  <button
-                    onClick={() => handleOpenAction('LAUNDRY_PICKUP', undefined, 'LAUNDRY')}
-                    className="p-5 rounded-3xl bg-amber-600 hover:bg-amber-700 active:scale-[0.98] text-white shadow-md hover:shadow-lg transition-all text-left flex items-center gap-4 min-h-[100px]"
-                  >
-                    <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center shrink-0">
-                      <FaTruckLoading size={24} />
-                    </div>
-                    <div>
-                      <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Laundry</span>
-                      <h4 className="font-black text-lg sm:text-xl leading-tight mt-1">TERIMA KOTOR</h4>
-                      <p className="text-xs text-amber-100 mt-0.5 font-medium">
-                        Petugas laundry menerima linen kotor dari IGD
-                      </p>
-                    </div>
-                  </button>
+                  {(() => {
+                    const waitingDirty = totalInTransitDirty > 0 ? totalInTransitDirty : totalDirtyItems;
+                    return (
+                      <button
+                        onClick={() => {
+                          if (waitingDirty === 0) {
+                            toast.error('Belum ada linen kotor yang dikirim dari IGD.');
+                            return;
+                          }
+                          handleOpenAction('LAUNDRY_PICKUP', undefined, 'LAUNDRY');
+                        }}
+                        disabled={waitingDirty === 0}
+                        className={`p-5 rounded-3xl text-left flex items-center gap-4 min-h-[100px] transition-all ${
+                          waitingDirty > 0
+                            ? 'bg-amber-600 hover:bg-amber-700 active:scale-[0.98] text-white shadow-md hover:shadow-lg'
+                            : 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none border border-slate-300'
+                        }`}
+                      >
+                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${
+                          waitingDirty > 0 ? 'bg-white/20 text-white' : 'bg-slate-300 text-slate-500'
+                        }`}>
+                          <FaTruckLoading size={24} />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
+                              waitingDirty > 0 ? 'bg-white/20 text-white' : 'bg-slate-300 text-slate-600'
+                            }`}>
+                              Laundry
+                            </span>
+                            {waitingDirty > 0 && (
+                              <span className="text-[10px] bg-rose-400 text-rose-950 font-black px-2 py-0.5 rounded-full animate-pulse">
+                                {waitingDirty} pcs Kotor Menunggu
+                              </span>
+                            )}
+                          </div>
+                          <h4 className="font-black text-lg sm:text-xl leading-tight mt-1">TERIMA KOTOR</h4>
+                          <p className={`text-xs mt-0.5 font-medium ${waitingDirty > 0 ? 'text-amber-100' : 'text-slate-500'}`}>
+                            {waitingDirty > 0
+                              ? `Terima ${waitingDirty} pcs linen kotor untuk dicuci`
+                              : 'Nonaktif: Belum ada linen kotor dikirim dari IGD'}
+                          </p>
+                        </div>
+                      </button>
+                    );
+                  })()}
 
-                  {/* 2. Kirim Bersih */}
+                  {/* 2. Kirim Bersih: Hanya aktif jika totalInLaundry > 0 */}
                   <button
-                    onClick={() => handleOpenAction('LAUNDRY_RETURN', undefined, 'LAUNDRY')}
-                    className="p-5 rounded-3xl bg-teal-600 hover:bg-teal-700 active:scale-[0.98] text-white shadow-md hover:shadow-lg transition-all text-left flex items-center gap-4 min-h-[100px]"
+                    onClick={() => {
+                      if (totalInLaundry === 0) {
+                        if (totalInTransitClean > 0) {
+                          toast.error('Linen bersih sedang dalam perjalanan ke IGD, menunggu konfirmasi perawat.');
+                        } else {
+                          toast.error('Tidak ada cucian yang sedang dikerjakan untuk dikirim.');
+                        }
+                        return;
+                      }
+                      handleOpenAction('LAUNDRY_RETURN', undefined, 'LAUNDRY');
+                    }}
+                    disabled={totalInLaundry === 0}
+                    className={`p-5 rounded-3xl text-left flex items-center gap-4 min-h-[100px] transition-all ${
+                      totalInLaundry > 0
+                        ? 'bg-teal-600 hover:bg-teal-700 active:scale-[0.98] text-white shadow-md hover:shadow-lg'
+                        : 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none border border-slate-300'
+                    }`}
                   >
-                    <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center shrink-0">
+                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${
+                      totalInLaundry > 0 ? 'bg-white/20 text-white' : 'bg-slate-300 text-slate-500'
+                    }`}>
                       <FaCheckDouble size={22} />
                     </div>
                     <div>
-                      <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Laundry</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
+                          totalInLaundry > 0 ? 'bg-white/20 text-white' : 'bg-slate-300 text-slate-600'
+                        }`}>
+                          Laundry
+                        </span>
+                        {totalInLaundry > 0 ? (
+                          <span className="text-[10px] bg-emerald-400 text-emerald-950 font-black px-2 py-0.5 rounded-full">
+                            {totalInLaundry} pcs Siap Kirim
+                          </span>
+                        ) : totalInTransitClean > 0 ? (
+                          <span className="text-[10px] bg-amber-400 text-amber-950 font-black px-2 py-0.5 rounded-full animate-pulse">
+                            {totalInTransitClean} pcs Sedang Dikirim
+                          </span>
+                        ) : null}
+                      </div>
                       <h4 className="font-black text-lg sm:text-xl leading-tight mt-1">KIRIM BERSIH</h4>
-                      <p className="text-xs text-teal-100 mt-0.5 font-medium">
-                        Petugas laundry mengirim linen bersih ke IGD
+                      <p className={`text-xs mt-0.5 font-medium ${totalInLaundry > 0 ? 'text-teal-100' : 'text-slate-500'}`}>
+                        {totalInLaundry > 0
+                          ? `Kirim ${totalInLaundry} pcs linen bersih hasil cuci ke IGD`
+                          : totalInTransitClean > 0
+                          ? 'Nonaktif: Sedang dikirim ke IGD (menunggu konfirmasi perawat)'
+                          : 'Nonaktif: Tidak ada antrean cucian'}
                       </p>
                     </div>
                   </button>
@@ -440,7 +585,7 @@ export const LinenFlowPage: React.FC<LinenFlowPageProps> = ({ initialRole }) => 
 
             {/* Section 3: PANEL ROLE-SPESIFIK (IGD: TERIMA BERSIH | LAUNDRY: KIRIM BERSIH) */}
             {operationalRole === 'IGD' ? (
-              /* ================== KHUSUS HALAMAN IGD: HANYA CARD TERIMA BERSIH ================== */
+              /* ================== KHUSUS HALAMAN IGD: CARD TERIMA BERSIH REALTIME ================== */
               <section className="bg-white rounded-3xl p-5 sm:p-6 shadow-xs border border-indigo-200 space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
                   <div>
@@ -457,72 +602,277 @@ export const LinenFlowPage: React.FC<LinenFlowPageProps> = ({ initialRole }) => 
                   </span>
                 </div>
 
-                {/* CARD TUNGGAL: TERIMA BERSIH */}
-                <div className="p-4 sm:p-5 rounded-2xl border border-indigo-200 bg-indigo-50/40 flex flex-col justify-between space-y-4">
-                  <div>
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="w-3 h-3 rounded-full bg-indigo-500 shrink-0"></span>
-                        <h4 className="text-xs sm:text-sm font-black text-indigo-950 uppercase tracking-wider truncate">
-                          Linen Bersih Siap Diterima ke Lemari
-                        </h4>
-                      </div>
-                      <span className={`text-xs font-black px-3 py-1 rounded-full border shrink-0 ${
-                        totalLaundryItems > 0 
-                          ? 'bg-indigo-100 text-indigo-800 border-indigo-200' 
-                          : 'bg-slate-100 text-slate-600 border-slate-200'
-                      }`}>
-                        {totalLaundryItems > 0 
-                          ? `${totalLaundryItems} pcs (Menunggu Diterima Bersih)` 
-                          : '0 pcs (Semua Bersih di Lemari)'}
-                      </span>
-                    </div>
-
-                    {/* Breakdown Items */}
-                    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 my-3">
-                      {items.map((i) => (
-                        <div key={i.id} className="bg-white p-3.5 rounded-xl border border-indigo-100 shadow-2xs flex flex-col justify-between">
-                          <div className="text-xs text-slate-500 font-medium">{i.name}</div>
-                          <div className="text-xl font-black text-indigo-700 mt-1">
-                            {i.laundry || 0} <span className="text-xs font-normal text-slate-400">{i.unitLabel}</span>
-                          </div>
-                          <div className="text-[10px] text-slate-400 mt-1">
-                            Bersih di lemari: {i.clean || 0}
-                          </div>
+                {/* CARD TUNGGAL: TERIMA BERSIH SESUAI STATUS REAL-TIME */}
+                {totalInTransitClean > 0 ? (
+                  /* KONDISI 1: Linen Bersih Sedang Dikirim ke IGD -> TOMBOL AKTIF */
+                  <div className="p-4 sm:p-5 rounded-2xl border-2 border-emerald-300 bg-emerald-50/40 flex flex-col justify-between space-y-4">
+                    <div>
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="w-3 h-3 rounded-full bg-emerald-500 animate-ping shrink-0"></span>
+                          <h4 className="text-xs sm:text-sm font-black text-emerald-950 uppercase tracking-wider truncate">
+                            Linen Bersih Sedang Dikirim ke Lemari (Siap Diterima)
+                          </h4>
                         </div>
-                      ))}
+                        <span className="text-xs font-black px-3 py-1 rounded-full border bg-emerald-100 text-emerald-800 border-emerald-300 shrink-0 animate-pulse">
+                          {totalInTransitClean} pcs (Siap Diterima Bersih)
+                        </span>
+                      </div>
+
+                      {/* Alert Info */}
+                      <div className="bg-emerald-100/70 border border-emerald-300 rounded-xl p-3 text-xs text-emerald-900 flex items-start gap-2.5 mb-3">
+                        <span className="text-base shrink-0">🚚</span>
+                        <div>
+                          <strong>Linen Bersih Sedang Dikirim dari Laundry!</strong>
+                          <p className="text-[11px] text-emerald-800 mt-0.5 leading-relaxed">
+                            Petugas laundry telah mengirim cucian bersih. Silakan periksa fisik cucian dan tekan tombol <strong>"Terima Semua Bersih ke Lemari"</strong> di bawah untuk memasukkan ke stok lemari IGD.
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Breakdown Items */}
+                      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 my-3">
+                        {items.map((i) => (
+                          <div key={i.id} className="bg-white p-3.5 rounded-xl border border-emerald-200 shadow-2xs flex flex-col justify-between">
+                            <div className="text-xs text-slate-500 font-medium">{i.name}</div>
+                            <div className="text-2xl font-black text-emerald-700 mt-1">
+                              {i.inTransitClean || 0} <span className="text-xs font-normal text-slate-400">{i.unitLabel}</span>
+                            </div>
+                            <div className="text-[10px] text-slate-400 mt-1">
+                              Bersih di lemari: <strong className="text-slate-600">{i.clean || 0}</strong>
+                            </div>
+                            {(i.laundry || 0) > 0 && (
+                              <div className="text-[10px] text-blue-600 font-medium mt-0.5">
+                                ({i.laundry} pcs masih di laundry)
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Action Buttons: ENABLED */}
+                    <div className="pt-2 flex flex-col sm:flex-row gap-3">
+                      <button
+                        onClick={handleConfirmAllLaundryReturn}
+                        disabled={laundryReturning}
+                        className="flex-1 py-3.5 px-4 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white font-bold rounded-xl shadow-md hover:shadow-lg transition-all text-xs sm:text-sm flex items-center justify-center gap-2"
+                      >
+                        {laundryReturning ? (
+                          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        ) : (
+                          <>
+                            <FaCheckDouble size={16} />
+                            <span>Terima Semua Bersih ke Lemari ({totalInTransitClean})</span>
+                          </>
+                        )}
+                      </button>
+
+                      <button
+                        onClick={() => handleOpenAction('LAUNDRY_RETURN', undefined, 'IGD')}
+                        className="py-3.5 px-5 bg-white hover:bg-indigo-50 border border-indigo-300 text-indigo-700 font-bold rounded-xl text-xs sm:text-sm transition-all shadow-2xs active:scale-[0.98]"
+                        title="Terima sebagian atau pilih jumlah spesifik"
+                      >
+                        Pilih Parsial
+                      </button>
                     </div>
                   </div>
+                ) : totalInLaundry > 0 ? (
+                  /* KONDISI 2: Sedang Dikerjakan di Laundry -> TOMBOL NONAKTIF */
+                  <div className="p-4 sm:p-5 rounded-2xl border border-blue-200 bg-blue-50/40 flex flex-col justify-between space-y-4">
+                    <div>
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="w-3 h-3 rounded-full bg-blue-500 animate-pulse shrink-0"></span>
+                          <h4 className="text-xs sm:text-sm font-black text-blue-950 uppercase tracking-wider truncate">
+                            Linen Sedang Dikerjakan di Laundry
+                          </h4>
+                        </div>
+                        <span className="text-xs font-black px-3 py-1 rounded-full border bg-blue-100 text-blue-800 border-blue-200 shrink-0">
+                          {totalInLaundry} pcs (Sedang Dikerjakan di Laundry)
+                        </span>
+                      </div>
 
-                  <div className="pt-2 flex flex-col sm:flex-row gap-3">
-                    <button
-                      onClick={handleConfirmAllLaundryReturn}
-                      disabled={laundryReturning || totalLaundryItems === 0}
-                      className="flex-1 py-3.5 px-4 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white font-bold rounded-xl shadow-xs transition-all text-xs sm:text-sm flex items-center justify-center gap-2 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed disabled:shadow-none"
-                    >
-                      {laundryReturning ? (
-                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      ) : (
-                        <>
-                          <FaCheckDouble size={16} />
-                          <span>Terima Semua Bersih ke Lemari ({totalLaundryItems})</span>
-                        </>
-                      )}
-                    </button>
+                      {/* Alert Info: NONAKTIF */}
+                      <div className="bg-blue-100/70 border border-blue-300 rounded-xl p-3 text-xs text-blue-900 flex items-start gap-2.5 mb-3">
+                        <span className="text-base shrink-0">⚙️</span>
+                        <div>
+                          <strong>Linen Sedang Diproses di Laundry (Cuci & Setrika)</strong>
+                          <p className="text-[11px] text-blue-800 mt-0.5 leading-relaxed">
+                            Linen kotor telah diterima petugas laundry dan sedang dikerjakan. <strong>Tombol terima bersih belum aktif/nonaktif</strong> pada status ini. Tombol akan otomatis aktif setelah laundry menekan <strong>"Kirim Bersih"</strong>.
+                          </p>
+                        </div>
+                      </div>
 
-                    <button
-                      onClick={() => handleOpenAction('LAUNDRY_RETURN', undefined, 'IGD')}
-                      disabled={totalLaundryItems === 0}
-                      className="py-3.5 px-5 bg-white hover:bg-indigo-50 border border-indigo-300 text-indigo-700 font-bold rounded-xl text-xs sm:text-sm transition-all disabled:bg-slate-100 disabled:text-slate-400 disabled:border-slate-200 disabled:cursor-not-allowed"
-                      title="Terima sebagian atau pilih jumlah spesifik"
-                    >
-                      Pilih Parsial
-                    </button>
+                      {/* Breakdown Items */}
+                      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 my-3">
+                        {items.map((i) => (
+                          <div key={i.id} className="bg-white p-3.5 rounded-xl border border-blue-100 shadow-2xs flex flex-col justify-between">
+                            <div className="text-xs text-slate-500 font-medium">{i.name}</div>
+                            <div className="text-2xl font-black text-blue-700 mt-1">
+                              {i.laundry || 0} <span className="text-xs font-normal text-slate-400">{i.unitLabel}</span>
+                            </div>
+                            <div className="text-[10px] text-blue-600 font-medium mt-1">
+                              Sedang diproses laundry
+                            </div>
+                            <div className="text-[10px] text-slate-400">
+                              Bersih di lemari: {i.clean || 0}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Action Buttons: DISABLED */}
+                    <div className="pt-2 flex flex-col sm:flex-row gap-3">
+                      <button
+                        disabled={true}
+                        className="flex-1 py-3.5 px-4 bg-slate-200 text-slate-400 font-bold rounded-xl text-xs sm:text-sm flex items-center justify-center gap-2 cursor-not-allowed shadow-none border border-slate-300"
+                        title="Tombol nonaktif: Cucian masih sedang dikerjakan di laundry"
+                      >
+                        <FaCheckDouble size={16} />
+                        <span>Terima Semua Bersih (Nonaktif: Sedang Dikerjakan di Laundry)</span>
+                      </button>
+
+                      <button
+                        disabled={true}
+                        className="py-3.5 px-5 bg-slate-100 text-slate-400 border border-slate-200 font-bold rounded-xl text-xs sm:text-sm cursor-not-allowed"
+                        title="Tombol nonaktif: Cucian masih sedang dikerjakan di laundry"
+                      >
+                        Pilih Parsial
+                      </button>
+                    </div>
                   </div>
-                </div>
+                ) : totalInTransitDirty > 0 ? (
+                  /* KONDISI 3: Sedang Dikirim ke Laundry -> TOMBOL NONAKTIF */
+                  <div className="p-4 sm:p-5 rounded-2xl border border-rose-200 bg-rose-50/40 flex flex-col justify-between space-y-4">
+                    <div>
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="w-3 h-3 rounded-full bg-rose-500 animate-pulse shrink-0"></span>
+                          <h4 className="text-xs sm:text-sm font-black text-rose-950 uppercase tracking-wider truncate">
+                            Linen Kotor Sedang Dikirim ke Laundry
+                          </h4>
+                        </div>
+                        <span className="text-xs font-black px-3 py-1 rounded-full border bg-rose-100 text-rose-800 border-rose-200 shrink-0">
+                          {totalInTransitDirty} pcs (Sedang Dikirim ke Laundry)
+                        </span>
+                      </div>
+
+                      {/* Alert Info: NONAKTIF */}
+                      <div className="bg-rose-100/70 border border-rose-300 rounded-xl p-3 text-xs text-rose-900 flex items-start gap-2.5 mb-3">
+                        <span className="text-base shrink-0">🚚</span>
+                        <div>
+                          <strong>Linen Kotor Dalam Perjalanan ke Laundry</strong>
+                          <p className="text-[11px] text-rose-800 mt-0.5 leading-relaxed">
+                            Linen kotor baru diserahkan oleh IGD. <strong>Tombol terima bersih belum aktif/nonaktif</strong> hingga cucian selesai diproses dan dikirim kembali oleh laundry.
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Breakdown Items */}
+                      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 my-3">
+                        {items.map((i) => (
+                          <div key={i.id} className="bg-white p-3.5 rounded-xl border border-rose-100 shadow-2xs flex flex-col justify-between">
+                            <div className="text-xs text-slate-500 font-medium">{i.name}</div>
+                            <div className="text-2xl font-black text-rose-700 mt-1">
+                              {i.inTransitDirty || 0} <span className="text-xs font-normal text-slate-400">{i.unitLabel}</span>
+                            </div>
+                            <div className="text-[10px] text-rose-600 font-medium mt-1">
+                              Sedang dikirim ke laundry
+                            </div>
+                            <div className="text-[10px] text-slate-400">
+                              Bersih di lemari: {i.clean || 0}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Action Buttons: DISABLED */}
+                    <div className="pt-2 flex flex-col sm:flex-row gap-3">
+                      <button
+                        disabled={true}
+                        className="flex-1 py-3.5 px-4 bg-slate-200 text-slate-400 font-bold rounded-xl text-xs sm:text-sm flex items-center justify-center gap-2 cursor-not-allowed shadow-none border border-slate-300"
+                        title="Tombol nonaktif: Linen masih sedang dikirim ke laundry"
+                      >
+                        <FaCheckDouble size={16} />
+                        <span>Terima Semua Bersih (Nonaktif: Sedang Dikirim ke Laundry)</span>
+                      </button>
+
+                      <button
+                        disabled={true}
+                        className="py-3.5 px-5 bg-slate-100 text-slate-400 border border-slate-200 font-bold rounded-xl text-xs sm:text-sm cursor-not-allowed"
+                      >
+                        Pilih Parsial
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  /* KONDISI 4: Semua Bersih di Lemari */
+                  <div className="p-4 sm:p-5 rounded-2xl border border-slate-200 bg-slate-50/50 flex flex-col justify-between space-y-4">
+                    <div>
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="w-3 h-3 rounded-full bg-emerald-500 shrink-0"></span>
+                          <h4 className="text-xs sm:text-sm font-black text-slate-900 uppercase tracking-wider truncate">
+                            Semua Linen Bersih di Lemari
+                          </h4>
+                        </div>
+                        <span className="text-xs font-black px-3 py-1 rounded-full border bg-slate-100 text-slate-600 border-slate-200 shrink-0">
+                          0 pcs (Semua Bersih di Lemari)
+                        </span>
+                      </div>
+
+                      {/* Alert Info */}
+                      <div className="bg-slate-100 border border-slate-200 rounded-xl p-3 text-xs text-slate-700 flex items-start gap-2.5 mb-3">
+                        <span className="text-base shrink-0">✨</span>
+                        <div>
+                          <strong>Lemari Bersih Terisi Penuh</strong>
+                          <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">
+                            Tidak ada antrean cucian linen yang sedang dikerjakan di laundry maupun yang sedang dalam perjalanan.
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Breakdown Items */}
+                      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 my-3">
+                        {items.map((i) => (
+                          <div key={i.id} className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs flex flex-col justify-between">
+                            <div className="text-xs text-slate-500 font-medium">{i.name}</div>
+                            <div className="text-2xl font-black text-slate-400 mt-1">
+                              0 <span className="text-xs font-normal text-slate-400">{i.unitLabel}</span>
+                            </div>
+                            <div className="text-[10px] text-slate-400 mt-1">
+                              Bersih di lemari: <strong className="text-slate-700">{i.clean || 0}</strong>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Action Buttons: DISABLED */}
+                    <div className="pt-2 flex flex-col sm:flex-row gap-3">
+                      <button
+                        disabled={true}
+                        className="flex-1 py-3.5 px-4 bg-slate-200 text-slate-400 font-bold rounded-xl text-xs sm:text-sm flex items-center justify-center gap-2 cursor-not-allowed shadow-none border border-slate-300"
+                      >
+                        <FaCheckDouble size={16} />
+                        <span>Terima Semua Bersih ke Lemari (0)</span>
+                      </button>
+
+                      <button
+                        disabled={true}
+                        className="py-3.5 px-5 bg-slate-100 text-slate-400 border border-slate-200 font-bold rounded-xl text-xs sm:text-sm cursor-not-allowed"
+                      >
+                        Pilih Parsial
+                      </button>
+                    </div>
+                  </div>
+                )}
               </section>
             ) : (
-              /* ================== KHUSUS HALAMAN LAUNDRY: HANYA CARD KIRIM BERSIH ================== */
+              /* ================== KHUSUS HALAMAN LAUNDRY: CARD KIRIM BERSIH REALTIME ================== */
               <section className="bg-white rounded-3xl p-5 sm:p-6 shadow-xs border border-teal-200 space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
                   <div>
@@ -539,69 +889,261 @@ export const LinenFlowPage: React.FC<LinenFlowPageProps> = ({ initialRole }) => 
                   </span>
                 </div>
 
-                {/* CARD TUNGGAL: KIRIM BERSIH */}
-                <div className="p-4 sm:p-5 rounded-2xl border border-teal-200 bg-teal-50/40 flex flex-col justify-between space-y-4">
-                  <div>
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="w-3 h-3 rounded-full bg-teal-500 shrink-0"></span>
-                        <h4 className="text-xs sm:text-sm font-black text-teal-950 uppercase tracking-wider truncate">
-                          Linen Bersih Selesai Cuci (Siap Kirim ke IGD)
-                        </h4>
-                      </div>
-                      <span className={`text-xs font-black px-3 py-1 rounded-full border shrink-0 ${
-                        totalLaundryItems > 0 
-                          ? 'bg-teal-100 text-teal-800 border-teal-200' 
-                          : 'bg-slate-100 text-slate-600 border-slate-200'
-                      }`}>
-                        {totalLaundryItems > 0 
-                          ? `${totalLaundryItems} pcs (Siap Kirim ke IGD)` 
-                          : '0 pcs (Tidak Ada Antrean Siap Kirim)'}
-                      </span>
-                    </div>
-
-                    {/* Breakdown Items */}
-                    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 my-3">
-                      {items.map((i) => (
-                        <div key={i.id} className="bg-white p-3.5 rounded-xl border border-teal-100 shadow-2xs flex flex-col justify-between">
-                          <div className="text-xs text-slate-500 font-medium">{i.name}</div>
-                          <div className="text-xl font-black text-teal-700 mt-1">
-                            {i.laundry || 0} <span className="text-xs font-normal text-slate-400">{i.unitLabel}</span>
-                          </div>
-                          <div className="text-[10px] text-slate-400 mt-1">
-                            Siap dikirim ke IGD
-                          </div>
+                {/* CARD TUNGGAL: KIRIM BERSIH SESUAI STATUS REAL-TIME */}
+                {totalInLaundry > 0 ? (
+                  /* KONDISI 1: Linen Sedang Dikerjakan di Laundry -> SIAP KIRIM BERSIH (TOMBOL AKTIF) */
+                  <div className="p-4 sm:p-5 rounded-2xl border-2 border-teal-300 bg-teal-50/40 flex flex-col justify-between space-y-4">
+                    <div>
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="w-3 h-3 rounded-full bg-teal-500 animate-pulse shrink-0"></span>
+                          <h4 className="text-xs sm:text-sm font-black text-teal-950 uppercase tracking-wider truncate">
+                            Linen Sedang Dikerjakan (Siap Kirim Bersih ke IGD)
+                          </h4>
                         </div>
-                      ))}
+                        <span className="text-xs font-black px-3 py-1 rounded-full border bg-teal-100 text-teal-800 border-teal-300 shrink-0 font-bold">
+                          {totalInLaundry} pcs (Siap Kirim ke IGD)
+                        </span>
+                      </div>
+
+                      {/* Alert Info: SIAP KIRIM */}
+                      <div className="bg-teal-100/70 border border-teal-300 rounded-xl p-3 text-xs text-teal-900 flex items-start gap-2.5 mb-3">
+                        <span className="text-base shrink-0">🧺</span>
+                        <div>
+                          <strong>Linen Bersih Siap Dikirim ke IGD</strong>
+                          <p className="text-[11px] text-teal-800 mt-0.5 leading-relaxed">
+                            Linen hasil cuci siap diserahkan ke IGD. Tekan tombol <strong>"Kirim Semua Bersih ke IGD"</strong> di bawah untuk mengirim linen. Status akan otomatis berubah menjadi <strong>"Sedang Dikirim"</strong> di IGD dan tombol terima perawat akan aktif.
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Breakdown Items */}
+                      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 my-3">
+                        {items.map((i) => (
+                          <div key={i.id} className="bg-white p-3.5 rounded-xl border border-teal-200 shadow-2xs flex flex-col justify-between">
+                            <div className="text-xs text-slate-500 font-medium">{i.name}</div>
+                            <div className="text-2xl font-black text-teal-700 mt-1">
+                              {i.laundry || 0} <span className="text-xs font-normal text-slate-400">{i.unitLabel}</span>
+                            </div>
+                            <div className="text-[10px] text-teal-600 font-medium mt-1">
+                              Siap dikirim ke IGD
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Action Buttons: ENABLED */}
+                    <div className="pt-2 flex flex-col sm:flex-row gap-3">
+                      <button
+                        onClick={handleConfirmAllLaundryReturn}
+                        disabled={laundryReturning}
+                        className="flex-1 py-3.5 px-4 bg-teal-600 hover:bg-teal-700 active:scale-[0.98] text-white font-bold rounded-xl shadow-md hover:shadow-lg transition-all text-xs sm:text-sm flex items-center justify-center gap-2"
+                      >
+                        {laundryReturning ? (
+                          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        ) : (
+                          <>
+                            <FaCheckDouble size={16} />
+                            <span>Kirim Semua Bersih ke IGD ({totalInLaundry})</span>
+                          </>
+                        )}
+                      </button>
+
+                      <button
+                        onClick={() => handleOpenAction('LAUNDRY_RETURN', undefined, 'LAUNDRY')}
+                        className="py-3.5 px-5 bg-white hover:bg-teal-50 border border-teal-300 text-teal-800 font-bold rounded-xl text-xs sm:text-sm transition-all shadow-2xs active:scale-[0.98]"
+                        title="Kirim sebagian atau pilih jumlah spesifik"
+                      >
+                        Pilih Parsial
+                      </button>
                     </div>
                   </div>
+                ) : totalInTransitClean > 0 ? (
+                  /* KONDISI 2: Linen Bersih Sudah Dikirim ke IGD -> TOMBOL NONAKTIF (MENUNGGU KONFIRMASI) */
+                  <div className="p-4 sm:p-5 rounded-2xl border border-amber-200 bg-amber-50/40 flex flex-col justify-between space-y-4">
+                    <div>
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="w-3 h-3 rounded-full bg-amber-500 animate-pulse shrink-0"></span>
+                          <h4 className="text-xs sm:text-sm font-black text-amber-950 uppercase tracking-wider truncate">
+                            Linen Bersih Sedang Dikirim ke IGD
+                          </h4>
+                        </div>
+                        <span className="text-xs font-black px-3 py-1 rounded-full border bg-amber-100 text-amber-800 border-amber-200 shrink-0">
+                          {totalInTransitClean} pcs (Sedang Dikirim ke IGD)
+                        </span>
+                      </div>
 
-                  <div className="pt-2 flex flex-col sm:flex-row gap-3">
-                    <button
-                      onClick={handleConfirmAllLaundryReturn}
-                      disabled={laundryReturning || totalLaundryItems === 0}
-                      className="flex-1 py-3.5 px-4 bg-teal-600 hover:bg-teal-700 active:scale-[0.98] text-white font-bold rounded-xl shadow-xs transition-all text-xs sm:text-sm flex items-center justify-center gap-2 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed disabled:shadow-none"
-                    >
-                      {laundryReturning ? (
-                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      ) : (
-                        <>
-                          <FaCheckDouble size={16} />
-                          <span>Kirim Semua Bersih ke IGD ({totalLaundryItems})</span>
-                        </>
-                      )}
-                    </button>
+                      {/* Alert Info: NONAKTIF */}
+                      <div className="bg-amber-100/70 border border-amber-300 rounded-xl p-3 text-xs text-amber-900 flex items-start gap-2.5 mb-3">
+                        <span className="text-base shrink-0">🚚</span>
+                        <div>
+                          <strong>Linen Bersih Sedang Dalam Perjalanan ke Lemari IGD</strong>
+                          <p className="text-[11px] text-amber-800 mt-0.5 leading-relaxed">
+                            Linen bersih telah dikirim dari laundry dan saat ini dalam perjalanan menuju IGD. <strong>Tombol kirim bersih nonaktif</strong> hingga perawat IGD menekan tombol "Terima Bersih" untuk memasukkan linen ke lemari IGD.
+                          </p>
+                        </div>
+                      </div>
 
-                    <button
-                      onClick={() => handleOpenAction('LAUNDRY_RETURN', undefined, 'LAUNDRY')}
-                      disabled={totalLaundryItems === 0}
-                      className="py-3.5 px-5 bg-white hover:bg-teal-50 border border-teal-300 text-teal-800 font-bold rounded-xl text-xs sm:text-sm transition-all disabled:bg-slate-100 disabled:text-slate-400 disabled:border-slate-200 disabled:cursor-not-allowed"
-                      title="Kirim sebagian atau pilih jumlah spesifik"
-                    >
-                      Pilih Parsial
-                    </button>
+                      {/* Breakdown Items */}
+                      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 my-3">
+                        {items.map((i) => (
+                          <div key={i.id} className="bg-white p-3.5 rounded-xl border border-amber-100 shadow-2xs flex flex-col justify-between">
+                            <div className="text-xs text-slate-500 font-medium">{i.name}</div>
+                            <div className="text-2xl font-black text-amber-700 mt-1">
+                              {i.inTransitClean || 0} <span className="text-xs font-normal text-slate-400">{i.unitLabel}</span>
+                            </div>
+                            <div className="text-[10px] text-amber-600 font-medium mt-1">
+                              Menunggu konfirmasi perawat IGD
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Action Buttons: DISABLED */}
+                    <div className="pt-2 flex flex-col sm:flex-row gap-3">
+                      <button
+                        disabled={true}
+                        className="flex-1 py-3.5 px-4 bg-slate-200 text-slate-400 font-bold rounded-xl text-xs sm:text-sm flex items-center justify-center gap-2 cursor-not-allowed shadow-none border border-slate-300"
+                        title="Tombol nonaktif: Linen sudah dikirim dan menunggu konfirmasi perawat IGD"
+                      >
+                        <FaCheckDouble size={16} />
+                        <span>Kirim Semua Bersih (Nonaktif: Sedang Dikirim ke IGD)</span>
+                      </button>
+
+                      <button
+                        disabled={true}
+                        className="py-3.5 px-5 bg-slate-100 text-slate-400 border border-slate-200 font-bold rounded-xl text-xs sm:text-sm cursor-not-allowed"
+                      >
+                        Pilih Parsial
+                      </button>
+                    </div>
                   </div>
-                </div>
+                ) : totalInTransitDirty > 0 ? (
+                  /* KONDISI 3: Linen Kotor Sedang Dikirim dari IGD -> Minta Terima Kotor dulu */
+                  <div className="p-4 sm:p-5 rounded-2xl border border-rose-200 bg-rose-50/40 flex flex-col justify-between space-y-4">
+                    <div>
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="w-3 h-3 rounded-full bg-rose-500 animate-pulse shrink-0"></span>
+                          <h4 className="text-xs sm:text-sm font-black text-rose-950 uppercase tracking-wider truncate">
+                            Linen Kotor Sedang Dikirim dari IGD
+                          </h4>
+                        </div>
+                        <span className="text-xs font-black px-3 py-1 rounded-full border bg-rose-100 text-rose-800 border-rose-200 shrink-0">
+                          {totalInTransitDirty} pcs (Menunggu Diterima Laundry)
+                        </span>
+                      </div>
+
+                      {/* Alert Info */}
+                      <div className="bg-rose-100/70 border border-rose-300 rounded-xl p-3 text-xs text-rose-900 flex items-start gap-2.5 mb-3">
+                        <span className="text-base shrink-0">📥</span>
+                        <div>
+                          <strong>Ada Linen Kotor Dikirim dari IGD</strong>
+                          <p className="text-[11px] text-rose-800 mt-0.5 leading-relaxed">
+                            Perawat IGD telah menyerahkan {totalInTransitDirty} pcs linen kotor. Silakan klik tombol <strong>"TERIMA KOTOR"</strong> pada menu aksi di atas untuk mengonfirmasi penerimaan ke pencucian laundry.
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Breakdown Items */}
+                      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 my-3">
+                        {items.map((i) => (
+                          <div key={i.id} className="bg-white p-3.5 rounded-xl border border-rose-100 shadow-2xs flex flex-col justify-between">
+                            <div className="text-xs text-slate-500 font-medium">{i.name}</div>
+                            <div className="text-2xl font-black text-rose-700 mt-1">
+                              {i.inTransitDirty || 0} <span className="text-xs font-normal text-slate-400">{i.unitLabel}</span>
+                            </div>
+                            <div className="text-[10px] text-rose-600 font-medium mt-1">
+                              Menunggu diterima laundry
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Action Buttons: DISABLED */}
+                    <div className="pt-2 flex flex-col sm:flex-row gap-3">
+                      <button
+                        disabled={true}
+                        className="flex-1 py-3.5 px-4 bg-slate-200 text-slate-400 font-bold rounded-xl text-xs sm:text-sm flex items-center justify-center gap-2 cursor-not-allowed shadow-none border border-slate-300"
+                      >
+                        <FaCheckDouble size={16} />
+                        <span>Kirim Semua Bersih ke IGD (0)</span>
+                      </button>
+
+                      <button
+                        disabled={true}
+                        className="py-3.5 px-5 bg-slate-100 text-slate-400 border border-slate-200 font-bold rounded-xl text-xs sm:text-sm cursor-not-allowed"
+                      >
+                        Pilih Parsial
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  /* KONDISI 4: Tidak Ada Antrean Cucian */
+                  <div className="p-4 sm:p-5 rounded-2xl border border-slate-200 bg-slate-50/50 flex flex-col justify-between space-y-4">
+                    <div>
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="w-3 h-3 rounded-full bg-slate-400 shrink-0"></span>
+                          <h4 className="text-xs sm:text-sm font-black text-slate-900 uppercase tracking-wider truncate">
+                            Tidak Ada Antrean Siap Kirim
+                          </h4>
+                        </div>
+                        <span className="text-xs font-black px-3 py-1 rounded-full border bg-slate-100 text-slate-600 border-slate-200 shrink-0">
+                          0 pcs (Tidak Ada Antrean Siap Kirim)
+                        </span>
+                      </div>
+
+                      {/* Alert Info */}
+                      <div className="bg-slate-100 border border-slate-200 rounded-xl p-3 text-xs text-slate-700 flex items-start gap-2.5 mb-3">
+                        <span className="text-base shrink-0">✨</span>
+                        <div>
+                          <strong>Tidak Ada Cucian Menunggu Dikirim</strong>
+                          <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">
+                            Semua linen saat ini berada di IGD atau belum ada kiriman linen kotor yang masuk.
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Breakdown Items */}
+                      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 my-3">
+                        {items.map((i) => (
+                          <div key={i.id} className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs flex flex-col justify-between">
+                            <div className="text-xs text-slate-500 font-medium">{i.name}</div>
+                            <div className="text-2xl font-black text-slate-400 mt-1">
+                              0 <span className="text-xs font-normal text-slate-400">{i.unitLabel}</span>
+                            </div>
+                            <div className="text-[10px] text-slate-400 mt-1">
+                              Tidak ada antrean
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Action Buttons: DISABLED */}
+                    <div className="pt-2 flex flex-col sm:flex-row gap-3">
+                      <button
+                        disabled={true}
+                        className="flex-1 py-3.5 px-4 bg-slate-200 text-slate-400 font-bold rounded-xl text-xs sm:text-sm flex items-center justify-center gap-2 cursor-not-allowed shadow-none border border-slate-300"
+                      >
+                        <FaCheckDouble size={16} />
+                        <span>Kirim Semua Bersih ke IGD (0)</span>
+                      </button>
+
+                      <button
+                        disabled={true}
+                        className="py-3.5 px-5 bg-slate-100 text-slate-400 border border-slate-200 font-bold rounded-xl text-xs sm:text-sm cursor-not-allowed"
+                      >
+                        Pilih Parsial
+                      </button>
+                    </div>
+                  </div>
+                )}
               </section>
             )}
 
@@ -647,9 +1189,33 @@ export const LinenFlowPage: React.FC<LinenFlowPageProps> = ({ initialRole }) => 
 
                     const getBadge = () => {
                       const actorLower = (tx.actor || '').toLowerCase();
-                      const isIgd = actorLower.includes('igd');
+                      const isIgd = actorLower.includes('igd') || actorLower.includes('perawat');
 
                       switch (tx.type) {
+                        case 'IGD_DISPATCH_DIRTY':
+                          return { 
+                            label: 'SERAH KOTOR (DIKIRIM)', 
+                            color: 'bg-rose-50 text-rose-700 border-rose-200', 
+                            icon: <FaTruckLoading size={12} /> 
+                          };
+                        case 'LAUNDRY_RECEIVE_DIRTY':
+                          return { 
+                            label: 'TERIMA KOTOR (DIKERJAKAN)', 
+                            color: 'bg-amber-50 text-amber-700 border-amber-200', 
+                            icon: <FaTruckLoading size={12} /> 
+                          };
+                        case 'LAUNDRY_DISPATCH_CLEAN':
+                          return { 
+                            label: 'KIRIM BERSIH (DIKIRIM)', 
+                            color: 'bg-teal-50 text-teal-700 border-teal-200', 
+                            icon: <FaTruckLoading size={12} /> 
+                          };
+                        case 'IGD_RECEIVE_CLEAN':
+                          return { 
+                            label: 'TERIMA BERSIH (LEMARI)', 
+                            color: 'bg-indigo-50 text-indigo-700 border-indigo-200', 
+                            icon: <FaCheckDouble size={12} /> 
+                          };
                         case 'LAUNDRY_PICKUP':
                           if (isIgd) {
                             return { 

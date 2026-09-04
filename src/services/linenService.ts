@@ -139,10 +139,12 @@ export const executeLinenTransition = async (params: {
     let clean = current.clean || 0;
     let used = current.used || 0;
     let dirty = current.dirty || 0;
+    let inTransitDirty = current.inTransitDirty || 0;
     let laundry = current.laundry || 0;
+    let inTransitClean = current.inTransitClean || 0;
 
-    let sourceStatus: 'clean' | 'used' | 'dirty' | 'laundry' = 'clean';
-    let targetStatus: 'clean' | 'used' | 'dirty' | 'laundry' = 'used';
+    let sourceStatus: LinenTransaction['sourceStatus'] = 'clean';
+    let targetStatus: LinenTransaction['targetStatus'] = 'used';
 
     switch (type) {
       case 'TAKE':
@@ -158,16 +160,15 @@ export const executeLinenTransition = async (params: {
       case 'TO_DIRTY':
         sourceStatus = 'used';
         targetStatus = 'dirty';
-        // If used is less than requested, allow transition but cap used at 0 and add to dirty
         used = Math.max(0, used - quantity);
         dirty += quantity;
         break;
 
-      case 'LAUNDRY_PICKUP':
+      case 'IGD_DISPATCH_DIRTY':
+        // IGD Serah Kotor: dirty -> inTransitDirty (Sedang Dikirim ke Laundry)
         sourceStatus = 'dirty';
-        targetStatus = 'laundry';
+        targetStatus = 'inTransitDirty';
         {
-          // Ambil dari dirty terlebih dahulu; jika belum tercatat di kotor, potong sisa dari lemari/clean
           const fromDirty = Math.min(dirty, quantity);
           const remainingNeeded = quantity - fromDirty;
           if (clean < remainingNeeded) {
@@ -175,15 +176,101 @@ export const executeLinenTransition = async (params: {
           }
           dirty -= fromDirty;
           clean -= remainingNeeded;
+          inTransitDirty += quantity;
+        }
+        break;
+
+      case 'LAUNDRY_RECEIVE_DIRTY':
+        // Laundry Terima Kotor: inTransitDirty (atau dirty fallback) -> laundry (Sedang Dikerjakan)
+        sourceStatus = 'inTransitDirty';
+        targetStatus = 'laundry';
+        {
+          const fromTransit = Math.min(inTransitDirty, quantity);
+          const remaining = quantity - fromTransit;
+          const fromDirty = Math.min(dirty, remaining);
+          const stillRemaining = remaining - fromDirty;
+          if (clean < stillRemaining) {
+            throw new Error(`Stok linen kotor tidak mencukupi untuk diterima laundry`);
+          }
+          inTransitDirty -= fromTransit;
+          dirty -= fromDirty;
+          clean -= stillRemaining;
+          laundry += quantity;
+        }
+        break;
+
+      case 'LAUNDRY_DISPATCH_CLEAN':
+        // Laundry Kirim Bersih: laundry (Sedang Dikerjakan) -> inTransitClean (Sedang Dikirim ke IGD)
+        sourceStatus = 'laundry';
+        targetStatus = 'inTransitClean';
+        if (laundry < quantity) {
+          throw new Error(`Jumlah linen di laundry tidak mencukupi untuk dikirim (Tersedia: ${laundry}, Diminta: ${quantity})`);
+        }
+        laundry -= quantity;
+        inTransitClean += quantity;
+        break;
+
+      case 'IGD_RECEIVE_CLEAN':
+        // IGD Terima Bersih: inTransitClean (atau laundry fallback) -> clean (Kembali ke Lemari)
+        sourceStatus = 'inTransitClean';
+        targetStatus = 'clean';
+        {
+          const fromTransit = Math.min(inTransitClean, quantity);
+          const remaining = quantity - fromTransit;
+          const fromLaundry = Math.min(laundry, remaining);
+          inTransitClean -= fromTransit;
+          laundry -= fromLaundry;
+          clean += quantity;
+        }
+        break;
+
+      case 'LAUNDRY_PICKUP':
+        // Legacy alias / direct:
+        if (actor?.includes('Perawat') || actor?.includes('IGD')) {
+          sourceStatus = 'dirty';
+          targetStatus = 'inTransitDirty';
+          const fromDirty = Math.min(dirty, quantity);
+          const remainingNeeded = quantity - fromDirty;
+          if (clean < remainingNeeded) {
+            throw new Error(`Stok linen di IGD tidak mencukupi (Tersedia kotor: ${dirty}, bersih: ${clean}, diserahkan: ${quantity})`);
+          }
+          dirty -= fromDirty;
+          clean -= remainingNeeded;
+          inTransitDirty += quantity;
+        } else {
+          sourceStatus = 'inTransitDirty';
+          targetStatus = 'laundry';
+          const fromTransit = Math.min(inTransitDirty, quantity);
+          const remaining = quantity - fromTransit;
+          const fromDirty = Math.min(dirty, remaining);
+          const stillRemaining = remaining - fromDirty;
+          if (clean < stillRemaining) {
+            throw new Error(`Stok linen kotor tidak mencukupi untuk diterima laundry`);
+          }
+          inTransitDirty -= fromTransit;
+          dirty -= fromDirty;
+          clean -= stillRemaining;
           laundry += quantity;
         }
         break;
 
       case 'LAUNDRY_RETURN':
-        sourceStatus = 'laundry';
-        targetStatus = 'clean';
-        laundry = Math.max(0, laundry - quantity);
-        clean += quantity;
+        // Legacy alias / direct:
+        if (actor?.includes('Laundry')) {
+          sourceStatus = 'laundry';
+          targetStatus = 'inTransitClean';
+          const fromLaundry = Math.min(laundry, quantity);
+          laundry -= fromLaundry;
+          inTransitClean += quantity;
+        } else {
+          sourceStatus = 'inTransitClean';
+          targetStatus = 'clean';
+          const fromTransit = Math.min(inTransitClean, quantity);
+          const fromLaundry = Math.min(laundry, quantity - fromTransit);
+          inTransitClean -= fromTransit;
+          laundry -= fromLaundry;
+          clean += quantity;
+        }
         break;
 
       case 'DIRECT_DIRTY':
@@ -205,7 +292,9 @@ export const executeLinenTransition = async (params: {
       clean,
       used,
       dirty,
+      inTransitDirty,
       laundry,
+      inTransitClean,
       updatedAt: serverTimestamp()
     });
 
@@ -256,7 +345,7 @@ export const adjustCleanStock = async (params: {
 
     // Update total owned if clean increases/decreases so total matches circulation
     const newTotalOwned = Math.max(
-      newClean + (current.used || 0) + (current.dirty || 0) + (current.laundry || 0),
+      newClean + (current.used || 0) + (current.dirty || 0) + (current.inTransitDirty || 0) + (current.laundry || 0) + (current.inTransitClean || 0),
       current.totalOwned + diff
     );
 
@@ -331,7 +420,9 @@ export const updateLinenMaster = async (itemId: string, updates: {
       clean: newClean,
       used: newUsed,
       dirty: newDirty,
+      inTransitDirty: updates.resetToClean ? 0 : (current.inTransitDirty || 0),
       laundry: newLaundry,
+      inTransitClean: updates.resetToClean ? 0 : (current.inTransitClean || 0),
       totalOwned: newTotal,
       updatedAt: serverTimestamp()
     };
@@ -401,7 +492,7 @@ export const reconcileAndWhitewashStock = async (
 
   for (const itemDoc of snapshot.docs) {
     const item = itemDoc.data() as LinenItem;
-    const total = item.totalOwned || (item.clean + (item.dirty || 0) + (item.used || 0) + (item.laundry || 0));
+    const total = item.totalOwned || (item.clean + (item.dirty || 0) + (item.used || 0) + (item.inTransitDirty || 0) + (item.laundry || 0) + (item.inTransitClean || 0));
 
     const itemRef = doc(db, ITEMS_COLLECTION, itemDoc.id);
     const txRef = doc(collection(db, TRANSACTIONS_COLLECTION));
@@ -411,7 +502,9 @@ export const reconcileAndWhitewashStock = async (
         clean: total,
         used: 0,
         dirty: 0,
+        inTransitDirty: 0,
         laundry: 0,
+        inTransitClean: 0,
         totalOwned: total,
         updatedAt: serverTimestamp()
       });

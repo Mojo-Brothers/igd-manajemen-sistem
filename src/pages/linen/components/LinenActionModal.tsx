@@ -37,7 +37,12 @@ export const LinenActionModal: React.FC<LinenActionModalProps> = ({
   React.useEffect(() => {
     if (isOpen) {
       setRole(defaultRole);
-      const initialType = (defaultType === 'TAKE' || defaultType === 'TO_DIRTY') ? 'LAUNDRY_PICKUP' : defaultType;
+      let initialType: TransactionType = defaultType;
+      if (defaultType === 'TAKE' || defaultType === 'TO_DIRTY' || defaultType === 'IGD_DISPATCH_DIRTY' || defaultType === 'LAUNDRY_RECEIVE_DIRTY') {
+        initialType = 'LAUNDRY_PICKUP';
+      } else if (defaultType === 'IGD_RECEIVE_CLEAN' || defaultType === 'LAUNDRY_DISPATCH_CLEAN') {
+        initialType = 'LAUNDRY_RETURN';
+      }
       setActiveType(initialType);
       if (defaultItemId) {
         setSelectedItemId(defaultItemId);
@@ -56,23 +61,33 @@ export const LinenActionModal: React.FC<LinenActionModalProps> = ({
   // Title and helper info based on type and role
   const getActionConfig = () => {
     if (role === 'LAUNDRY') {
-      // Peran Petugas Laundry: Terima Kotor & Serah Bersih
-      if (activeType === 'LAUNDRY_PICKUP') {
+      // Peran Petugas Laundry: Terima Kotor & Kirim Bersih
+      if (activeType === 'LAUNDRY_PICKUP' || activeType === 'LAUNDRY_RECEIVE_DIRTY') {
+        const waitingFromIgd = (currentItem?.inTransitDirty || 0) > 0 
+          ? (currentItem?.inTransitDirty || 0) 
+          : (currentItem?.dirty || 0);
         return {
           title: 'Terima Linen Kotor dari IGD',
-          description: 'Petugas laundry menerima linen kotor dari IGD untuk dibawa dan dicuci.',
-          sourceName: 'Linen Kotor di IGD',
-          available: (currentItem?.dirty || 0) + (currentItem?.clean || 0),
+          description: waitingFromIgd > 0
+            ? 'Petugas laundry mengonfirmasi penerimaan linen kotor yang dikirim dari IGD.'
+            : 'Belum ada linen kotor yang dikirim dari IGD.',
+          sourceName: (currentItem?.inTransitDirty || 0) > 0 ? 'Sedang Dikirim dari IGD' : 'Linen Kotor IGD',
+          available: waitingFromIgd,
           buttonText: 'Simpan Terima Kotor',
           buttonColor: 'bg-amber-600 hover:bg-amber-700',
-          badge: 'Laundry ← IGD (Kotor)'
+          badge: 'Laundry ← IGD (Terima Kotor)'
         };
       } else {
+        const readyToDispatch = currentItem?.laundry || 0;
         return {
           title: 'Kirim Linen Bersih ke IGD',
-          description: 'Petugas laundry mengirim dan menyerahkan linen bersih hasil cuci ke lemari IGD.',
-          sourceName: 'Selesai Cuci di Laundry',
-          available: currentItem?.laundry || 0,
+          description: readyToDispatch > 0 
+            ? 'Petugas laundry mengirim dan menyerahkan linen bersih hasil cuci ke lemari IGD.'
+            : (currentItem?.inTransitClean || 0) > 0
+            ? 'Linen sudah dikirim ke IGD (sedang dalam perjalanan menunggu konfirmasi perawat IGD).'
+            : 'Tidak ada linen yang sedang dikerjakan untuk dikirim.',
+          sourceName: 'Sedang Dikerjakan di Laundry',
+          available: readyToDispatch,
           buttonText: 'Simpan Kirim Bersih',
           buttonColor: 'bg-teal-600 hover:bg-teal-700',
           badge: 'Laundry → IGD (Kirim Bersih)'
@@ -80,25 +95,33 @@ export const LinenActionModal: React.FC<LinenActionModalProps> = ({
       }
     } else {
       // Peran Petugas IGD: Serah Kotor & Terima Bersih
-      if (activeType === 'LAUNDRY_PICKUP') {
+      if (activeType === 'LAUNDRY_PICKUP' || activeType === 'IGD_DISPATCH_DIRTY') {
+        const dirtyAvailable = (currentItem?.dirty || 0) > 0 ? (currentItem?.dirty || 0) : ((currentItem?.clean || 0) + (currentItem?.used || 0));
         return {
           title: 'Serah Linen Kotor ke Laundry',
           description: 'Petugas IGD menyerahkan linen kotor ke petugas laundry untuk dicuci.',
           sourceName: 'Linen Kotor di IGD',
-          available: (currentItem?.dirty || 0) + (currentItem?.clean || 0),
+          available: dirtyAvailable,
           buttonText: 'Simpan Serah Kotor',
           buttonColor: 'bg-rose-600 hover:bg-rose-700',
-          badge: 'IGD → Laundry (Kotor)'
+          badge: 'IGD → Laundry (Serah Kotor)'
         };
       } else {
+        const waitingClean = currentItem?.inTransitClean || 0;
         return {
           title: 'Terima Linen Bersih dari Laundry',
-          description: 'Petugas IGD menerima linen bersih dari laundry kembali ke lemari bersih.',
-          sourceName: 'Sedang di Laundry',
-          available: currentItem?.laundry || 0,
+          description: waitingClean > 0
+            ? 'Petugas IGD menerima linen bersih dari laundry kembali ke lemari bersih.'
+            : (currentItem?.laundry || 0) > 0
+            ? 'Linen masih sedang dikerjakan di laundry. Belum dikirim oleh laundry.'
+            : (currentItem?.inTransitDirty || 0) > 0
+            ? 'Linen masih sedang dikirim ke laundry.'
+            : 'Tidak ada linen bersih yang sedang dikirim dari laundry.',
+          sourceName: waitingClean > 0 ? 'Sedang Dikirim ke IGD (Siap Diterima)' : (currentItem?.laundry || 0) > 0 ? 'Sedang di Laundry (Belum Dikirim)' : 'Semua Bersih di Lemari',
+          available: waitingClean,
           buttonText: 'Simpan Terima Bersih',
           buttonColor: 'bg-indigo-600 hover:bg-indigo-700',
-          badge: 'Laundry → Lemari IGD (Bersih)'
+          badge: 'Laundry → Lemari IGD (Terima Bersih)'
         };
       }
     }
@@ -128,11 +151,26 @@ export const LinenActionModal: React.FC<LinenActionModalProps> = ({
       localStorage.setItem('linenflow_actor_name', actorName);
     }
 
+    let transitionType: TransactionType = activeType;
+    if (role === 'LAUNDRY') {
+      if (activeType === 'LAUNDRY_PICKUP' || activeType === 'LAUNDRY_RECEIVE_DIRTY') {
+        transitionType = 'LAUNDRY_RECEIVE_DIRTY';
+      } else {
+        transitionType = 'LAUNDRY_DISPATCH_CLEAN';
+      }
+    } else {
+      if (activeType === 'LAUNDRY_PICKUP' || activeType === 'IGD_DISPATCH_DIRTY') {
+        transitionType = 'IGD_DISPATCH_DIRTY';
+      } else {
+        transitionType = 'IGD_RECEIVE_CLEAN';
+      }
+    }
+
     setLoading(true);
     try {
       await executeLinenTransition({
         itemId: currentItem.id,
-        type: activeType,
+        type: transitionType,
         quantity,
         actor: actorRole,
         actorName,
@@ -347,11 +385,34 @@ export const LinenActionModal: React.FC<LinenActionModalProps> = ({
             />
           </div>
 
+          {/* Empty stock alert when available is 0 */}
+          {config.available === 0 && (
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 flex items-start gap-2">
+              <span className="text-sm">⚠️</span>
+              <div>
+                <strong>Tidak Ada Stok Tersedia</strong>
+                <p className="text-[11px] text-amber-700 mt-0.5 leading-relaxed">
+                  {role === 'IGD' && activeType === 'LAUNDRY_RETURN'
+                    ? ((currentItem?.laundry || 0) > 0
+                      ? 'Linen masih sedang dikerjakan di laundry. Tombol terima baru bisa digunakan setelah laundry mengirim linen bersih.'
+                      : (currentItem?.inTransitDirty || 0) > 0
+                      ? 'Linen kotor masih dalam perjalanan ke laundry.'
+                      : 'Semua linen bersih sudah berada di lemari IGD.')
+                    : role === 'LAUNDRY' && activeType === 'LAUNDRY_RETURN'
+                    ? ((currentItem?.inTransitClean || 0) > 0
+                      ? 'Linen bersih sudah dikirim ke IGD. Menunggu konfirmasi penerimaan perawat IGD.'
+                      : 'Tidak ada linen yang sedang dikerjakan di laundry untuk dikirim.')
+                    : 'Belum ada linen kotor yang diserahkan dari IGD.'}
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Submit Button */}
           <button
             type="submit"
-            disabled={loading}
-            className={`w-full py-4 px-6 text-white font-bold rounded-2xl shadow-lg transition-all active:scale-[0.98] flex items-center justify-center gap-2 text-base ${config.buttonColor} disabled:opacity-50`}
+            disabled={loading || (config.available === 0 && (activeType === 'LAUNDRY_RETURN' || (role === 'LAUNDRY' && activeType === 'LAUNDRY_PICKUP')))}
+            className={`w-full py-4 px-6 text-white font-bold rounded-2xl shadow-lg transition-all active:scale-[0.98] flex items-center justify-center gap-2 text-base ${config.buttonColor} disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none`}
           >
             {loading ? (
               <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>

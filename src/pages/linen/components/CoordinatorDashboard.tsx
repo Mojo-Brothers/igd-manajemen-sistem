@@ -121,7 +121,13 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({
 
   // Check overall discrepancies
   const itemsWithDiscrepancy = items.filter((item) => {
-    const currentSum = (item.clean || 0) + (item.used || 0) + (item.dirty || 0) + (item.laundry || 0);
+    const currentSum = 
+      (item.clean || 0) + 
+      (item.used || 0) + 
+      (item.dirty || 0) + 
+      (item.inTransitDirty || 0) + 
+      (item.laundry || 0) + 
+      (item.inTransitClean || 0);
     return currentSum !== item.totalOwned;
   });
 
