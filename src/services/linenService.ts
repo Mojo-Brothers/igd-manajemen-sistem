@@ -1,6 +1,7 @@
 import { 
   collection, 
   doc, 
+  getDoc,
   getDocs, 
   setDoc, 
   deleteDoc,
@@ -696,5 +697,53 @@ export const reconcileAndWhitewashStock = async (
       transaction.set(txRef, logData);
     });
   }
+};
+
+const SETTINGS_COLLECTION = 'settings';
+const LINEN_CONFIG_DOC = 'linen_config';
+export const DEFAULT_WHITEWASH_PIN = '123456';
+
+/**
+ * Mengambil PIN Otorisasi 6 Angka untuk Fitur Pemutihan dari Firestore
+ * Default fallback: '123456'
+ */
+export const getLinenWhitewashPin = async (): Promise<string> => {
+  try {
+    const configRef = doc(db, SETTINGS_COLLECTION, LINEN_CONFIG_DOC);
+    const snap = await getDoc(configRef);
+    if (snap.exists() && snap.data()?.whitewashPin) {
+      return String(snap.data().whitewashPin).trim();
+    }
+  } catch (error) {
+    console.warn('Menggunakan PIN default untuk pemutihan:', error);
+  }
+  return DEFAULT_WHITEWASH_PIN;
+};
+
+/**
+ * Mengubah PIN Otorisasi 6 Angka untuk Fitur Pemutihan
+ */
+export const setLinenWhitewashPin = async (
+  newPin: string,
+  updatedBy: string = 'Administrator'
+): Promise<void> => {
+  const sanitizedPin = newPin.trim();
+  if (!/^\d{6}$/.test(sanitizedPin)) {
+    throw new Error('PIN harus terdiri dari tepat 6 digit angka numerik (0-9)');
+  }
+  const configRef = doc(db, SETTINGS_COLLECTION, LINEN_CONFIG_DOC);
+  await setDoc(configRef, {
+    whitewashPin: sanitizedPin,
+    updatedAt: serverTimestamp(),
+    updatedBy
+  }, { merge: true });
+};
+
+/**
+ * Verifikasi apakah PIN yang dimasukkan cocok dengan PIN yang tersimpan
+ */
+export const verifyLinenWhitewashPin = async (inputPin: string): Promise<boolean> => {
+  const currentPin = await getLinenWhitewashPin();
+  return inputPin.trim() === currentPin.trim();
 };
 

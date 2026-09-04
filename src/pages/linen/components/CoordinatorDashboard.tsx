@@ -9,6 +9,7 @@ import {
 } from '../../../services/linenService';
 import { AdjustCleanModal } from './AdjustCleanModal';
 import { CreateLinenModal } from './CreateLinenModal';
+import { WhitewashPinModal } from './WhitewashPinModal';
 import toast from 'react-hot-toast';
 import { 
   FaExclamationTriangle, 
@@ -27,7 +28,8 @@ import {
   FaCalendarAlt,
   FaFilter,
   FaPlus,
-  FaTrash
+  FaTrash,
+  FaKey
 } from 'react-icons/fa';
 
 interface CoordinatorDashboardProps {
@@ -45,6 +47,8 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({
   const [filterDate, setFilterDate] = useState<string>('');
   const [filterActionType, setFilterActionType] = useState<string>('ALL');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
+  const [isWhitewashPinModalOpen, setIsWhitewashPinModalOpen] = useState<boolean>(false);
+  const [whitewashModalMode, setWhitewashModalMode] = useState<'AUTH' | 'SETTINGS'>('AUTH');
   const [editingItem, setEditingItem] = useState<LinenItem | null>(null);
   const [adjustingItem, setAdjustingItem] = useState<LinenItem | null>(null);
   const [baseOldStock, setBaseOldStock] = useState<number>(0);
@@ -117,13 +121,20 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({
 
   const [whitewashing, setWhitewashing] = useState<boolean>(false);
 
-  const handleWhitewash = async () => {
-    if (!window.confirm(`Lakukan pemutihan stok linen ${unitName}? Seluruh linen (Perlak & Selimut) akan diselaraskan menjadi 100% Bersih di Lemari (kotor = 0, laundry = 0, digunakan = 0).`)) {
-      return;
-    }
+  const handleOpenWhitewashAuth = () => {
+    setWhitewashModalMode('AUTH');
+    setIsWhitewashPinModalOpen(true);
+  };
+
+  const handleOpenWhitewashSettings = () => {
+    setWhitewashModalMode('SETTINGS');
+    setIsWhitewashPinModalOpen(true);
+  };
+
+  const handleExecuteWhitewash = async () => {
     setWhitewashing(true);
     try {
-      await reconcileAndWhitewashStock(unitId, `Administrator ${unitName} (Pemutihan)`);
+      await reconcileAndWhitewashStock(unitId, `Administrator ${unitName} (Pemutihan Otorisasi PIN)`);
       toast.success(`Pemutihan berhasil! Seluruh linen ${unitName} kini 100% selaras di lemari bersih.`);
     } catch (err: any) {
       toast.error(err.message || 'Gagal melakukan pemutihan stok');
@@ -269,14 +280,26 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({
               </p>
             </div>
           </div>
-          <button
-            onClick={handleWhitewash}
-            disabled={whitewashing}
-            className="px-4 py-2.5 bg-amber-600 hover:bg-amber-700 active:scale-95 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-2 shrink-0 disabled:opacity-50 cursor-pointer"
-          >
-            <FaBroom size={14} />
-            <span>{whitewashing ? 'Memutihkan...' : 'Pemutihan / Selaraskan Stok'}</span>
-          </button>
+          <div className="flex items-center gap-2 shrink-0 flex-wrap">
+            <button
+              onClick={handleOpenWhitewashAuth}
+              disabled={whitewashing}
+              className="px-4 py-2.5 bg-amber-600 hover:bg-amber-700 active:scale-95 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-2 shrink-0 disabled:opacity-50 cursor-pointer"
+              title="Otorisasi PIN untuk menyelaraskan seluruh sirkulasi menjadi 100% di lemari bersih"
+            >
+              <FaBroom size={14} />
+              <span>{whitewashing ? 'Memutihkan...' : 'Pemutihan / Selaraskan Stok'}</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleOpenWhitewashSettings}
+              className="p-2.5 bg-amber-200/90 hover:bg-amber-300 text-amber-950 font-bold text-xs rounded-xl border border-amber-400/60 transition-colors flex items-center justify-center cursor-pointer shadow-2xs"
+              title="Pengaturan PIN Otorisasi 6 Angka Pemutihan"
+            >
+              <FaKey size={13} />
+              <span className="hidden sm:inline ml-1.5 font-bold">Atur PIN</span>
+            </button>
+          </div>
         </div>
       ) : (
         <div className="p-5 rounded-3xl bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-emerald-500/10 border border-emerald-300/80 text-emerald-900 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
@@ -296,15 +319,26 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({
               </p>
             </div>
           </div>
-          <button
-            onClick={handleWhitewash}
-            disabled={whitewashing}
-            className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-2 shrink-0 disabled:opacity-50 cursor-pointer"
-            title="Reset dan selaraskan seluruh sirkulasi menjadi 100% di lemari bersih"
-          >
-            <FaBroom size={14} />
-            <span>{whitewashing ? 'Memutihkan...' : 'Pemutihan / Selaraskan Stok'}</span>
-          </button>
+          <div className="flex items-center gap-2 shrink-0 flex-wrap">
+            <button
+              onClick={handleOpenWhitewashAuth}
+              disabled={whitewashing}
+              className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-2 shrink-0 disabled:opacity-50 cursor-pointer"
+              title="Otorisasi PIN untuk menyelaraskan seluruh sirkulasi menjadi 100% di lemari bersih"
+            >
+              <FaBroom size={14} />
+              <span>{whitewashing ? 'Memutihkan...' : 'Pemutihan / Selaraskan Stok'}</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleOpenWhitewashSettings}
+              className="p-2.5 bg-emerald-200/80 hover:bg-emerald-300 text-emerald-950 font-bold text-xs rounded-xl border border-emerald-400/60 transition-colors flex items-center justify-center cursor-pointer shadow-2xs"
+              title="Pengaturan PIN Otorisasi 6 Angka Pemutihan"
+            >
+              <FaKey size={13} />
+              <span className="hidden sm:inline ml-1.5 font-bold">Atur PIN</span>
+            </button>
+          </div>
         </div>
       )}
 
@@ -1031,6 +1065,16 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         unitId={unitId}
+        unitName={unitName}
+      />
+
+      {/* Otorisasi & Pengaturan PIN Pemutihan Modal */}
+      <WhitewashPinModal
+        isOpen={isWhitewashPinModalOpen}
+        onClose={() => setIsWhitewashPinModalOpen(false)}
+        onSuccess={handleExecuteWhitewash}
+        initialMode={whitewashModalMode}
+        totalPhysical={totalPhysical}
         unitName={unitName}
       />
     </div>
