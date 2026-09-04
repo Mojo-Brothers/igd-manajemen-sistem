@@ -1,6 +1,6 @@
-# Primaya Hospital - IGD Doctor Schedule Display
+# IGD Manajemen Sistem
 
-Sistem Informasi Jadwal Dokter Jaga (On-Call) Instalasi Gawat Darurat (IGD) Primaya Hospital. Aplikasi ini dirancang khusus untuk ditampilkan pada layar monitor display di area publik IGD, dilengkapi dengan Panel Admin komprehensif untuk mengelola jadwal bulanan maupun harian secara real-time.
+Sistem Manajemen dan Informasi Terpadu Instalasi Gawat Darurat (IGD) Primaya Hospital. Aplikasi ini mencakup sistem tampilan layar monitor publik (TV Display On-Call), panel administrasi jadwal dokter jaga, serta manajemen alur dan inventaris linen (LinenFlow IGD & Laundry) secara real-time.
 
 ## 🌟 Fitur Utama
 

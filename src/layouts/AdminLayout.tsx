@@ -42,8 +42,8 @@ const AdminLayout = () => {
           <div className="flex items-center gap-3">
             <FaHospitalAlt size={28} />
             <div>
-              <h2 className="font-bold text-lg leading-tight">Admin Panel</h2>
-              <p className="text-xs text-blue-200">Doctor Schedule Display</p>
+              <h2 className="font-bold text-base leading-tight">IGD Manajemen Sistem</h2>
+              <p className="text-xs text-blue-200">Admin Panel</p>
             </div>
           </div>
           <button 
