@@ -4,9 +4,11 @@ import {
   getLinenStatusLevel, 
   updateLinenMaster, 
   subscribeRecentTransactions,
-  reconcileAndWhitewashStock
+  reconcileAndWhitewashStock,
+  deleteLinenItem
 } from '../../../services/linenService';
 import { AdjustCleanModal } from './AdjustCleanModal';
+import { CreateLinenModal } from './CreateLinenModal';
 import toast from 'react-hot-toast';
 import { 
   FaExclamationTriangle, 
@@ -23,7 +25,9 @@ import {
   FaBoxes,
   FaLayerGroup,
   FaCalendarAlt,
-  FaFilter
+  FaFilter,
+  FaPlus,
+  FaTrash
 } from 'react-icons/fa';
 
 interface CoordinatorDashboardProps {
@@ -40,6 +44,7 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({
   const [transactions, setTransactions] = useState<LinenTransaction[]>([]);
   const [filterDate, setFilterDate] = useState<string>('');
   const [filterActionType, setFilterActionType] = useState<string>('ALL');
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
   const [editingItem, setEditingItem] = useState<LinenItem | null>(null);
   const [adjustingItem, setAdjustingItem] = useState<LinenItem | null>(null);
   const [baseOldStock, setBaseOldStock] = useState<number>(0);
@@ -124,6 +129,18 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({
       toast.error(err.message || 'Gagal melakukan pemutihan stok');
     } finally {
       setWhitewashing(false);
+    }
+  };
+
+  const handleDeleteItem = async (item: LinenItem) => {
+    if (!window.confirm(`Apakah Anda yakin ingin menghapus jenis linen "${item.name}" dari inventaris unit ${unitName}?\n\nPerhatian: Seluruh data master dan pencatatan sirkulasi item ini akan dihapus.`)) {
+      return;
+    }
+    try {
+      await deleteLinenItem(item.id, item.name, unitId, `Administrator ${unitName}`);
+      toast.success(`Jenis linen "${item.name}" berhasil dihapus dari inventaris.`);
+    } catch (err: any) {
+      toast.error(err.message || 'Gagal menghapus jenis linen');
     }
   };
 
@@ -305,7 +322,16 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({
               Tracking siklus lengkap: Bersih di Lemari, Dipakai, Kotor di IGD, Transit Pengiriman, dan Gudang Laundry.
             </p>
           </div>
-          <div className="flex items-center gap-2 self-start sm:self-auto">
+          <div className="flex items-center gap-2.5 self-start sm:self-auto flex-wrap">
+            <button
+              type="button"
+              onClick={() => setIsCreateModalOpen(true)}
+              className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-bold text-xs flex items-center gap-2 shadow-sm transition-all cursor-pointer"
+              title="Tambah Jenis Linen Baru ke Master Inventaris"
+            >
+              <FaPlus size={12} />
+              <span>Tambah Jenis Linen</span>
+            </button>
             <span className="text-[11px] font-bold px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 border border-blue-400/30 flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
               <span>Live Real-time Sync</span>
@@ -441,6 +467,13 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({
                         >
                           <FaEdit size={12} />
                           <span>Edit Master</span>
+                        </button>
+                        <button
+                          onClick={() => handleDeleteItem(item)}
+                          className="p-2 bg-rose-50 hover:bg-rose-100 text-rose-600 hover:text-rose-800 text-xs font-bold rounded-xl transition-all border border-rose-200 shadow-2xs inline-flex items-center justify-center active:scale-95 cursor-pointer"
+                          title={`Hapus jenis linen ${item.name}`}
+                        >
+                          <FaTrash size={12} />
                         </button>
                       </div>
                     </td>
@@ -991,6 +1024,14 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({
         isOpen={!!adjustingItem}
         onClose={() => setAdjustingItem(null)}
         item={adjustingItem}
+      />
+
+      {/* Tambah Jenis Linen Baru Modal */}
+      <CreateLinenModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        unitId={unitId}
+        unitName={unitName}
       />
     </div>
   );

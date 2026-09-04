@@ -29,9 +29,11 @@ import {
   FaDownload,
   FaSlidersH,
   FaCalendarAlt,
-  FaFilter
+  FaFilter,
+  FaPlus
 } from 'react-icons/fa';
 import { LinenReportModal } from './components/LinenReportModal';
+import { CreateLinenModal } from './components/CreateLinenModal';
 
 interface LinenFlowPageProps {
   initialRole?: 'IGD' | 'LAUNDRY';
@@ -63,6 +65,7 @@ export const LinenFlowPage: React.FC<LinenFlowPageProps> = ({ initialRole }) => 
   const [actionModalItemId, setActionModalItemId] = useState<string | undefined>();
   const [isQrModalOpen, setIsQrModalOpen] = useState<boolean>(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState<boolean>(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
   const [adjustingItem, setAdjustingItem] = useState<LinenItem | null>(null);
 
   // View mode switcher: card, grid, list
@@ -313,8 +316,21 @@ export const LinenFlowPage: React.FC<LinenFlowPageProps> = ({ initialRole }) => 
                   <span className="text-[11px] text-slate-400 hidden sm:inline">• Real-time Sync</span>
                 </div>
 
-                {/* View Switcher Controls */}
-                <div className="inline-flex items-center p-1 bg-slate-200/80 rounded-2xl border border-slate-300 shadow-2xs self-start sm:self-auto gap-1">
+                <div className="flex items-center gap-2 flex-wrap self-start sm:self-auto">
+                  {isInsideAdmin && (
+                    <button
+                      type="button"
+                      onClick={() => setIsCreateModalOpen(true)}
+                      className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer"
+                      title="Tambah Jenis Linen Baru ke Master Inventaris"
+                    >
+                      <FaPlus size={11} />
+                      <span>Tambah Item</span>
+                    </button>
+                  )}
+
+                  {/* View Switcher Controls */}
+                  <div className="inline-flex items-center p-1 bg-slate-200/80 rounded-2xl border border-slate-300 shadow-2xs gap-1">
                   <button
                     type="button"
                     onClick={() => handleViewModeChange('card')}
@@ -355,6 +371,7 @@ export const LinenFlowPage: React.FC<LinenFlowPageProps> = ({ initialRole }) => 
                     <span>List</span>
                   </button>
                 </div>
+              </div>
               </div>
 
               {/* TAMPILAN 1: CARD VIEW */}
@@ -1264,6 +1281,14 @@ export const LinenFlowPage: React.FC<LinenFlowPageProps> = ({ initialRole }) => 
         isOpen={isReportModalOpen}
         onClose={() => setIsReportModalOpen(false)}
         items={items}
+        unitId={unitId}
+        unitName={activeUnit}
+      />
+
+      {/* Tambah Jenis Linen Baru Modal */}
+      <CreateLinenModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
         unitId={unitId}
         unitName={activeUnit}
       />

@@ -3,6 +3,7 @@ import {
   doc, 
   getDocs, 
   setDoc, 
+  deleteDoc,
   query, 
   where, 
   onSnapshot, 
@@ -78,6 +79,105 @@ export const seedInitialIgdLinen = async (unitId: string = 'igd') => {
   } catch (error) {
     console.error('Error seeding initial linen items:', error);
   }
+};
+
+export interface CreateLinenItemParams {
+  name: string;
+  unitLabel?: string;
+  icon?: 'bed' | 'layer' | 'cube';
+  totalOwned: number;
+  minStock: number;
+  criticalStock: number;
+  notes?: string;
+  actor?: string;
+}
+
+/**
+ * Add a new linen item type to the unit's inventory master
+ */
+export const createLinenItem = async (
+  unitId: string = 'igd',
+  params: CreateLinenItemParams
+): Promise<LinenItem> => {
+  const normalizedUnit = (unitId || 'igd').toLowerCase();
+  const slug = params.name.trim().toLowerCase().replace(/[^a-z0-9]/g, '_');
+  const itemId = `${normalizedUnit}_${slug}_${Date.now()}`;
+  const itemRef = doc(db, ITEMS_COLLECTION, itemId);
+  const txRef = doc(collection(db, TRANSACTIONS_COLLECTION));
+
+  const total = Math.max(1, Number(params.totalOwned) || 1);
+  const min = Math.max(0, Number(params.minStock) || 0);
+  const critical = Math.max(0, Number(params.criticalStock) || 0);
+
+  const newItem: LinenItem = {
+    id: itemId,
+    unitId: normalizedUnit,
+    name: params.name.trim(),
+    unitLabel: params.unitLabel?.trim() || 'pcs',
+    icon: params.icon || (params.name.toLowerCase().includes('selimut') ? 'bed' : 'layer'),
+    totalOwned: total,
+    minStock: min,
+    criticalStock: critical,
+    clean: total,
+    used: 0,
+    dirty: 0,
+    inTransitDirty: 0,
+    laundry: 0,
+    inTransitClean: 0,
+    updatedAt: serverTimestamp()
+  };
+
+  await setDoc(itemRef, newItem);
+
+  // Log master adjustment transaction
+  const logData: LinenTransaction = {
+    id: txRef.id,
+    unitId: normalizedUnit,
+    itemId: itemId,
+    itemName: newItem.name,
+    type: 'ADJUST_STOCK',
+    quantity: total,
+    sourceStatus: 'system',
+    targetStatus: 'clean',
+    actor: params.actor || 'Administrator IGD',
+    notes: params.notes?.trim() || `Penambahan jenis linen baru: ${newItem.name} (Total: ${total} ${newItem.unitLabel})`,
+    timestamp: serverTimestamp()
+  };
+
+  await setDoc(txRef, logData);
+  return newItem;
+};
+
+/**
+ * Delete a linen item from the unit inventory
+ */
+export const deleteLinenItem = async (
+  itemId: string,
+  itemName: string,
+  unitId: string = 'igd',
+  actor: string = 'Administrator IGD'
+): Promise<void> => {
+  const itemRef = doc(db, ITEMS_COLLECTION, itemId);
+  const txRef = doc(collection(db, TRANSACTIONS_COLLECTION));
+
+  await deleteDoc(itemRef);
+
+  // Log deletion in transaction history
+  const logData: LinenTransaction = {
+    id: txRef.id,
+    unitId: (unitId || 'igd').toLowerCase(),
+    itemId: itemId,
+    itemName: itemName,
+    type: 'ADJUST_STOCK',
+    quantity: 0,
+    sourceStatus: 'system',
+    targetStatus: 'system',
+    actor: actor || 'Administrator IGD',
+    notes: `Penghapusan jenis linen: ${itemName} dari inventaris`,
+    timestamp: serverTimestamp()
+  };
+
+  await setDoc(txRef, logData);
 };
 
 /**
