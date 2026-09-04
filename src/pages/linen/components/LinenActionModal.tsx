@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { LinenItem, TransactionType } from '../../../types/linen';
 import { executeLinenTransition } from '../../../services/linenService';
 import toast from 'react-hot-toast';
-import { FaTimes, FaCheck, FaMinus, FaPlus, FaTruckLoading, FaCheckDouble, FaChevronDown } from 'react-icons/fa';
+import { FaTimes, FaCheck, FaMinus, FaPlus, FaTruckLoading, FaCheckDouble, FaBed, FaLayerGroup } from 'react-icons/fa';
 
 interface LinenActionModalProps {
   isOpen: boolean;
@@ -281,57 +281,68 @@ export const LinenActionModal: React.FC<LinenActionModalProps> = ({
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-5 overflow-y-auto">
-          {/* Item Selector Dropdown */}
+          {/* Item Selector: Modern Segmented Pill / Button Toggle */}
           <div>
-            <label htmlFor="linen-select" className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
-              Pilih Jenis Linen
-            </label>
-            <div className="relative">
-              <select
-                id="linen-select"
-                value={selectedItemId}
-                onChange={(e) => {
-                  setSelectedItemId(e.target.value);
-                  setQuantity(1);
-                }}
-                className="w-full appearance-none px-4 py-3.5 pr-11 rounded-2xl border-2 border-slate-200 bg-white hover:border-slate-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 text-sm font-black text-slate-800 shadow-2xs outline-none cursor-pointer transition-all"
-              >
-                {items.map((item) => {
-                  let stockSummary = '';
-                  if (role === 'LAUNDRY') {
-                    if (activeType === 'LAUNDRY_PICKUP') {
-                      const kirimDariIgd = item.inTransitDirty || 0;
-                      const kotorIgd = item.dirty || 0;
-                      const diLaundry = item.laundry || 0;
-                      stockSummary = `Sedang Dikirim IGD: ${kirimDariIgd} ${item.unitLabel} • Kotor di IGD: ${kotorIgd} ${item.unitLabel} • Dicuci: ${diLaundry} ${item.unitLabel}`;
-                    } else {
-                      const siapKirim = item.laundry || 0;
-                      const kirimKeIgd = item.inTransitClean || 0;
-                      stockSummary = `Siap Kirim: ${siapKirim} ${item.unitLabel} • Sedang Dikirim: ${kirimKeIgd} ${item.unitLabel}`;
-                    }
-                  } else {
-                    if (activeType === 'LAUNDRY_PICKUP') {
-                      const kotor = item.dirty || 0;
-                      const kirim = item.inTransitDirty || 0;
-                      const bersih = item.clean || 0;
-                      stockSummary = `Kotor di IGD: ${kotor} ${item.unitLabel} • Sedang Dikirim: ${kirim} ${item.unitLabel} • Lemari Bersih: ${bersih} ${item.unitLabel}`;
-                    } else {
-                      const siapTerima = item.inTransitClean || 0;
-                      const diLaundry = item.laundry || 0;
-                      const bersih = item.clean || 0;
-                      stockSummary = `Siap Diterima: ${siapTerima} ${item.unitLabel} • Di Laundry: ${diLaundry} ${item.unitLabel} • Lemari: ${bersih} ${item.unitLabel}`;
-                    }
-                  }
-                  return (
-                    <option key={item.id} value={item.id} className="py-2 text-slate-800 font-semibold">
-                      {item.name} ({stockSummary})
-                    </option>
-                  );
-                })}
-              </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500">
-                <FaChevronDown size={14} />
-              </div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-xs font-black uppercase tracking-wider text-slate-500">
+                Pilih Jenis Linen
+              </label>
+              <span className="text-[11px] text-slate-400 font-medium">
+                1-Klik Pilih ({items.length} Jenis Tersedia)
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 bg-slate-100 p-1.5 rounded-2xl border border-slate-200">
+              {items.map((item) => {
+                const isSelected = item.id === selectedItemId;
+                const isSelimut = item.name.toLowerCase().includes('selimut');
+
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedItemId(item.id);
+                      setQuantity(1);
+                    }}
+                    className={`p-2.5 sm:p-3 rounded-xl transition-all flex items-center justify-between gap-2 text-left cursor-pointer border ${
+                      isSelected
+                        ? 'bg-white text-slate-900 border-blue-500/50 shadow-xs ring-2 ring-blue-500/20'
+                        : 'bg-transparent text-slate-600 border-transparent hover:bg-white/60 hover:text-slate-900'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
+                        isSelected
+                          ? 'bg-blue-600 text-white shadow-2xs'
+                          : 'bg-slate-200/90 text-slate-600'
+                      }`}>
+                        {isSelimut ? <FaBed size={14} /> : <FaLayerGroup size={14} />}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="font-black text-xs sm:text-sm truncate">
+                          {item.name}
+                        </div>
+                        <div className="text-[10px] text-slate-400 truncate">
+                          Lemari: <strong className={isSelected ? 'text-emerald-700 font-bold' : 'text-slate-600 font-semibold'}>{item.clean || 0} {item.unitLabel}</strong>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="shrink-0 flex items-center">
+                      {isSelected ? (
+                        <div className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] shadow-2xs">
+                          <FaCheck size={9} />
+                        </div>
+                      ) : (
+                        <span className="text-[10px] text-slate-400 font-bold px-1.5 py-0.5 rounded bg-slate-200/60">
+                          Pilih
+                        </span>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
             </div>
 
             {/* Quick stock status card for selected item */}
