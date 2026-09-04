@@ -26,8 +26,10 @@ import {
   FaHistory,
   FaThLarge,
   FaTh,
-  FaList
+  FaList,
+  FaDownload
 } from 'react-icons/fa';
+import { LinenReportModal } from './components/LinenReportModal';
 
 interface LinenFlowPageProps {
   initialRole?: 'IGD' | 'LAUNDRY';
@@ -57,6 +59,7 @@ export const LinenFlowPage: React.FC<LinenFlowPageProps> = ({ initialRole }) => 
   const [actionModalType, setActionModalType] = useState<TransactionType>('LAUNDRY_PICKUP');
   const [actionModalItemId, setActionModalItemId] = useState<string | undefined>();
   const [isQrModalOpen, setIsQrModalOpen] = useState<boolean>(false);
+  const [isReportModalOpen, setIsReportModalOpen] = useState<boolean>(false);
   const [adjustingItem, setAdjustingItem] = useState<LinenItem | null>(null);
 
   // View mode switcher: card, grid, list
@@ -215,6 +218,14 @@ export const LinenFlowPage: React.FC<LinenFlowPageProps> = ({ initialRole }) => 
           </div>
 
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsReportModalOpen(true)}
+              className="p-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors border border-blue-500 shadow-xs active:scale-95 cursor-pointer"
+              title="Unduh Laporan Harian / Bulanan (PDF & Excel)"
+            >
+              <FaDownload size={14} />
+              <span className="hidden sm:inline">Unduh Laporan</span>
+            </button>
             <button
               onClick={() => setIsQrModalOpen(true)}
               className="p-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors border border-white/10"
@@ -1585,6 +1596,15 @@ export const LinenFlowPage: React.FC<LinenFlowPageProps> = ({ initialRole }) => 
         isOpen={!!adjustingItem}
         onClose={() => setAdjustingItem(null)}
         item={adjustingItem}
+      />
+
+      {/* Linen Report Download Modal (PDF & Excel) */}
+      <LinenReportModal
+        isOpen={isReportModalOpen}
+        onClose={() => setIsReportModalOpen(false)}
+        items={items}
+        unitId={unitId}
+        unitName={activeUnit}
       />
     </div>
   );

@@ -479,6 +479,46 @@ export const subscribeRecentTransactions = (
 };
 
 /**
+ * Mengambil seluruh data transaksi mutasi pada rentang waktu tertentu untuk pembuatan laporan (Harian / Bulanan)
+ */
+export const fetchLinenTransactionsByRange = async (
+  unitId: string = 'igd',
+  startDate?: Date,
+  endDate?: Date
+): Promise<LinenTransaction[]> => {
+  try {
+    const q = query(
+      collection(db, TRANSACTIONS_COLLECTION),
+      where('unitId', '==', unitId),
+      orderBy('timestamp', 'desc')
+    );
+
+    const snapshot = await getDocs(q);
+    const allTxs: LinenTransaction[] = [];
+    
+    snapshot.forEach((docSnap) => {
+      allTxs.push({ ...docSnap.data(), id: docSnap.id } as LinenTransaction);
+    });
+
+    if (!startDate && !endDate) {
+      return allTxs;
+    }
+
+    return allTxs.filter((tx) => {
+      if (!tx.timestamp) return true;
+      const txDate = tx.timestamp.toDate ? tx.timestamp.toDate() : new Date(tx.timestamp);
+      if (startDate && txDate < startDate) return false;
+      if (endDate && txDate > endDate) return false;
+      return true;
+    });
+  } catch (error) {
+    console.error('Error fetching transactions by range:', error);
+    return [];
+  }
+};
+
+
+/**
  * Pemutihan / Penyelarasan Total Kepemilikan ke 100% Lemari Bersih
  * Mereset dirty = 0, used = 0, laundry = 0, dan clean = totalOwned
  */

@@ -1,13 +1,25 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { FaHome, FaUserMd, FaCog, FaSignOutAlt, FaHospitalAlt, FaBars, FaTimes, FaCalendarAlt, FaBed } from 'react-icons/fa';
+import { FaHome, FaUserMd, FaCog, FaSignOutAlt, FaHospitalAlt, FaBars, FaTimes, FaCalendarAlt, FaBed, FaDownload } from 'react-icons/fa';
+import { LinenItem } from '../types/linen';
+import { subscribeLinenItems } from '../services/linenService';
+import { LinenReportModal } from '../pages/linen/components/LinenReportModal';
 
 const AdminLayout = () => {
   const { logout, currentUser } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [linenItems, setLinenItems] = useState<LinenItem[]>([]);
+
+  useEffect(() => {
+    const unsubscribe = subscribeLinenItems('igd', (items) => {
+      setLinenItems(items);
+    });
+    return () => unsubscribe();
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -113,22 +125,34 @@ const AdminLayout = () => {
             </h1>
           </div>
           {location.pathname.startsWith('/admin/linen') ? (
-            <Link 
-              to={location.search.includes('tab=coordinator') ? '/linen' : '/admin/linen?tab=coordinator'}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`text-xs md:text-sm font-bold px-3.5 py-2 rounded-xl border transition-all flex items-center justify-center ${
-                location.search.includes('tab=coordinator')
-                  ? 'bg-blue-600 text-white border-blue-600 shadow-xs hover:bg-blue-700'
-                  : 'bg-white text-slate-700 border-slate-300 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 shadow-2xs'
-              }`}
-            >
-              {location.search.includes('tab=coordinator') ? (
-                <span>Mode Operasional Lemari</span>
-              ) : (
-                <span>Dashboard Admin Manajemen Linen</span>
-              )}
-            </Link>
+            <div className="flex items-center gap-2.5">
+              <button 
+                type="button"
+                onClick={() => setIsReportModalOpen(true)}
+                className="text-xs md:text-sm font-bold px-3.5 py-2 rounded-xl border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-700 transition-all flex items-center gap-2 shadow-2xs cursor-pointer active:scale-95"
+                title="Unduh Laporan Mutasi & Distribusi Linen Harian / Bulanan (PDF & Excel)"
+              >
+                <FaDownload size={13} className="text-blue-600" />
+                <span>Unduh Laporan</span>
+              </button>
+
+              <Link 
+                to={location.search.includes('tab=coordinator') ? '/linen' : '/admin/linen?tab=coordinator'}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`text-xs md:text-sm font-bold px-3.5 py-2 rounded-xl border transition-all flex items-center justify-center ${
+                  location.search.includes('tab=coordinator')
+                    ? 'bg-blue-600 text-white border-blue-600 shadow-xs hover:bg-blue-700'
+                    : 'bg-white text-slate-700 border-slate-300 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 shadow-2xs'
+                }`}
+              >
+                {location.search.includes('tab=coordinator') ? (
+                  <span>Mode Operasional Lemari</span>
+                ) : (
+                  <span>Dashboard Admin Manajemen Linen</span>
+                )}
+              </Link>
+            </div>
           ) : (
             <Link 
               to={location.pathname.includes('on-call') ? '/on-call' : '/display'} 
@@ -143,6 +167,15 @@ const AdminLayout = () => {
         <div className="flex-1 overflow-y-auto p-4 md:p-8 bg-gray-50">
           <Outlet />
         </div>
+
+        {/* Modal Unduh Laporan Linen */}
+        <LinenReportModal
+          isOpen={isReportModalOpen}
+          onClose={() => setIsReportModalOpen(false)}
+          items={linenItems}
+          unitId="igd"
+          unitName="Instalasi Gawat Darurat (IGD)"
+        />
       </main>
     </div>
   );

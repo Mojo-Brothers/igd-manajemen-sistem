@@ -17,8 +17,10 @@ import {
   FaTimes,
   FaSave,
   FaClipboardCheck,
-  FaBroom
+  FaBroom,
+  FaDownload
 } from 'react-icons/fa';
+import { LinenReportModal } from './LinenReportModal';
 
 interface CoordinatorDashboardProps {
   items: LinenItem[];
@@ -42,6 +44,7 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({
   const [editNotes, setEditNotes] = useState<string>('');
   const [resetToClean, setResetToClean] = useState<boolean>(true);
   const [saving, setSaving] = useState<boolean>(false);
+  const [isReportModalOpen, setIsReportModalOpen] = useState<boolean>(false);
 
   useEffect(() => {
     const unsub = subscribeRecentTransactions(unitId, (txs) => {
@@ -185,11 +188,19 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({
             <FaSlidersH className="text-blue-400" />
             <h3 className="font-bold text-base">Matriks Sirkulasi 4 Status ({unitName})</h3>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <button
+              onClick={() => setIsReportModalOpen(true)}
+              className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center gap-1.5 border border-white/10 active:scale-95 cursor-pointer"
+              title="Unduh Laporan Mutasi & Distribusi Linen Harian / Bulanan (PDF & Excel)"
+            >
+              <FaDownload size={12} className="text-blue-400" />
+              <span>Unduh Laporan</span>
+            </button>
             <button
               onClick={handleWhitewash}
               disabled={whitewashing}
-              className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center gap-1.5 disabled:opacity-50"
+              className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
               title="Selaraskan semua status menjadi 100% bersih di lemari"
             >
               <FaBroom size={12} />
@@ -602,6 +613,15 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({
         isOpen={!!adjustingItem}
         onClose={() => setAdjustingItem(null)}
         item={adjustingItem}
+      />
+
+      {/* Linen Report Download Modal (PDF & Excel) */}
+      <LinenReportModal
+        isOpen={isReportModalOpen}
+        onClose={() => setIsReportModalOpen(false)}
+        items={items}
+        unitId={unitId}
+        unitName={unitName}
       />
     </div>
   );
