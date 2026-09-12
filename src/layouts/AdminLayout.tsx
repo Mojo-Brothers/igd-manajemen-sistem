@@ -154,7 +154,18 @@ const AdminLayout = () => {
                 )}
               </Link>
             </div>
-          ) : location.pathname.startsWith('/admin/ambulance') ? null : (
+          ) : location.pathname.startsWith('/admin/ambulance') ? (
+            <Link 
+              to="/ambulance" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-xs md:text-sm font-bold px-3.5 py-2 rounded-xl border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-700 transition-all flex items-center gap-2 shadow-2xs cursor-pointer active:scale-95"
+              title="Buka Halaman Front Ekspedisi Ambulance (Akses PIN)"
+            >
+              <FaAmbulance size={14} className="text-primary" />
+              <span>Buka Front Ambulance (Akses PIN) ↗</span>
+            </Link>
+          ) : (
             <Link 
               to={location.pathname.includes('on-call') ? '/on-call' : '/display'} 
               target="_blank" 

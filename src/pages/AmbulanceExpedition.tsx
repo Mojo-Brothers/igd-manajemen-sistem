@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
-import { FaAmbulance, FaPlus, FaTrash, FaExclamationTriangle } from 'react-icons/fa';
+import { Link } from 'react-router-dom';
+import { FaAmbulance, FaPlus, FaTrash, FaExclamationTriangle, FaExternalLinkAlt } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
 import {
@@ -231,6 +232,35 @@ const AmbulanceExpedition = () => {
           <FaPlus size={13} />
           <span>Tambah Kegiatan</span>
         </button>
+      </div>
+
+      {/* Hyperlink Banner to Front Route */}
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50/70 border border-blue-200 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center shrink-0 shadow-xs">
+            <FaAmbulance size={20} />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-gray-800 flex items-center gap-2">
+              <span>Halaman Front Operasional Ambulance (Akses PIN)</span>
+              <span className="text-[10px] px-2 py-0.5 rounded-md bg-blue-100 text-blue-700 font-extrabold">
+                Mobile-Friendly
+              </span>
+            </h3>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Workstation mobile khusus driver/perawat IGD di rute <code className="font-mono text-primary font-bold">/ambulance</code> yang diproteksi dengan 6-digit PIN tanpa memerlukan login akun email admin.
+            </p>
+          </div>
+        </div>
+        <Link
+          to="/ambulance"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="w-full sm:w-auto px-4 py-2.5 bg-primary hover:bg-blue-800 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 shrink-0"
+        >
+          <span>Buka Front Ambulance</span>
+          <FaExternalLinkAlt size={11} />
+        </Link>
       </div>
 
       {/* Summary Metrics Dashboard */}

@@ -60,3 +60,8 @@ export const DEFAULT_DRIVERS: string[] = [
   'Johari',
   'Edy'
 ];
+
+export const SETTINGS_COLLECTION = 'settings';
+export const AMBULANCE_CONFIG_DOC = 'ambulance_config';
+export const DEFAULT_AMBULANCE_PIN = '123456';
+

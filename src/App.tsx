@@ -17,6 +17,7 @@ const Settings = lazy(() => import('./pages/Settings'));
 const AdminOnCall = lazy(() => import('./pages/AdminOnCall'));
 const LinenFlowPage = lazy(() => import('./pages/linen/LinenFlowPage'));
 const AmbulanceExpedition = lazy(() => import('./pages/AmbulanceExpedition'));
+const AmbulanceFrontPage = lazy(() => import('./pages/AmbulanceFrontPage'));
 
 function App() {
   return (
@@ -40,6 +41,9 @@ function App() {
             {/* 2. Halaman Khusus Laundry (Akses Runner & Petugas Cuci) */}
             <Route path="/laundry" element={<LinenFlowPage initialRole="LAUNDRY" />} />
             <Route path="/linen/laundry" element={<LinenFlowPage initialRole="LAUNDRY" />} />
+            
+            {/* 3. Halaman Front Operasional Ekspedisi Ambulance IGD (Akses PIN) */}
+            <Route path="/ambulance" element={<AmbulanceFrontPage />} />
             
             {/* Admin Login */}
             <Route path="/login" element={<Login />} />

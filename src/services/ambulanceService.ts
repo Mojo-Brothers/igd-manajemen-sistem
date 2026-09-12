@@ -14,7 +14,14 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { AmbulanceExpedition } from '../types/ambulance';
-import { AMBULANCE_COLLECTION, DRIVERS_COLLECTION, DEFAULT_DRIVERS } from '../utils/ambulanceConstants';
+import {
+  AMBULANCE_COLLECTION,
+  DRIVERS_COLLECTION,
+  DEFAULT_DRIVERS,
+  SETTINGS_COLLECTION,
+  AMBULANCE_CONFIG_DOC,
+  DEFAULT_AMBULANCE_PIN,
+} from '../utils/ambulanceConstants';
 import { generateExpeditionNumber, calculateDuration } from '../utils/ambulanceUtils';
 
 /**
@@ -238,4 +245,53 @@ export const addAmbulanceDriver = async (name: string): Promise<string> => {
   });
   return docRef.id;
 };
+
+/**
+ * Mengambil PIN Otorisasi 6 Angka untuk Akses Front Ekspedisi Ambulance
+ * Default fallback: '123456'
+ */
+export const getAmbulancePin = async (): Promise<string> => {
+  try {
+    const configRef = doc(db, SETTINGS_COLLECTION, AMBULANCE_CONFIG_DOC);
+    const snap = await getDoc(configRef);
+    if (snap.exists() && snap.data()?.ambulancePin) {
+      return String(snap.data().ambulancePin).trim();
+    }
+  } catch (error) {
+    console.warn('Menggunakan PIN default untuk akses ambulance:', error);
+  }
+  return DEFAULT_AMBULANCE_PIN;
+};
+
+/**
+ * Mengubah PIN Otorisasi 6 Angka untuk Akses Front Ekspedisi Ambulance
+ */
+export const setAmbulancePin = async (
+  newPin: string,
+  updatedBy: string = 'Administrator'
+): Promise<void> => {
+  const sanitizedPin = newPin.trim();
+  if (!/^\d{6}$/.test(sanitizedPin)) {
+    throw new Error('PIN harus terdiri dari tepat 6 digit angka numerik (0-9)');
+  }
+  const configRef = doc(db, SETTINGS_COLLECTION, AMBULANCE_CONFIG_DOC);
+  await setDoc(
+    configRef,
+    {
+      ambulancePin: sanitizedPin,
+      updatedAt: serverTimestamp(),
+      updatedBy,
+    },
+    { merge: true }
+  );
+};
+
+/**
+ * Verifikasi apakah PIN yang dimasukkan cocok dengan PIN Ambulance yang tersimpan
+ */
+export const verifyAmbulancePin = async (inputPin: string): Promise<boolean> => {
+  const currentPin = await getAmbulancePin();
+  return inputPin.trim() === currentPin.trim();
+};
+
 
