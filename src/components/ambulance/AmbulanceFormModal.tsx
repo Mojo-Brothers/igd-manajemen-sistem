@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { FaTimes, FaSave, FaClock, FaAmbulance, FaUser, FaRoute, FaClipboardList, FaPlus, FaCheck } from 'react-icons/fa';
+import { FaTimes, FaSave, FaClock, FaAmbulance, FaUser, FaRoute, FaClipboardList, FaPlus, FaCheck, FaChevronDown } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import {
   AmbulanceExpedition,
@@ -262,69 +262,85 @@ export const AmbulanceFormModal: React.FC<AmbulanceFormModalProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Tanggal */}
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">
-                  Tanggal Kegiatan <span className="text-red-500">*</span>
-                </label>
+                <div className="h-5 flex items-center mb-1">
+                  <label className="block text-xs font-bold text-gray-700">
+                    Tanggal Kegiatan <span className="text-red-500">*</span>
+                  </label>
+                </div>
                 <input
                   type="date"
                   required
                   value={formData.date}
                   onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                  className="w-full px-3.5 py-2 text-sm bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
+                  className="w-full h-10 px-3.5 py-2 text-sm bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
                 />
               </div>
 
               {/* Jenis Kegiatan */}
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">
-                  Jenis Kegiatan <span className="text-red-500">*</span>
-                </label>
-                <select
-                  required
-                  value={formData.activityType}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      activityType: e.target.value as AmbulanceActivityType,
-                    })
-                  }
-                  className="w-full px-3.5 py-2 text-sm bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
-                >
-                  {ACTIVITY_TYPES.map((type) => (
-                    <option key={type} value={type}>
-                      {type}
-                    </option>
-                  ))}
-                </select>
+                <div className="h-5 flex items-center mb-1">
+                  <label className="block text-xs font-bold text-gray-700">
+                    Jenis Kegiatan <span className="text-red-500">*</span>
+                  </label>
+                </div>
+                <div className="relative">
+                  <select
+                    required
+                    value={formData.activityType}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        activityType: e.target.value as AmbulanceActivityType,
+                      })
+                    }
+                    className="w-full h-10 appearance-none pl-3.5 pr-10 py-2 text-sm bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all cursor-pointer"
+                  >
+                    {ACTIVITY_TYPES.map((type) => (
+                      <option key={type} value={type}>
+                        {type}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3.5 text-gray-400">
+                    <FaChevronDown size={12} />
+                  </div>
+                </div>
               </div>
 
               {/* Ambulance */}
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">
-                  Ambulance yang Digunakan <span className="text-red-500">*</span>
-                </label>
-                <select
-                  required
-                  value={formData.ambulance}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      ambulance: e.target.value as AmbulanceFleetType,
-                    })
-                  }
-                  className="w-full px-3.5 py-2 text-sm bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
-                >
-                  {AMBULANCE_FLEET_OPTIONS.map((fleet) => (
-                    <option key={fleet} value={fleet}>
-                      {fleet}
-                    </option>
-                  ))}
-                </select>
+                <div className="h-5 flex items-center mb-1">
+                  <label className="block text-xs font-bold text-gray-700">
+                    Ambulance yang Digunakan <span className="text-red-500">*</span>
+                  </label>
+                </div>
+                <div className="relative">
+                  <select
+                    required
+                    value={formData.ambulance}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        ambulance: e.target.value as AmbulanceFleetType,
+                      })
+                    }
+                    className="w-full h-10 appearance-none pl-3.5 pr-10 py-2 text-sm bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all cursor-pointer"
+                  >
+                    {AMBULANCE_FLEET_OPTIONS.map((fleet) => (
+                      <option key={fleet} value={fleet}>
+                        {fleet}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3.5 text-gray-400">
+                    <FaChevronDown size={12} />
+                  </div>
+                </div>
               </div>
 
               {/* Driver */}
               <div>
-                <div className="flex items-center justify-between mb-1">
+                <div className="h-5 flex items-center justify-between mb-1">
                   <label className="block text-xs font-bold text-gray-700">
                     Driver <span className="text-red-500">*</span>
                   </label>
@@ -341,14 +357,14 @@ export const AmbulanceFormModal: React.FC<AmbulanceFormModalProps> = ({
                 </div>
 
                 {isAddingDriver ? (
-                  <div className="flex items-center gap-1.5 animate-fadeIn">
+                  <div className="flex items-center gap-1.5 h-10 animate-fadeIn">
                     <input
                       type="text"
                       autoFocus
                       value={newDriverName}
                       onChange={(e) => setNewDriverName(e.target.value)}
                       placeholder="Ketik nama driver..."
-                      className="flex-1 px-3 py-2 text-xs bg-white border border-primary rounded-xl focus:ring-2 focus:ring-primary/30 outline-none"
+                      className="flex-1 h-full px-3 py-2 text-xs bg-white border border-primary rounded-xl focus:ring-2 focus:ring-primary/30 outline-none"
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
                           e.preventDefault();
@@ -360,7 +376,7 @@ export const AmbulanceFormModal: React.FC<AmbulanceFormModalProps> = ({
                       type="button"
                       disabled={isSavingDriver}
                       onClick={handleSaveNewDriver}
-                      className="px-3 py-2 bg-primary hover:bg-blue-800 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1 shrink-0"
+                      className="h-full px-3 bg-primary hover:bg-blue-800 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1 shrink-0"
                     >
                       <FaCheck size={11} /> {isSavingDriver ? '...' : 'Simpan'}
                     </button>
@@ -370,32 +386,37 @@ export const AmbulanceFormModal: React.FC<AmbulanceFormModalProps> = ({
                         setIsAddingDriver(false);
                         setNewDriverName('');
                       }}
-                      className="px-2.5 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl text-xs font-semibold transition-colors cursor-pointer shrink-0"
+                      className="h-full px-2.5 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl text-xs font-semibold transition-colors cursor-pointer shrink-0"
                     >
                       <FaTimes size={11} />
                     </button>
                   </div>
                 ) : (
-                  <select
-                    required
-                    value={formData.driver}
-                    onChange={(e) => {
-                      if (e.target.value === '__NEW__') {
-                        setIsAddingDriver(true);
-                      } else {
-                        setFormData({ ...formData, driver: e.target.value });
-                      }
-                    }}
-                    className="w-full px-3.5 py-2 text-sm bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
-                  >
-                    <option value="">-- Pilih Driver --</option>
-                    {driverList.map((d) => (
-                      <option key={d} value={d}>
-                        {d}
-                      </option>
-                    ))}
-                    <option value="__NEW__">+ Tambah Driver Baru...</option>
-                  </select>
+                  <div className="relative">
+                    <select
+                      required
+                      value={formData.driver}
+                      onChange={(e) => {
+                        if (e.target.value === '__NEW__') {
+                          setIsAddingDriver(true);
+                        } else {
+                          setFormData({ ...formData, driver: e.target.value });
+                        }
+                      }}
+                      className="w-full h-10 appearance-none pl-3.5 pr-10 py-2 text-sm bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all cursor-pointer"
+                    >
+                      <option value="">-- Pilih Driver --</option>
+                      {driverList.map((d) => (
+                        <option key={d} value={d}>
+                          {d}
+                        </option>
+                      ))}
+                      <option value="__NEW__">+ Tambah Driver Baru...</option>
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3.5 text-gray-400">
+                      <FaChevronDown size={12} />
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
@@ -424,9 +445,11 @@ export const AmbulanceFormModal: React.FC<AmbulanceFormModalProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Nama Pasien */}
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">
-                  Nama Pasien {isPatientRequired && <span className="text-red-500">*</span>}
-                </label>
+                <div className="h-5 flex items-center mb-1">
+                  <label className="block text-xs font-bold text-gray-700">
+                    Nama Pasien {isPatientRequired && <span className="text-red-500">*</span>}
+                  </label>
+                </div>
                 <input
                   type="text"
                   required={isPatientRequired}
@@ -435,15 +458,17 @@ export const AmbulanceFormModal: React.FC<AmbulanceFormModalProps> = ({
                   placeholder={
                     isPatientRequired ? 'Contoh: Ny. Siti Rahma' : 'Opsional / jika ada pasien'
                   }
-                  className="w-full px-3.5 py-2 text-sm bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
+                  className="w-full h-10 px-3.5 py-2 text-sm bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
                 />
               </div>
 
               {/* Nomor Rekam Medis */}
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">
-                  Nomor Rekam Medis (No. RM) <span className="text-gray-400 font-normal">(Opsional)</span>
-                </label>
+                <div className="h-5 flex items-center mb-1">
+                  <label className="block text-xs font-bold text-gray-700">
+                    Nomor Rekam Medis (No. RM) <span className="text-gray-400 font-normal text-[11px] ml-1">(Opsional)</span>
+                  </label>
+                </div>
                 <input
                   type="text"
                   value={formData.medicalRecordNumber || ''}
@@ -451,49 +476,63 @@ export const AmbulanceFormModal: React.FC<AmbulanceFormModalProps> = ({
                     setFormData({ ...formData, medicalRecordNumber: e.target.value })
                   }
                   placeholder="Contoh: RM-0012345"
-                  className="w-full px-3.5 py-2 text-sm bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
+                  className="w-full h-10 px-3.5 py-2 text-sm bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
                 />
               </div>
 
               {/* Status Awal (Kondisional) */}
               {isStatusApplicable && (
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">
-                    Status Awal Pasien
-                  </label>
-                  <select
-                    value={formData.initialStatus || ''}
-                    onChange={(e) => setFormData({ ...formData, initialStatus: e.target.value })}
-                    className="w-full px-3.5 py-2 text-sm bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary outline-none"
-                  >
-                    <option value="">-- Pilih Status Awal --</option>
-                    {INITIAL_STATUS_OPTIONS.map((status) => (
-                      <option key={status} value={status}>
-                        {status}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="h-5 flex items-center mb-1">
+                    <label className="block text-xs font-bold text-gray-700">
+                      Status Awal Pasien
+                    </label>
+                  </div>
+                  <div className="relative">
+                    <select
+                      value={formData.initialStatus || ''}
+                      onChange={(e) => setFormData({ ...formData, initialStatus: e.target.value })}
+                      className="w-full h-10 appearance-none pl-3.5 pr-10 py-2 text-sm bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all cursor-pointer"
+                    >
+                      <option value="">-- Pilih Status Awal --</option>
+                      {INITIAL_STATUS_OPTIONS.map((status) => (
+                        <option key={status} value={status}>
+                          {status}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3.5 text-gray-400">
+                      <FaChevronDown size={12} />
+                    </div>
+                  </div>
                 </div>
               )}
 
               {/* Status Akhir (Kondisional) */}
               {isStatusApplicable && (
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">
-                    Status Akhir Pasien
-                  </label>
-                  <select
-                    value={formData.finalStatus || ''}
-                    onChange={(e) => setFormData({ ...formData, finalStatus: e.target.value })}
-                    className="w-full px-3.5 py-2 text-sm bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary outline-none"
-                  >
-                    <option value="">-- Pilih Status Akhir --</option>
-                    {FINAL_STATUS_OPTIONS.map((status) => (
-                      <option key={status} value={status}>
-                        {status}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="h-5 flex items-center mb-1">
+                    <label className="block text-xs font-bold text-gray-700">
+                      Status Akhir Pasien
+                    </label>
+                  </div>
+                  <div className="relative">
+                    <select
+                      value={formData.finalStatus || ''}
+                      onChange={(e) => setFormData({ ...formData, finalStatus: e.target.value })}
+                      className="w-full h-10 appearance-none pl-3.5 pr-10 py-2 text-sm bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all cursor-pointer"
+                    >
+                      <option value="">-- Pilih Status Akhir --</option>
+                      {FINAL_STATUS_OPTIONS.map((status) => (
+                        <option key={status} value={status}>
+                          {status}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3.5 text-gray-400">
+                      <FaChevronDown size={12} />
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
@@ -511,53 +550,59 @@ export const AmbulanceFormModal: React.FC<AmbulanceFormModalProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
               {/* Waktu Mulai */}
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">
-                  Waktu Mulai <span className="text-red-500">*</span>
-                </label>
+                <div className="h-5 flex items-center mb-1">
+                  <label className="block text-xs font-bold text-gray-700">
+                    Waktu Mulai <span className="text-red-500">*</span>
+                  </label>
+                </div>
                 <div className="relative">
                   <input
                     type="time"
                     required
                     value={formData.startTime}
                     onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
-                    className="w-full px-3.5 py-2 text-sm bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary outline-none font-mono"
+                    className="w-full h-10 px-3.5 py-2 text-sm bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none font-mono transition-all"
                   />
                 </div>
               </div>
 
               {/* Waktu Selesai */}
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">
-                  Waktu Selesai <span className="text-red-500">*</span>
-                </label>
+                <div className="h-5 flex items-center mb-1">
+                  <label className="block text-xs font-bold text-gray-700">
+                    Waktu Selesai <span className="text-red-500">*</span>
+                  </label>
+                </div>
                 <div className="relative">
                   <input
                     type="time"
                     required
                     value={formData.endTime}
                     onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
-                    className="w-full px-3.5 py-2 text-sm bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary outline-none font-mono"
+                    className="w-full h-10 px-3.5 py-2 text-sm bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none font-mono transition-all"
                   />
                 </div>
               </div>
 
               {/* Durasi (Otomatis & Read-Only) */}
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1 flex items-center justify-between">
-                  <span>Durasi</span>
+                <div className="h-5 flex items-center justify-between mb-1">
+                  <span className="text-xs font-bold text-gray-700">Durasi</span>
                   <span className="text-[10px] text-blue-600 font-semibold">Otomatis</span>
-                </label>
-                <div className="w-full px-3 py-2 text-xs font-bold bg-blue-50 border border-blue-200 text-blue-800 rounded-xl flex items-center gap-1.5 h-[38px]">
-                  <FaClock size={12} className="text-blue-600 shrink-0" />
+                </div>
+                <div className="w-full h-10 px-3.5 py-2 text-xs font-bold bg-blue-50 border border-blue-200 text-blue-800 rounded-xl flex items-center gap-2">
+                  <FaClock size={13} className="text-blue-600 shrink-0" />
                   <span className="truncate">{formData.durationFormatted || '-'}</span>
                 </div>
               </div>
 
               {/* Jarak Tempuh (KM) */}
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">
-                  Jarak Tempuh (KM)
-                </label>
+                <div className="h-5 flex items-center mb-1">
+                  <label className="block text-xs font-bold text-gray-700">
+                    Jarak Tempuh (KM)
+                  </label>
+                </div>
                 <input
                   type="number"
                   min="0"
@@ -567,7 +612,7 @@ export const AmbulanceFormModal: React.FC<AmbulanceFormModalProps> = ({
                     setFormData({ ...formData, distanceKm: parseFloat(e.target.value) || 0 })
                   }
                   placeholder="0.0"
-                  className="w-full px-3.5 py-2 text-sm bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary outline-none"
+                  className="w-full h-10 px-3.5 py-2 text-sm bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
                 />
               </div>
             </div>

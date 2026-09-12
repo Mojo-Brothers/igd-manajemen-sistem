@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaSearch, FaCalendarAlt, FaTimes } from 'react-icons/fa';
+import { FaSearch, FaCalendarAlt, FaTimes, FaChevronDown } from 'react-icons/fa';
 import { AmbulanceFilterState } from '../../types/ambulance';
 import { ACTIVITY_TYPES, AMBULANCE_FLEET_OPTIONS } from '../../utils/ambulanceConstants';
 
@@ -117,18 +117,23 @@ export const AmbulanceFilters: React.FC<AmbulanceFiltersProps> = ({
           <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">
             Jenis Kegiatan
           </label>
-          <select
-            value={filters.activityType}
-            onChange={(e) => onFilterChange({ activityType: e.target.value })}
-            className="w-full px-3 py-2 text-xs bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-primary outline-none transition-all"
-          >
-            <option value="">Semua Jenis Kegiatan</option>
-            {ACTIVITY_TYPES.map((type) => (
-              <option key={type} value={type}>
-                {type}
-              </option>
-            ))}
-          </select>
+          <div className="relative">
+            <select
+              value={filters.activityType}
+              onChange={(e) => onFilterChange({ activityType: e.target.value })}
+              className="w-full appearance-none pl-3 pr-8 py-2 text-xs bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-primary outline-none transition-all cursor-pointer"
+            >
+              <option value="">Semua Jenis Kegiatan</option>
+              {ACTIVITY_TYPES.map((type) => (
+                <option key={type} value={type}>
+                  {type}
+                </option>
+              ))}
+            </select>
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5 text-gray-400">
+              <FaChevronDown size={10} />
+            </div>
+          </div>
         </div>
 
         {/* Filter Ambulance */}
@@ -136,18 +141,23 @@ export const AmbulanceFilters: React.FC<AmbulanceFiltersProps> = ({
           <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">
             Ambulance
           </label>
-          <select
-            value={filters.ambulance}
-            onChange={(e) => onFilterChange({ ambulance: e.target.value })}
-            className="w-full px-3 py-2 text-xs bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-primary outline-none transition-all"
-          >
-            <option value="">Semua Armada</option>
-            {AMBULANCE_FLEET_OPTIONS.map((amb) => (
-              <option key={amb} value={amb}>
-                {amb}
-              </option>
-            ))}
-          </select>
+          <div className="relative">
+            <select
+              value={filters.ambulance}
+              onChange={(e) => onFilterChange({ ambulance: e.target.value })}
+              className="w-full appearance-none pl-3 pr-8 py-2 text-xs bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-primary outline-none transition-all cursor-pointer"
+            >
+              <option value="">Semua Armada</option>
+              {AMBULANCE_FLEET_OPTIONS.map((amb) => (
+                <option key={amb} value={amb}>
+                  {amb}
+                </option>
+              ))}
+            </select>
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5 text-gray-400">
+              <FaChevronDown size={10} />
+            </div>
+          </div>
         </div>
 
         {/* Filter Driver */}
@@ -155,18 +165,23 @@ export const AmbulanceFilters: React.FC<AmbulanceFiltersProps> = ({
           <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">
             Driver
           </label>
-          <select
-            value={filters.driver}
-            onChange={(e) => onFilterChange({ driver: e.target.value })}
-            className="w-full px-3 py-2 text-xs bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-primary outline-none transition-all"
-          >
-            <option value="">Semua Driver</option>
-            {availableDrivers.map((driver) => (
-              <option key={driver} value={driver}>
-                {driver}
-              </option>
-            ))}
-          </select>
+          <div className="relative">
+            <select
+              value={filters.driver}
+              onChange={(e) => onFilterChange({ driver: e.target.value })}
+              className="w-full appearance-none pl-3 pr-8 py-2 text-xs bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-primary outline-none transition-all cursor-pointer"
+            >
+              <option value="">Semua Driver</option>
+              {availableDrivers.map((driver) => (
+                <option key={driver} value={driver}>
+                  {driver}
+                </option>
+              ))}
+            </select>
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5 text-gray-400">
+              <FaChevronDown size={10} />
+            </div>
+          </div>
         </div>
 
         {/* Reset Filter Button */}
