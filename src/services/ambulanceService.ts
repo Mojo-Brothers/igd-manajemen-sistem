@@ -7,8 +7,6 @@ import {
   updateDoc,
   deleteDoc,
   query,
-  where,
-  orderBy,
   onSnapshot,
   serverTimestamp,
 } from 'firebase/firestore';
@@ -33,8 +31,8 @@ export const subscribeAmbulanceExpeditions = (
   onError?: (error: Error) => void
 ): (() => void) => {
   const colRef = collection(db, AMBULANCE_COLLECTION);
-  // Default query diurutkan berdasarkan tanggal terbaru (single-field index)
-  const q = query(colRef, orderBy('date', 'desc'));
+  // Scan collection directly without Firestore index dependency, sort in-memory
+  const q = query(colRef);
 
   return onSnapshot(
     q,
@@ -86,8 +84,7 @@ export const subscribeAmbulanceExpeditions = (
  */
 export const getAmbulanceExpeditions = async (): Promise<AmbulanceExpedition[]> => {
   const colRef = collection(db, AMBULANCE_COLLECTION);
-  const q = query(colRef, orderBy('date', 'desc'));
-  const snapshot = await getDocs(q);
+  const snapshot = await getDocs(colRef);
 
   const items = snapshot.docs.map((docSnap) => {
     const data = docSnap.data();
@@ -98,7 +95,7 @@ export const getAmbulanceExpeditions = async (): Promise<AmbulanceExpedition[]> 
   });
 
   items.sort((a, b) => {
-    if (b.date !== a.date) return b.date.localeCompare(a.date);
+    if (b.date !== a.date) return (b.date || '').localeCompare(a.date || '');
     return (b.startTime || '').localeCompare(a.startTime || '');
   });
 
@@ -121,19 +118,21 @@ export const getAmbulanceExpeditionById = async (id: string): Promise<AmbulanceE
  */
 export const getNextExpeditionNumber = async (dateStr: string): Promise<string> => {
   const colRef = collection(db, AMBULANCE_COLLECTION);
-  const q = query(colRef, where('date', '==', dateStr));
-  const snapshot = await getDocs(q);
+  const snapshot = await getDocs(colRef);
 
   let maxSeq = 0;
   const prefix = `AMB-${dateStr.replace(/-/g, '')}-`;
 
   snapshot.docs.forEach((docSnap) => {
-    const expNum = docSnap.data().expeditionNumber as string;
-    if (expNum && expNum.startsWith(prefix)) {
-      const seqStr = expNum.replace(prefix, '');
-      const seq = parseInt(seqStr, 10);
-      if (!isNaN(seq) && seq > maxSeq) {
-        maxSeq = seq;
+    const data = docSnap.data();
+    if (data.date === dateStr) {
+      const expNum = data.expeditionNumber as string;
+      if (expNum && expNum.startsWith(prefix)) {
+        const seqStr = expNum.replace(prefix, '');
+        const seq = parseInt(seqStr, 10);
+        if (!isNaN(seq) && seq > maxSeq) {
+          maxSeq = seq;
+        }
       }
     }
   });
@@ -224,7 +223,7 @@ export const subscribeAmbulanceDrivers = (
   onError?: (error: Error) => void
 ): (() => void) => {
   const colRef = collection(db, DRIVERS_COLLECTION);
-  const q = query(colRef, orderBy('name', 'asc'));
+  const q = query(colRef);
 
   return onSnapshot(
     q,

@@ -79,7 +79,6 @@ const AmbulanceFrontPage = () => {
       },
       (error) => {
         console.error('Error fetching ambulance expeditions:', error);
-        toast.error('Gagal memuat data ekspedisi');
         setLoading(false);
       }
     );
@@ -173,11 +172,12 @@ const AmbulanceFrontPage = () => {
   const handleLock = () => {
     try {
       sessionStorage.removeItem('ambulance_front_auth');
+      localStorage.removeItem('ambulance_front_auth');
     } catch (e) {
       console.warn(e);
     }
     setIsUnlocked(false);
-    toast.success('Stasiun ambulance dikunci');
+    toast.success('Halaman dikunci. Masukkan PIN untuk membuka.');
   };
 
   const handleOpenAddModal = () => {
@@ -256,10 +256,11 @@ const AmbulanceFrontPage = () => {
             <button
               type="button"
               onClick={handleLock}
-              className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-xl transition-colors cursor-pointer"
-              title="Kunci Halaman"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-white/15 hover:bg-white/25 active:scale-95 text-white font-bold text-xs rounded-xl border border-white/20 transition-all cursor-pointer shadow-xs"
+              title="Kunci Halaman (Kembali ke Login PIN)"
             >
-              <FaLock size={16} />
+              <FaLock size={13} className="text-amber-300" />
+              <span>Kunci Halaman</span>
             </button>
           </div>
         </div>

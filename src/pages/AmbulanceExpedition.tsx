@@ -62,7 +62,6 @@ const AmbulanceExpedition = () => {
       },
       (error) => {
         console.error('Error fetching ambulance expeditions:', error);
-        toast.error('Gagal memuat data ekspedisi ambulance');
         setLoading(false);
       }
     );
