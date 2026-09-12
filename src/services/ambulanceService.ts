@@ -33,8 +33,8 @@ export const subscribeAmbulanceExpeditions = (
   onError?: (error: Error) => void
 ): (() => void) => {
   const colRef = collection(db, AMBULANCE_COLLECTION);
-  // Default query diurutkan dari data terbaru
-  const q = query(colRef, orderBy('date', 'desc'), orderBy('startTime', 'desc'));
+  // Default query diurutkan berdasarkan tanggal terbaru (single-field index)
+  const q = query(colRef, orderBy('date', 'desc'));
 
   return onSnapshot(
     q,
@@ -65,6 +65,13 @@ export const subscribeAmbulanceExpeditions = (
           updatedBy: data.updatedBy || '',
         } as AmbulanceExpedition;
       });
+
+      // Urutkan berdasarkan tanggal terbaru dan jam mulai terbaru secara in-memory
+      items.sort((a, b) => {
+        if (b.date !== a.date) return b.date.localeCompare(a.date);
+        return (b.startTime || '').localeCompare(a.startTime || '');
+      });
+
       callback(items);
     },
     (err) => {
@@ -79,16 +86,23 @@ export const subscribeAmbulanceExpeditions = (
  */
 export const getAmbulanceExpeditions = async (): Promise<AmbulanceExpedition[]> => {
   const colRef = collection(db, AMBULANCE_COLLECTION);
-  const q = query(colRef, orderBy('date', 'desc'), orderBy('startTime', 'desc'));
+  const q = query(colRef, orderBy('date', 'desc'));
   const snapshot = await getDocs(q);
 
-  return snapshot.docs.map((docSnap) => {
+  const items = snapshot.docs.map((docSnap) => {
     const data = docSnap.data();
     return {
       id: docSnap.id,
       ...data,
     } as AmbulanceExpedition;
   });
+
+  items.sort((a, b) => {
+    if (b.date !== a.date) return b.date.localeCompare(a.date);
+    return (b.startTime || '').localeCompare(a.startTime || '');
+  });
+
+  return items;
 };
 
 /**

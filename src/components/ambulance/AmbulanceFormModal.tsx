@@ -1,5 +1,20 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { FaTimes, FaSave, FaClock, FaAmbulance, FaUser, FaRoute, FaClipboardList, FaPlus, FaCheck, FaChevronDown } from 'react-icons/fa';
+import {
+  FaTimes,
+  FaSave,
+  FaClock,
+  FaAmbulance,
+  FaUser,
+  FaRoute,
+  FaClipboardList,
+  FaPlus,
+  FaCheck,
+  FaChevronDown,
+  FaArrowLeft,
+  FaExclamationCircle,
+  FaCalendarAlt,
+  FaClipboardCheck,
+} from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import {
   AmbulanceExpedition,
@@ -20,6 +35,7 @@ import {
   calculateDuration,
   getTodayDateString,
   getCurrentTimeString,
+  formatDateIndo,
 } from '../../utils/ambulanceUtils';
 
 interface AmbulanceFormModalProps {
@@ -57,12 +73,14 @@ export const AmbulanceFormModal: React.FC<AmbulanceFormModalProps> = ({
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
   const [isAddingDriver, setIsAddingDriver] = useState(false);
   const [newDriverName, setNewDriverName] = useState('');
   const [isSavingDriver, setIsSavingDriver] = useState(false);
 
   // Populate data when editingData changes or modal opens
   useEffect(() => {
+    setShowPreview(false);
     setIsAddingDriver(false);
     setNewDriverName('');
     if (editingData) {
@@ -159,7 +177,7 @@ export const AmbulanceFormModal: React.FC<AmbulanceFormModalProps> = ({
   const isPatientRequired = PATIENT_REQUIRED_ACTIVITIES.includes(formData.activityType);
   const isStatusApplicable = STATUS_APPLICABLE_ACTIVITIES.includes(formData.activityType);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleProceedToPreview = (e: React.FormEvent) => {
     e.preventDefault();
 
     // Validasi Dasar
@@ -207,6 +225,11 @@ export const AmbulanceFormModal: React.FC<AmbulanceFormModalProps> = ({
       return;
     }
 
+    // Buka tahap preview konfirmasi
+    setShowPreview(true);
+  };
+
+  const handleFinalSubmit = async () => {
     try {
       setIsSubmitting(true);
       await onSubmit(formData);
@@ -226,14 +249,20 @@ export const AmbulanceFormModal: React.FC<AmbulanceFormModalProps> = ({
         <div className="px-6 py-4 bg-gradient-to-r from-blue-700 to-primary text-white flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-white/10 rounded-xl">
-              <FaAmbulance size={20} />
+              {showPreview ? <FaClipboardCheck size={20} /> : <FaAmbulance size={20} />}
             </div>
             <div>
               <h3 className="text-lg font-bold">
-                {editingData ? 'Edit Kegiatan Ambulance' : 'Tambah Kegiatan Ambulance'}
+                {showPreview
+                  ? 'Konfirmasi & Preview Kegiatan Ambulance'
+                  : editingData
+                  ? 'Edit Kegiatan Ambulance'
+                  : 'Tambah Kegiatan Ambulance'}
               </h3>
               <p className="text-xs text-blue-100">
-                {editingData
+                {showPreview
+                  ? 'Pastikan seluruh rincian kegiatan operasional ambulance sudah benar sebelum disimpan'
+                  : editingData
                   ? `Memperbarui log ekspedisi ${editingData.expeditionNumber}`
                   : 'Catat aktivitas operasional ambulance IGD terkini'}
               </p>
@@ -242,14 +271,203 @@ export const AmbulanceFormModal: React.FC<AmbulanceFormModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+            className="p-1.5 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors cursor-pointer"
           >
             <FaTimes size={18} />
           </button>
         </div>
 
-        {/* Modal Body / Form */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
+        {showPreview ? (
+          <div className="flex-1 overflow-y-auto p-6 space-y-5 animate-fadeIn">
+            {/* Banner Konfirmasi */}
+            <div className="bg-blue-50/90 border border-blue-200 rounded-2xl p-4 flex items-start gap-3">
+              <div className="p-2 bg-blue-100 text-blue-700 rounded-xl shrink-0 mt-0.5">
+                <FaExclamationCircle size={18} />
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-blue-950">
+                  Pemeriksaan Akhir Data Ekspedisi
+                </h4>
+                <p className="text-xs text-blue-700 mt-0.5 leading-relaxed">
+                  Silakan periksa kembali rincian data di bawah ini untuk memastikan seluruh informasi kegiatan operasional ambulance telah benar sebelum dicatat ke sistem logbook IGD.
+                </p>
+              </div>
+            </div>
+
+            {/* 1. INFORMASI KEGIATAN & ARMADA */}
+            <div className="bg-white rounded-2xl border border-gray-200 p-4 sm:p-5 shadow-xs space-y-3">
+              <div className="flex items-center gap-2 border-b border-gray-100 pb-2.5">
+                <FaClipboardList className="text-primary" size={16} />
+                <h4 className="text-xs font-extrabold text-gray-800 uppercase tracking-wider">
+                  1. Informasi Kegiatan & Armada
+                </h4>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div className="bg-gray-50/80 p-3.5 rounded-xl border border-gray-100">
+                  <span className="block text-[11px] font-medium text-gray-500">Tanggal Kegiatan</span>
+                  <span className="text-sm font-bold text-gray-900 mt-1 flex items-center gap-1.5">
+                    <FaCalendarAlt className="text-primary" size={13} />
+                    {formatDateIndo(formData.date, 'long')}
+                  </span>
+                </div>
+
+                <div className="bg-gray-50/80 p-3.5 rounded-xl border border-gray-100">
+                  <span className="block text-[11px] font-medium text-gray-500">Jenis Kegiatan</span>
+                  <span className="inline-block mt-1 px-3 py-1 bg-blue-100 text-blue-800 border border-blue-200 rounded-lg text-xs font-bold">
+                    {formData.activityType}
+                  </span>
+                </div>
+
+                <div className="bg-gray-50/80 p-3.5 rounded-xl border border-gray-100">
+                  <span className="block text-[11px] font-medium text-gray-500">Ambulance yang Digunakan</span>
+                  <span className="inline-block mt-1 px-3 py-1 bg-purple-100 text-purple-800 border border-purple-200 rounded-lg text-xs font-black">
+                    🚑 {formData.ambulance}
+                  </span>
+                </div>
+
+                <div className="bg-gray-50/80 p-3.5 rounded-xl border border-gray-100">
+                  <span className="block text-[11px] font-medium text-gray-500">Driver / Pengemudi</span>
+                  <span className="text-sm font-bold text-gray-900 mt-1 flex items-center gap-1.5">
+                    <FaUser className="text-emerald-600" size={13} />
+                    {formData.driver || '-'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* 2. INFORMASI PASIEN */}
+            <div className="bg-white rounded-2xl border border-gray-200 p-4 sm:p-5 shadow-xs space-y-3">
+              <div className="flex items-center justify-between border-b border-gray-100 pb-2.5">
+                <div className="flex items-center gap-2">
+                  <FaUser className="text-blue-700" size={15} />
+                  <h4 className="text-xs font-extrabold text-blue-900 uppercase tracking-wider">
+                    2. Informasi Pasien
+                  </h4>
+                </div>
+                <span
+                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                    isPatientRequired
+                      ? 'bg-amber-100 text-amber-800'
+                      : 'bg-blue-100 text-blue-700'
+                  }`}
+                >
+                  {isPatientRequired ? 'Wajib Diisi' : 'Opsional'}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div className="bg-blue-50/40 p-3.5 rounded-xl border border-blue-100/70">
+                  <span className="block text-[11px] font-medium text-gray-500">Nama Pasien</span>
+                  <span className="text-sm font-bold text-gray-900 mt-1 block">
+                    {formData.patientName?.trim() || (
+                      <span className="text-gray-400 italic font-normal text-xs">Tidak ada pasien</span>
+                    )}
+                  </span>
+                </div>
+
+                <div className="bg-blue-50/40 p-3.5 rounded-xl border border-blue-100/70">
+                  <span className="block text-[11px] font-medium text-gray-500">Nomor Rekam Medis (No. RM)</span>
+                  <span className="text-sm font-bold font-mono text-gray-900 mt-1 block">
+                    {formData.medicalRecordNumber?.trim() || (
+                      <span className="text-gray-400 italic font-normal font-sans text-xs">-</span>
+                    )}
+                  </span>
+                </div>
+
+                {isStatusApplicable && (
+                  <>
+                    <div className="bg-blue-50/40 p-3.5 rounded-xl border border-blue-100/70">
+                      <span className="block text-[11px] font-medium text-gray-500">Status Awal Pasien</span>
+                      <span className="text-sm font-semibold text-gray-800 mt-1 block">
+                        {formData.initialStatus || '-'}
+                      </span>
+                    </div>
+
+                    <div className="bg-blue-50/40 p-3.5 rounded-xl border border-blue-100/70">
+                      <span className="block text-[11px] font-medium text-gray-500">Status Akhir Pasien</span>
+                      <span className="text-sm font-semibold text-gray-800 mt-1 block">
+                        {formData.finalStatus || '-'}
+                      </span>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* 3. INFORMASI WAKTU & PERJALANAN */}
+            <div className="bg-white rounded-2xl border border-gray-200 p-4 sm:p-5 shadow-xs space-y-3">
+              <div className="flex items-center gap-2 border-b border-gray-100 pb-2.5">
+                <FaRoute className="text-primary" size={16} />
+                <h4 className="text-xs font-extrabold text-gray-800 uppercase tracking-wider">
+                  3. Informasi Waktu & Perjalanan
+                </h4>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                <div className="bg-gray-50/80 p-3.5 rounded-xl border border-gray-100">
+                  <span className="block text-[11px] font-medium text-gray-500">Waktu Operasional</span>
+                  <span className="text-sm font-bold font-mono text-gray-900 mt-1 flex items-center gap-1.5">
+                    <FaClock className="text-blue-600" size={13} />
+                    {formData.startTime} - {formData.endTime} WIB
+                  </span>
+                </div>
+
+                <div className="bg-blue-50/60 p-3.5 rounded-xl border border-blue-100">
+                  <span className="block text-[11px] font-medium text-blue-700">Durasi Perjalanan</span>
+                  <span className="text-sm font-black text-blue-900 mt-1 block">
+                    ⏱️ {formData.durationFormatted || '-'}
+                  </span>
+                </div>
+
+                <div className="bg-gray-50/80 p-3.5 rounded-xl border border-gray-100">
+                  <span className="block text-[11px] font-medium text-gray-500">Jarak Tempuh</span>
+                  <span className="text-sm font-bold text-gray-900 mt-1 block">
+                    🚗 {formData.distanceKm} KM
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* 4. KETERANGAN TAMBAHAN */}
+            <div className="bg-white rounded-2xl border border-gray-200 p-4 sm:p-5 shadow-xs space-y-2">
+              <h4 className="text-xs font-extrabold text-gray-800 uppercase tracking-wider">
+                4. Keterangan / Catatan Tambahan
+              </h4>
+              <div className="p-3.5 bg-gray-50 rounded-xl border border-gray-100 text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
+                {formData.notes?.trim() ? (
+                  formData.notes
+                ) : (
+                  <span className="text-gray-400 italic text-xs">Tidak ada catatan tambahan</span>
+                )}
+              </div>
+            </div>
+
+            {/* Tombol Aksi Preview */}
+            <div className="pt-4 border-t border-gray-200 flex flex-col-reverse sm:flex-row items-center justify-between gap-3 shrink-0">
+              <button
+                type="button"
+                onClick={() => setShowPreview(false)}
+                disabled={isSubmitting}
+                className="w-full sm:w-auto px-5 py-2.5 text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-2"
+              >
+                <FaArrowLeft size={13} />
+                <span>Kembali & Ubah</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleFinalSubmit}
+                disabled={isSubmitting}
+                className="w-full sm:w-auto px-6 py-2.5 text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 active:scale-95 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+              >
+                <FaCheck size={14} />
+                <span>{isSubmitting ? 'Menyimpan...' : 'Ya, Konfirmasi & Simpan'}</span>
+              </button>
+            </div>
+          </div>
+        ) : (
+          <form onSubmit={handleProceedToPreview} className="flex-1 overflow-y-auto p-6 space-y-6">
           {/* SECTION 1: INFORMASI KEGIATAN */}
           <div className="bg-slate-50/70 p-4 sm:p-5 rounded-2xl border border-slate-200/80 space-y-4">
             <div className="flex items-center gap-2 border-b border-slate-200 pb-2.5">
@@ -659,7 +877,8 @@ export const AmbulanceFormModal: React.FC<AmbulanceFormModalProps> = ({
             </button>
           </div>
         </form>
-      </div>
+      )}
     </div>
+  </div>
   );
 };
