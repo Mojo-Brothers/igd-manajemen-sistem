@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { FaHome, FaUserMd, FaCog, FaSignOutAlt, FaHospitalAlt, FaBars, FaTimes, FaCalendarAlt, FaBed, FaDownload } from 'react-icons/fa';
+import { FaHome, FaUserMd, FaCog, FaSignOutAlt, FaHospitalAlt, FaBars, FaTimes, FaCalendarAlt, FaBed, FaDownload, FaAmbulance } from 'react-icons/fa';
 import { LinenItem } from '../types/linen';
 import { subscribeLinenItems } from '../services/linenService';
 import { LinenReportModal } from '../pages/linen/components/LinenReportModal';
@@ -35,6 +35,7 @@ const AdminLayout = () => {
     { path: '/admin/doctors', icon: <FaUserMd size={20} />, label: 'Jadwal Dokter IGD' },
     { path: '/admin/on-call', icon: <FaCalendarAlt size={20} />, label: 'Jadwal On Call' },
     { path: '/admin/linen', icon: <FaBed size={20} />, label: 'LinenFlow IGD' },
+    { path: '/admin/ambulance', icon: <FaAmbulance size={20} />, label: 'Ekspedisi Ambulance' },
     { path: '/admin/settings', icon: <FaCog size={20} />, label: 'Pengaturan' },
   ];
 

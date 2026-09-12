@@ -1,0 +1,527 @@
+import React, { useState, useEffect } from 'react';
+import { FaTimes, FaSave, FaClock, FaAmbulance, FaUser, FaRoute, FaClipboardList } from 'react-icons/fa';
+import toast from 'react-hot-toast';
+import {
+  AmbulanceExpedition,
+  AmbulanceExpeditionFormData,
+  AmbulanceActivityType,
+  AmbulanceFleetType,
+} from '../../types/ambulance';
+import {
+  ACTIVITY_TYPES,
+  PATIENT_REQUIRED_ACTIVITIES,
+  INITIAL_STATUS_OPTIONS,
+  FINAL_STATUS_OPTIONS,
+  AMBULANCE_FLEET_OPTIONS,
+  STATUS_APPLICABLE_ACTIVITIES,
+} from '../../utils/ambulanceConstants';
+import {
+  calculateDuration,
+  getTodayDateString,
+  getCurrentTimeString,
+} from '../../utils/ambulanceUtils';
+
+interface AmbulanceFormModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (formData: AmbulanceExpeditionFormData) => Promise<void>;
+  editingData?: AmbulanceExpedition | null;
+  driverSuggestions?: string[];
+}
+
+export const AmbulanceFormModal: React.FC<AmbulanceFormModalProps> = ({
+  isOpen,
+  onClose,
+  onSubmit,
+  editingData,
+  driverSuggestions = [],
+}) => {
+  const [formData, setFormData] = useState<AmbulanceExpeditionFormData>({
+    date: getTodayDateString(),
+    activityType: 'Jemput Pasien',
+    patientName: '',
+    medicalRecordNumber: '',
+    initialStatus: 'Rumah Pasien',
+    finalStatus: 'Rawat Inap',
+    ambulance: 'HIACE',
+    driver: '',
+    startTime: '08:00',
+    endTime: '09:00',
+    durationMinutes: 60,
+    durationFormatted: '1 Jam',
+    distanceKm: 0,
+    notes: '',
+  });
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Populate data when editingData changes or modal opens
+  useEffect(() => {
+    if (editingData) {
+      setFormData({
+        date: editingData.date || getTodayDateString(),
+        activityType: editingData.activityType || 'Jemput Pasien',
+        patientName: editingData.patientName || '',
+        medicalRecordNumber: editingData.medicalRecordNumber || '',
+        initialStatus: editingData.initialStatus || '',
+        finalStatus: editingData.finalStatus || '',
+        ambulance: editingData.ambulance || 'HIACE',
+        driver: editingData.driver || '',
+        startTime: editingData.startTime || '08:00',
+        endTime: editingData.endTime || '09:00',
+        durationMinutes: editingData.durationMinutes || 0,
+        durationFormatted: editingData.durationFormatted || '',
+        distanceKm: editingData.distanceKm || 0,
+        notes: editingData.notes || '',
+      });
+    } else {
+      const nowTime = getCurrentTimeString();
+      const nextHourTime = (() => {
+        const [h, m] = nowTime.split(':').map(Number);
+        const nextH = (h + 1) % 24;
+        return `${String(nextH).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+      })();
+
+      const duration = calculateDuration(nowTime, nextHourTime);
+
+      setFormData({
+        date: getTodayDateString(),
+        activityType: 'Jemput Pasien',
+        patientName: '',
+        medicalRecordNumber: '',
+        initialStatus: 'Rumah Pasien',
+        finalStatus: 'Rawat Inap',
+        ambulance: 'HIACE',
+        driver: '',
+        startTime: nowTime,
+        endTime: nextHourTime,
+        durationMinutes: duration.minutes,
+        durationFormatted: duration.formatted,
+        distanceKm: 0,
+        notes: '',
+      });
+    }
+  }, [editingData, isOpen]);
+
+  // Recalculate duration automatically when startTime, endTime, or date changes
+  useEffect(() => {
+    if (formData.startTime && formData.endTime) {
+      const duration = calculateDuration(formData.startTime, formData.endTime, formData.date);
+      setFormData((prev) => ({
+        ...prev,
+        durationMinutes: duration.minutes,
+        durationFormatted: duration.formatted,
+      }));
+    }
+  }, [formData.startTime, formData.endTime, formData.date]);
+
+  if (!isOpen) return null;
+
+  const isPatientRequired = PATIENT_REQUIRED_ACTIVITIES.includes(formData.activityType);
+  const isStatusApplicable = STATUS_APPLICABLE_ACTIVITIES.includes(formData.activityType);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Validasi Dasar
+    if (!formData.date) {
+      toast.error('Tanggal kegiatan wajib diisi');
+      return;
+    }
+    if (!formData.activityType) {
+      toast.error('Jenis kegiatan wajib dipilih');
+      return;
+    }
+    if (!formData.ambulance) {
+      toast.error('Ambulance yang digunakan wajib dipilih');
+      return;
+    }
+    if (!formData.driver.trim()) {
+      toast.error('Nama Driver wajib diisi');
+      return;
+    }
+    if (!formData.startTime || !formData.endTime) {
+      toast.error('Waktu mulai dan waktu selesai wajib diisi');
+      return;
+    }
+
+    // Validasi Kondisional Pasien
+    if (isPatientRequired && !formData.patientName?.trim()) {
+      toast.error(`Nama Pasien wajib diisi untuk kegiatan "${formData.activityType}"`);
+      return;
+    }
+
+    // Validasi Jarak Tempuh
+    if (formData.distanceKm < 0) {
+      toast.error('Jarak tempuh tidak boleh bernilai negatif');
+      return;
+    }
+
+    // Validasi Keterangan Jika Memilih 'Lainnya'
+    const hasLainnya =
+      formData.activityType === 'Lainnya' ||
+      formData.initialStatus === 'Lainnya' ||
+      formData.finalStatus === 'Lainnya';
+
+    if (hasLainnya && !formData.notes?.trim()) {
+      toast.error('Keterangan Tambahan wajib diisi jika memilih opsi "Lainnya"');
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      await onSubmit(formData);
+      onClose();
+    } catch (error) {
+      console.error('Submit expedition error:', error);
+      toast.error('Gagal menyimpan data ekspedisi');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 animate-fadeIn">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[92vh] border border-gray-100">
+        {/* Modal Header */}
+        <div className="px-6 py-4 bg-gradient-to-r from-blue-700 to-primary text-white flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-white/10 rounded-xl">
+              <FaAmbulance size={20} />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold">
+                {editingData ? 'Edit Kegiatan Ambulance' : 'Tambah Kegiatan Ambulance'}
+              </h3>
+              <p className="text-xs text-blue-100">
+                {editingData
+                  ? `Memperbarui log ekspedisi ${editingData.expeditionNumber}`
+                  : 'Catat aktivitas operasional ambulance IGD terkini'}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1.5 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+          >
+            <FaTimes size={18} />
+          </button>
+        </div>
+
+        {/* Modal Body / Form */}
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
+          {/* SECTION 1: INFORMASI KEGIATAN */}
+          <div className="bg-slate-50/70 p-4 sm:p-5 rounded-2xl border border-slate-200/80 space-y-4">
+            <div className="flex items-center gap-2 border-b border-slate-200 pb-2.5">
+              <FaClipboardList className="text-primary" size={16} />
+              <h4 className="text-sm font-bold text-gray-800 uppercase tracking-wide">
+                1. Informasi Kegiatan
+              </h4>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Tanggal */}
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">
+                  Tanggal Kegiatan <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="date"
+                  required
+                  value={formData.date}
+                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                  className="w-full px-3.5 py-2 text-sm bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
+                />
+              </div>
+
+              {/* Jenis Kegiatan */}
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">
+                  Jenis Kegiatan <span className="text-red-500">*</span>
+                </label>
+                <select
+                  required
+                  value={formData.activityType}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      activityType: e.target.value as AmbulanceActivityType,
+                    })
+                  }
+                  className="w-full px-3.5 py-2 text-sm bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
+                >
+                  {ACTIVITY_TYPES.map((type) => (
+                    <option key={type} value={type}>
+                      {type}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Ambulance */}
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">
+                  Ambulance yang Digunakan <span className="text-red-500">*</span>
+                </label>
+                <select
+                  required
+                  value={formData.ambulance}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      ambulance: e.target.value as AmbulanceFleetType,
+                    })
+                  }
+                  className="w-full px-3.5 py-2 text-sm bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
+                >
+                  {AMBULANCE_FLEET_OPTIONS.map((fleet) => (
+                    <option key={fleet} value={fleet}>
+                      {fleet}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Driver */}
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">
+                  Driver <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    required
+                    list="driverList"
+                    value={formData.driver}
+                    onChange={(e) => setFormData({ ...formData, driver: e.target.value })}
+                    placeholder="Nama Driver / Petugas"
+                    className="w-full px-3.5 py-2 text-sm bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
+                  />
+                  <datalist id="driverList">
+                    {driverSuggestions.map((d, i) => (
+                      <option key={i} value={d} />
+                    ))}
+                  </datalist>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* SECTION 2: INFORMASI PASIEN (Conditional) */}
+          <div className="bg-blue-50/50 p-4 sm:p-5 rounded-2xl border border-blue-100 space-y-4">
+            <div className="flex items-center justify-between border-b border-blue-200/80 pb-2.5">
+              <div className="flex items-center gap-2">
+                <FaUser className="text-blue-700" size={15} />
+                <h4 className="text-sm font-bold text-blue-900 uppercase tracking-wide">
+                  2. Informasi Pasien
+                </h4>
+              </div>
+              <span
+                className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full ${
+                  isPatientRequired
+                    ? 'bg-amber-100 text-amber-800'
+                    : 'bg-blue-100 text-blue-700'
+                }`}
+              >
+                {isPatientRequired ? 'Wajib Diisi' : 'Opsional'}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Nama Pasien */}
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">
+                  Nama Pasien {isPatientRequired && <span className="text-red-500">*</span>}
+                </label>
+                <input
+                  type="text"
+                  required={isPatientRequired}
+                  value={formData.patientName || ''}
+                  onChange={(e) => setFormData({ ...formData, patientName: e.target.value })}
+                  placeholder={
+                    isPatientRequired ? 'Contoh: Ny. Siti Rahma' : 'Opsional / jika ada pasien'
+                  }
+                  className="w-full px-3.5 py-2 text-sm bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
+                />
+              </div>
+
+              {/* Nomor Rekam Medis */}
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">
+                  Nomor Rekam Medis (No. RM) <span className="text-gray-400 font-normal">(Opsional)</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.medicalRecordNumber || ''}
+                  onChange={(e) =>
+                    setFormData({ ...formData, medicalRecordNumber: e.target.value })
+                  }
+                  placeholder="Contoh: RM-0012345"
+                  className="w-full px-3.5 py-2 text-sm bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
+                />
+              </div>
+
+              {/* Status Awal (Kondisional) */}
+              {isStatusApplicable && (
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">
+                    Status Awal Pasien
+                  </label>
+                  <select
+                    value={formData.initialStatus || ''}
+                    onChange={(e) => setFormData({ ...formData, initialStatus: e.target.value })}
+                    className="w-full px-3.5 py-2 text-sm bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary outline-none"
+                  >
+                    <option value="">-- Pilih Status Awal --</option>
+                    {INITIAL_STATUS_OPTIONS.map((status) => (
+                      <option key={status} value={status}>
+                        {status}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Status Akhir (Kondisional) */}
+              {isStatusApplicable && (
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">
+                    Status Akhir Pasien
+                  </label>
+                  <select
+                    value={formData.finalStatus || ''}
+                    onChange={(e) => setFormData({ ...formData, finalStatus: e.target.value })}
+                    className="w-full px-3.5 py-2 text-sm bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary outline-none"
+                  >
+                    <option value="">-- Pilih Status Akhir --</option>
+                    {FINAL_STATUS_OPTIONS.map((status) => (
+                      <option key={status} value={status}>
+                        {status}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* SECTION 3: INFORMASI PERJALANAN */}
+          <div className="bg-slate-50/70 p-4 sm:p-5 rounded-2xl border border-slate-200/80 space-y-4">
+            <div className="flex items-center gap-2 border-b border-slate-200 pb-2.5">
+              <FaRoute className="text-primary" size={16} />
+              <h4 className="text-sm font-bold text-gray-800 uppercase tracking-wide">
+                3. Informasi Perjalanan & Waktu
+              </h4>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+              {/* Waktu Mulai */}
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">
+                  Waktu Mulai <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type="time"
+                    required
+                    value={formData.startTime}
+                    onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
+                    className="w-full px-3.5 py-2 text-sm bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary outline-none font-mono"
+                  />
+                </div>
+              </div>
+
+              {/* Waktu Selesai */}
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">
+                  Waktu Selesai <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type="time"
+                    required
+                    value={formData.endTime}
+                    onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
+                    className="w-full px-3.5 py-2 text-sm bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary outline-none font-mono"
+                  />
+                </div>
+              </div>
+
+              {/* Durasi (Otomatis & Read-Only) */}
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1 flex items-center justify-between">
+                  <span>Durasi</span>
+                  <span className="text-[10px] text-blue-600 font-semibold">Otomatis</span>
+                </label>
+                <div className="w-full px-3 py-2 text-xs font-bold bg-blue-50 border border-blue-200 text-blue-800 rounded-xl flex items-center gap-1.5 h-[38px]">
+                  <FaClock size={12} className="text-blue-600 shrink-0" />
+                  <span className="truncate">{formData.durationFormatted || '-'}</span>
+                </div>
+              </div>
+
+              {/* Jarak Tempuh (KM) */}
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">
+                  Jarak Tempuh (KM)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  value={formData.distanceKm}
+                  onChange={(e) =>
+                    setFormData({ ...formData, distanceKm: parseFloat(e.target.value) || 0 })
+                  }
+                  placeholder="0.0"
+                  className="w-full px-3.5 py-2 text-sm bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary outline-none"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* SECTION 4: CATATAN & KETERANGAN */}
+          <div className="space-y-2">
+            <label className="block text-xs font-bold text-gray-700">
+              Keterangan Tambahan
+              {(formData.activityType === 'Lainnya' ||
+                formData.initialStatus === 'Lainnya' ||
+                formData.finalStatus === 'Lainnya') && (
+                <span className="text-red-500 ml-1">
+                  *(Wajib diisi untuk opsi 'Lainnya')
+                </span>
+              )}
+            </label>
+            <textarea
+              rows={3}
+              value={formData.notes || ''}
+              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              placeholder="Catatan rincian perjalanan, alasan rujukan, lokasi penjemputan, atau keterangan jenis kegiatan lainnya..."
+              className="w-full px-3.5 py-2.5 text-sm bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
+            />
+          </div>
+
+          {/* Modal Footer Buttons */}
+          <div className="pt-4 border-t border-gray-200 flex items-center justify-end gap-3 shrink-0">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={isSubmitting}
+              className="px-5 py-2.5 text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors cursor-pointer"
+            >
+              Batal
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="px-6 py-2.5 text-sm font-bold text-white bg-primary hover:bg-blue-800 active:scale-95 rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+            >
+              <FaSave />
+              <span>{isSubmitting ? 'Menyimpan...' : 'Simpan Kegiatan'}</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};

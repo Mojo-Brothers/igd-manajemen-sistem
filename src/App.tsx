@@ -16,6 +16,7 @@ const Doctors = lazy(() => import('./pages/Doctors'));
 const Settings = lazy(() => import('./pages/Settings'));
 const AdminOnCall = lazy(() => import('./pages/AdminOnCall'));
 const LinenFlowPage = lazy(() => import('./pages/linen/LinenFlowPage'));
+const AmbulanceExpedition = lazy(() => import('./pages/AmbulanceExpedition'));
 
 function App() {
   return (
@@ -50,6 +51,7 @@ function App() {
                 <Route path="doctors" element={<Doctors />} />
                 <Route path="on-call" element={<AdminOnCall />} />
                 <Route path="linen" element={<LinenFlowPage />} />
+                <Route path="ambulance" element={<AmbulanceExpedition />} />
                 <Route path="settings" element={<Settings />} />
               </Route>
             </Route>
