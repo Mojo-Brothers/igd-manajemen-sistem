@@ -29,7 +29,7 @@ import {
   PATIENT_REQUIRED_ACTIVITIES,
   INITIAL_STATUS_OPTIONS,
   FINAL_STATUS_OPTIONS,
-  AMBULANCE_FLEET_OPTIONS,
+  DEFAULT_AMBULANCE_FLEETS,
   DEFAULT_DRIVERS,
   STATUS_APPLICABLE_ACTIVITIES,
 } from '../../utils/ambulanceConstants';
@@ -51,6 +51,8 @@ interface AmbulanceFormModalProps {
   editingData?: AmbulanceExpedition | null;
   drivers?: string[];
   onAddDriver?: (name: string) => Promise<string | void>;
+  ambulances?: string[];
+  onAddAmbulance?: (name: string) => Promise<string | void>;
 }
 
 export const AmbulanceFormModal: React.FC<AmbulanceFormModalProps> = ({
@@ -60,6 +62,8 @@ export const AmbulanceFormModal: React.FC<AmbulanceFormModalProps> = ({
   editingData,
   drivers = [],
   onAddDriver,
+  ambulances = [],
+  onAddAmbulance,
 }) => {
   const [formData, setFormData] = useState<AmbulanceExpeditionFormData>({
     date: getTodayDateString(),
@@ -86,6 +90,9 @@ export const AmbulanceFormModal: React.FC<AmbulanceFormModalProps> = ({
   const [isAddingDriver, setIsAddingDriver] = useState(false);
   const [newDriverName, setNewDriverName] = useState('');
   const [isSavingDriver, setIsSavingDriver] = useState(false);
+  const [isAddingAmbulance, setIsAddingAmbulance] = useState(false);
+  const [newAmbulanceName, setNewAmbulanceName] = useState('');
+  const [isSavingAmbulance, setIsSavingAmbulance] = useState(false);
   const [isMapPickerOpen, setIsMapPickerOpen] = useState(false);
 
   // Manual custom status states (Tambahkan Lainnya)
@@ -97,6 +104,8 @@ export const AmbulanceFormModal: React.FC<AmbulanceFormModalProps> = ({
     setShowPreview(false);
     setIsAddingDriver(false);
     setNewDriverName('');
+    setIsAddingAmbulance(false);
+    setNewAmbulanceName('');
     setIsMapPickerOpen(false);
     if (editingData) {
       const isCustomInit = Boolean(
@@ -176,6 +185,38 @@ export const AmbulanceFormModal: React.FC<AmbulanceFormModalProps> = ({
       }));
     }
   }, [formData.startTime, formData.endTime, formData.date]);
+
+  const ambulanceList = useMemo(() => {
+    const base = ambulances && ambulances.length > 0 ? ambulances : DEFAULT_AMBULANCE_FLEETS;
+    const list = new Set(base);
+    if (formData.ambulance && !list.has(formData.ambulance)) {
+      list.add(formData.ambulance);
+    }
+    return Array.from(list).sort((a, b) => a.localeCompare(b, 'id'));
+  }, [ambulances, formData.ambulance]);
+
+  const handleSaveNewAmbulance = async () => {
+    const trimmed = newAmbulanceName.trim().toUpperCase();
+    if (!trimmed) {
+      toast.error('Nama armada ambulance tidak boleh kosong');
+      return;
+    }
+    try {
+      setIsSavingAmbulance(true);
+      if (onAddAmbulance) {
+        await onAddAmbulance(trimmed);
+      }
+      setFormData((prev) => ({ ...prev, ambulance: trimmed }));
+      toast.success(`Ambulance "${trimmed}" berhasil ditambahkan`);
+      setNewAmbulanceName('');
+      setIsAddingAmbulance(false);
+    } catch (error) {
+      console.error('Failed to add ambulance:', error);
+      toast.error('Gagal menambahkan armada ambulance');
+    } finally {
+      setIsSavingAmbulance(false);
+    }
+  };
 
   const driverList = useMemo(() => {
     const list = new Set(drivers && drivers.length > 0 ? drivers : DEFAULT_DRIVERS);
@@ -603,33 +644,88 @@ export const AmbulanceFormModal: React.FC<AmbulanceFormModalProps> = ({
 
               {/* Ambulance */}
               <div>
-                <div className="h-5 flex items-center mb-1">
+                <div className="h-5 flex items-center justify-between mb-1">
                   <label className="block text-xs font-bold text-gray-700">
                     Ambulance yang Digunakan <span className="text-red-500">*</span>
                   </label>
+                  {!isAddingAmbulance && (
+                    <button
+                      type="button"
+                      onClick={() => setIsAddingAmbulance(true)}
+                      className="text-[11px] font-bold text-primary hover:text-blue-800 flex items-center gap-1 cursor-pointer transition-colors"
+                      title="Tambah Unit Ambulance Baru"
+                    >
+                      <FaPlus size={9} /> Tambah Ambulance
+                    </button>
+                  )}
                 </div>
-                <div className="relative">
-                  <select
-                    required
-                    value={formData.ambulance}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        ambulance: e.target.value as AmbulanceFleetType,
-                      })
-                    }
-                    className="w-full h-10 appearance-none pl-3.5 pr-10 py-2 text-sm bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all cursor-pointer"
-                  >
-                    {AMBULANCE_FLEET_OPTIONS.map((fleet) => (
-                      <option key={fleet} value={fleet}>
-                        {fleet}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3.5 text-gray-400">
-                    <FaChevronDown size={12} />
+
+                {isAddingAmbulance ? (
+                  <div className="flex items-center gap-1.5 h-10 animate-fadeIn">
+                    <input
+                      type="text"
+                      autoFocus
+                      value={newAmbulanceName}
+                      onChange={(e) => setNewAmbulanceName(e.target.value.toUpperCase())}
+                      placeholder="Ketik unit baru (misal: APV, HIACE)..."
+                      className="flex-1 h-full px-3 py-2 text-xs bg-white border border-primary rounded-xl focus:ring-2 focus:ring-primary/30 outline-none uppercase font-semibold"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleSaveNewAmbulance();
+                        }
+                      }}
+                    />
+                    <button
+                      type="button"
+                      disabled={isSavingAmbulance}
+                      onClick={handleSaveNewAmbulance}
+                      className="h-full px-3 bg-primary hover:bg-blue-800 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1 shrink-0"
+                    >
+                      <FaCheck size={11} /> {isSavingAmbulance ? '...' : 'Simpan'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsAddingAmbulance(false);
+                        setNewAmbulanceName('');
+                      }}
+                      className="h-full px-2.5 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl text-xs font-semibold transition-colors cursor-pointer shrink-0"
+                    >
+                      <FaTimes size={11} />
+                    </button>
                   </div>
-                </div>
+                ) : (
+                  <div className="relative">
+                    <select
+                      required
+                      value={formData.ambulance}
+                      onChange={(e) => {
+                        if (e.target.value === '__NEW__') {
+                          setIsAddingAmbulance(true);
+                        } else {
+                          setFormData({
+                            ...formData,
+                            ambulance: e.target.value as AmbulanceFleetType,
+                          });
+                        }
+                      }}
+                      className="w-full h-10 appearance-none pl-3.5 pr-10 py-2 text-sm bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all cursor-pointer"
+                    >
+                      {ambulanceList.map((fleet) => (
+                        <option key={fleet} value={fleet}>
+                          {fleet}
+                        </option>
+                      ))}
+                      <option value="__NEW__" className="text-primary font-bold">
+                        + Tambah Ambulance Baru...
+                      </option>
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3.5 text-gray-400">
+                      <FaChevronDown size={12} />
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Driver */}

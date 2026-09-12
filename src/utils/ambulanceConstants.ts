@@ -48,8 +48,15 @@ export const AMBULANCE_FLEET_OPTIONS: AmbulanceFleetType[] = [
   'PHC'
 ];
 
+export const DEFAULT_AMBULANCE_FLEETS: string[] = [
+  'EVALIA',
+  'BSI',
+  'PHC'
+];
+
 export const AMBULANCE_COLLECTION = 'ambulance_expeditions';
 export const DRIVERS_COLLECTION = 'ambulance_drivers';
+export const FLEETS_COLLECTION = 'ambulance_fleets';
 
 export const DEFAULT_DRIVERS: string[] = [
   'Acun',

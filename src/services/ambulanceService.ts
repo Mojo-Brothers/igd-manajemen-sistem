@@ -16,6 +16,8 @@ import {
   AMBULANCE_COLLECTION,
   DRIVERS_COLLECTION,
   DEFAULT_DRIVERS,
+  FLEETS_COLLECTION,
+  DEFAULT_AMBULANCE_FLEETS,
   SETTINGS_COLLECTION,
   AMBULANCE_CONFIG_DOC,
   DEFAULT_AMBULANCE_PIN,
@@ -255,6 +257,51 @@ export const addAmbulanceDriver = async (name: string): Promise<string> => {
   if (!trimmed) throw new Error('Nama driver tidak boleh kosong');
 
   const docRef = doc(collection(db, DRIVERS_COLLECTION));
+  await setDoc(docRef, {
+    name: trimmed,
+    createdAt: serverTimestamp(),
+  });
+  return docRef.id;
+};
+
+/**
+ * Real-time listener untuk daftar armada ambulance.
+ * Menggabungkan armada default (EVALIA, BSI, PHC) dengan armada baru dari Firestore.
+ */
+export const subscribeAmbulanceFleets = (
+  callback: (fleets: string[]) => void,
+  onError?: (error: Error) => void
+): (() => void) => {
+  const colRef = collection(db, FLEETS_COLLECTION);
+  const q = query(colRef);
+
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const customFleets = snapshot.docs
+        .map((docSnap) => docSnap.data().name as string)
+        .filter(Boolean);
+
+      const combined = Array.from(new Set([...DEFAULT_AMBULANCE_FLEETS, ...customFleets]));
+      combined.sort((a, b) => a.localeCompare(b, 'id'));
+      callback(combined);
+    },
+    (err) => {
+      console.error('Error subscribing to ambulance fleets:', err);
+      callback(DEFAULT_AMBULANCE_FLEETS);
+      if (onError) onError(err);
+    }
+  );
+};
+
+/**
+ * Menambahkan armada ambulance baru ke Firestore
+ */
+export const addAmbulanceFleet = async (name: string): Promise<string> => {
+  const trimmed = name.trim().toUpperCase();
+  if (!trimmed) throw new Error('Nama armada ambulance tidak boleh kosong');
+
+  const docRef = doc(collection(db, FLEETS_COLLECTION));
   await setDoc(docRef, {
     name: trimmed,
     createdAt: serverTimestamp(),

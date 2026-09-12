@@ -23,6 +23,8 @@ import {
   deleteAmbulanceExpedition,
   subscribeAmbulanceDrivers,
   addAmbulanceDriver,
+  subscribeAmbulanceFleets,
+  addAmbulanceFleet,
 } from '../services/ambulanceService';
 import { AmbulancePinGate } from '../components/ambulance/AmbulancePinGate';
 import { AmbulanceStats } from '../components/ambulance/AmbulanceStats';
@@ -31,7 +33,7 @@ import { AmbulanceTable, AmbulanceViewMode } from '../components/ambulance/Ambul
 import { AmbulanceFormModal } from '../components/ambulance/AmbulanceFormModal';
 import { AmbulanceDetailModal } from '../components/ambulance/AmbulanceDetailModal';
 import { getTodayDateString } from '../utils/ambulanceUtils';
-import { DEFAULT_DRIVERS } from '../utils/ambulanceConstants';
+import { DEFAULT_DRIVERS, DEFAULT_AMBULANCE_FLEETS } from '../utils/ambulanceConstants';
 
 const AmbulanceFrontPage = () => {
   // Check session authorization for PIN gate
@@ -45,6 +47,7 @@ const AmbulanceFrontPage = () => {
 
   const [expeditions, setExpeditions] = useState<IAmbulanceExpedition[]>([]);
   const [drivers, setDrivers] = useState<string[]>(DEFAULT_DRIVERS);
+  const [fleets, setFleets] = useState<string[]>(DEFAULT_AMBULANCE_FLEETS);
   const [loading, setLoading] = useState(true);
 
   // View Mode: list (default), card, grid
@@ -109,9 +112,14 @@ const AmbulanceFrontPage = () => {
       setDrivers(driverList);
     });
 
+    const unsubscribeFleets = subscribeAmbulanceFleets((fleetList) => {
+      setFleets(fleetList);
+    });
+
     return () => {
       unsubscribeExpeditions();
       unsubscribeDrivers();
+      unsubscribeFleets();
     };
   }, [isUnlocked]);
 
@@ -124,6 +132,16 @@ const AmbulanceFrontPage = () => {
     ]);
     return Array.from(list).sort((a, b) => a.localeCompare(b, 'id'));
   }, [drivers, expeditions]);
+
+  // Combine ambulance fleet list
+  const availableAmbulances = useMemo(() => {
+    const list = new Set([
+      ...DEFAULT_AMBULANCE_FLEETS,
+      ...fleets,
+      ...expeditions.map((e) => e.ambulance?.trim()).filter((a): a is string => Boolean(a)),
+    ]);
+    return Array.from(list).sort((a, b) => a.localeCompare(b, 'id'));
+  }, [fleets, expeditions]);
 
   // Filtered expeditions
   const filteredExpeditions = useMemo(() => {
@@ -335,6 +353,7 @@ const AmbulanceFrontPage = () => {
             })
           }
           availableDrivers={availableDrivers}
+          availableAmbulances={availableAmbulances}
         />
 
         {/* Trip List / Cards / Table */}
@@ -433,6 +452,8 @@ const AmbulanceFrontPage = () => {
         editingData={editingItem}
         drivers={availableDrivers}
         onAddDriver={addAmbulanceDriver}
+        ambulances={availableAmbulances}
+        onAddAmbulance={addAmbulanceFleet}
       />
 
       {/* Detail Modal */}

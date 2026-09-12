@@ -8,6 +8,7 @@ interface AmbulanceFiltersProps {
   onFilterChange: (newFilters: Partial<AmbulanceFilterState>) => void;
   onResetFilters: () => void;
   availableDrivers: string[];
+  availableAmbulances?: string[];
 }
 
 export const AmbulanceFilters: React.FC<AmbulanceFiltersProps> = ({
@@ -15,6 +16,7 @@ export const AmbulanceFilters: React.FC<AmbulanceFiltersProps> = ({
   onFilterChange,
   onResetFilters,
   availableDrivers,
+  availableAmbulances = [],
 }) => {
   const isFiltered =
     filters.searchQuery !== '' ||
@@ -148,7 +150,7 @@ export const AmbulanceFilters: React.FC<AmbulanceFiltersProps> = ({
               className="w-full appearance-none pl-3 pr-8 py-2 text-xs bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-primary outline-none transition-all cursor-pointer"
             >
               <option value="">Semua Armada</option>
-              {AMBULANCE_FLEET_OPTIONS.map((amb) => (
+              {(availableAmbulances.length > 0 ? availableAmbulances : AMBULANCE_FLEET_OPTIONS).map((amb) => (
                 <option key={amb} value={amb}>
                   {amb}
                 </option>
