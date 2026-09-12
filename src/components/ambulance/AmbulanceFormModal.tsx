@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { FaTimes, FaSave, FaClock, FaAmbulance, FaUser, FaRoute, FaClipboardList } from 'react-icons/fa';
+import React, { useState, useEffect, useMemo } from 'react';
+import { FaTimes, FaSave, FaClock, FaAmbulance, FaUser, FaRoute, FaClipboardList, FaPlus, FaCheck } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import {
   AmbulanceExpedition,
@@ -14,6 +14,7 @@ import {
   FINAL_STATUS_OPTIONS,
   AMBULANCE_FLEET_OPTIONS,
   STATUS_APPLICABLE_ACTIVITIES,
+  DEFAULT_DRIVERS,
 } from '../../utils/ambulanceConstants';
 import {
   calculateDuration,
@@ -26,7 +27,8 @@ interface AmbulanceFormModalProps {
   onClose: () => void;
   onSubmit: (formData: AmbulanceExpeditionFormData) => Promise<void>;
   editingData?: AmbulanceExpedition | null;
-  driverSuggestions?: string[];
+  drivers?: string[];
+  onAddDriver?: (name: string) => Promise<string | void>;
 }
 
 export const AmbulanceFormModal: React.FC<AmbulanceFormModalProps> = ({
@@ -34,7 +36,8 @@ export const AmbulanceFormModal: React.FC<AmbulanceFormModalProps> = ({
   onClose,
   onSubmit,
   editingData,
-  driverSuggestions = [],
+  drivers = [],
+  onAddDriver,
 }) => {
   const [formData, setFormData] = useState<AmbulanceExpeditionFormData>({
     date: getTodayDateString(),
@@ -54,9 +57,14 @@ export const AmbulanceFormModal: React.FC<AmbulanceFormModalProps> = ({
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isAddingDriver, setIsAddingDriver] = useState(false);
+  const [newDriverName, setNewDriverName] = useState('');
+  const [isSavingDriver, setIsSavingDriver] = useState(false);
 
   // Populate data when editingData changes or modal opens
   useEffect(() => {
+    setIsAddingDriver(false);
+    setNewDriverName('');
     if (editingData) {
       setFormData({
         date: editingData.date || getTodayDateString(),
@@ -114,6 +122,37 @@ export const AmbulanceFormModal: React.FC<AmbulanceFormModalProps> = ({
       }));
     }
   }, [formData.startTime, formData.endTime, formData.date]);
+
+  const driverList = useMemo(() => {
+    const list = new Set(drivers && drivers.length > 0 ? drivers : DEFAULT_DRIVERS);
+    if (formData.driver && !list.has(formData.driver)) {
+      list.add(formData.driver);
+    }
+    return Array.from(list).sort((a, b) => a.localeCompare(b, 'id'));
+  }, [drivers, formData.driver]);
+
+  const handleSaveNewDriver = async () => {
+    const trimmed = newDriverName.trim();
+    if (!trimmed) {
+      toast.error('Nama driver tidak boleh kosong');
+      return;
+    }
+    try {
+      setIsSavingDriver(true);
+      if (onAddDriver) {
+        await onAddDriver(trimmed);
+      }
+      setFormData((prev) => ({ ...prev, driver: trimmed }));
+      toast.success(`Driver "${trimmed}" berhasil ditambahkan`);
+      setNewDriverName('');
+      setIsAddingDriver(false);
+    } catch (error) {
+      console.error('Failed to add driver:', error);
+      toast.error('Gagal menambahkan driver');
+    } finally {
+      setIsSavingDriver(false);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -285,25 +324,79 @@ export const AmbulanceFormModal: React.FC<AmbulanceFormModalProps> = ({
 
               {/* Driver */}
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">
-                  Driver <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    required
-                    list="driverList"
-                    value={formData.driver}
-                    onChange={(e) => setFormData({ ...formData, driver: e.target.value })}
-                    placeholder="Nama Driver / Petugas"
-                    className="w-full px-3.5 py-2 text-sm bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
-                  />
-                  <datalist id="driverList">
-                    {driverSuggestions.map((d, i) => (
-                      <option key={i} value={d} />
-                    ))}
-                  </datalist>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-bold text-gray-700">
+                    Driver <span className="text-red-500">*</span>
+                  </label>
+                  {!isAddingDriver && (
+                    <button
+                      type="button"
+                      onClick={() => setIsAddingDriver(true)}
+                      className="text-[11px] font-bold text-primary hover:text-blue-800 flex items-center gap-1 cursor-pointer transition-colors"
+                      title="Tambah Nama Driver Baru"
+                    >
+                      <FaPlus size={9} /> Tambah Driver
+                    </button>
+                  )}
                 </div>
+
+                {isAddingDriver ? (
+                  <div className="flex items-center gap-1.5 animate-fadeIn">
+                    <input
+                      type="text"
+                      autoFocus
+                      value={newDriverName}
+                      onChange={(e) => setNewDriverName(e.target.value)}
+                      placeholder="Ketik nama driver..."
+                      className="flex-1 px-3 py-2 text-xs bg-white border border-primary rounded-xl focus:ring-2 focus:ring-primary/30 outline-none"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleSaveNewDriver();
+                        }
+                      }}
+                    />
+                    <button
+                      type="button"
+                      disabled={isSavingDriver}
+                      onClick={handleSaveNewDriver}
+                      className="px-3 py-2 bg-primary hover:bg-blue-800 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1 shrink-0"
+                    >
+                      <FaCheck size={11} /> {isSavingDriver ? '...' : 'Simpan'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsAddingDriver(false);
+                        setNewDriverName('');
+                      }}
+                      className="px-2.5 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl text-xs font-semibold transition-colors cursor-pointer shrink-0"
+                    >
+                      <FaTimes size={11} />
+                    </button>
+                  </div>
+                ) : (
+                  <select
+                    required
+                    value={formData.driver}
+                    onChange={(e) => {
+                      if (e.target.value === '__NEW__') {
+                        setIsAddingDriver(true);
+                      } else {
+                        setFormData({ ...formData, driver: e.target.value });
+                      }
+                    }}
+                    className="w-full px-3.5 py-2 text-sm bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
+                  >
+                    <option value="">-- Pilih Driver --</option>
+                    {driverList.map((d) => (
+                      <option key={d} value={d}>
+                        {d}
+                      </option>
+                    ))}
+                    <option value="__NEW__">+ Tambah Driver Baru...</option>
+                  </select>
+                )}
               </div>
             </div>
           </div>

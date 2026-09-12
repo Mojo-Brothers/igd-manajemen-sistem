@@ -14,7 +14,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { AmbulanceExpedition } from '../types/ambulance';
-import { AMBULANCE_COLLECTION } from '../utils/ambulanceConstants';
+import { AMBULANCE_COLLECTION, DRIVERS_COLLECTION, DEFAULT_DRIVERS } from '../utils/ambulanceConstants';
 import { generateExpeditionNumber, calculateDuration } from '../utils/ambulanceUtils';
 
 /**
@@ -193,3 +193,49 @@ export const deleteAmbulanceExpedition = async (id: string): Promise<void> => {
   const docRef = doc(db, AMBULANCE_COLLECTION, id);
   await deleteDoc(docRef);
 };
+
+/**
+ * Real-time listener untuk daftar driver ambulance.
+ * Menggabungkan driver default (Acun, Aldy, Azis, Johari, Edy) dengan driver baru dari Firestore.
+ */
+export const subscribeAmbulanceDrivers = (
+  callback: (drivers: string[]) => void,
+  onError?: (error: Error) => void
+): (() => void) => {
+  const colRef = collection(db, DRIVERS_COLLECTION);
+  const q = query(colRef, orderBy('name', 'asc'));
+
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const customDrivers = snapshot.docs
+        .map((docSnap) => docSnap.data().name as string)
+        .filter(Boolean);
+
+      const combined = Array.from(new Set([...DEFAULT_DRIVERS, ...customDrivers]));
+      combined.sort((a, b) => a.localeCompare(b, 'id'));
+      callback(combined);
+    },
+    (err) => {
+      console.error('Error subscribing to ambulance drivers:', err);
+      callback(DEFAULT_DRIVERS);
+      if (onError) onError(err);
+    }
+  );
+};
+
+/**
+ * Menambahkan driver baru ke Firestore
+ */
+export const addAmbulanceDriver = async (name: string): Promise<string> => {
+  const trimmed = name.trim();
+  if (!trimmed) throw new Error('Nama driver tidak boleh kosong');
+
+  const docRef = doc(collection(db, DRIVERS_COLLECTION));
+  await setDoc(docRef, {
+    name: trimmed,
+    createdAt: serverTimestamp(),
+  });
+  return docRef.id;
+};
+

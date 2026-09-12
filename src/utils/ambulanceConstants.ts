@@ -51,3 +51,12 @@ export const AMBULANCE_FLEET_OPTIONS: AmbulanceFleetType[] = [
 ];
 
 export const AMBULANCE_COLLECTION = 'ambulance_expeditions';
+export const DRIVERS_COLLECTION = 'ambulance_drivers';
+
+export const DEFAULT_DRIVERS: string[] = [
+  'Acun',
+  'Aldy',
+  'Azis',
+  'Johari',
+  'Edy'
+];

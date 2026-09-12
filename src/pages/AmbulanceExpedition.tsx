@@ -12,6 +12,8 @@ import {
   createAmbulanceExpedition,
   updateAmbulanceExpedition,
   deleteAmbulanceExpedition,
+  subscribeAmbulanceDrivers,
+  addAmbulanceDriver,
 } from '../services/ambulanceService';
 import { AmbulanceStats } from '../components/ambulance/AmbulanceStats';
 import { AmbulanceFilters } from '../components/ambulance/AmbulanceFilters';
@@ -19,6 +21,7 @@ import { AmbulanceTable } from '../components/ambulance/AmbulanceTable';
 import { AmbulanceFormModal } from '../components/ambulance/AmbulanceFormModal';
 import { AmbulanceDetailModal } from '../components/ambulance/AmbulanceDetailModal';
 import { getTodayDateString } from '../utils/ambulanceUtils';
+import { DEFAULT_DRIVERS } from '../utils/ambulanceConstants';
 
 const AmbulanceExpedition = () => {
   const { currentUser } = useAuth();
@@ -46,10 +49,12 @@ const AmbulanceExpedition = () => {
     driver: '',
   });
 
-  // Real-time Firestore Subscription
+  // Real-time Firestore Subscription for Expeditions & Drivers
+  const [drivers, setDrivers] = useState<string[]>(DEFAULT_DRIVERS);
+
   useEffect(() => {
     setLoading(true);
-    const unsubscribe = subscribeAmbulanceExpeditions(
+    const unsubscribeExpeditions = subscribeAmbulanceExpeditions(
       (items) => {
         setExpeditions(items);
         setLoading(false);
@@ -61,16 +66,27 @@ const AmbulanceExpedition = () => {
       }
     );
 
-    return () => unsubscribe();
+    const unsubscribeDrivers = subscribeAmbulanceDrivers(
+      (driverList) => {
+        setDrivers(driverList);
+      }
+    );
+
+    return () => {
+      unsubscribeExpeditions();
+      unsubscribeDrivers();
+    };
   }, []);
 
   // Extract unique driver list for filter & suggestion
   const availableDrivers = useMemo(() => {
-    const drivers = expeditions
-      .map((e) => e.driver?.trim())
-      .filter((d): d is string => Boolean(d));
-    return Array.from(new Set(drivers)).sort();
-  }, [expeditions]);
+    const list = new Set([
+      ...DEFAULT_DRIVERS,
+      ...drivers,
+      ...expeditions.map((e) => e.driver?.trim()).filter((d): d is string => Boolean(d)),
+    ]);
+    return Array.from(list).sort((a, b) => a.localeCompare(b, 'id'));
+  }, [drivers, expeditions]);
 
   // Filter & Search Logic
   const filteredExpeditions = useMemo(() => {
@@ -257,7 +273,8 @@ const AmbulanceExpedition = () => {
         }}
         onSubmit={handleFormSubmit}
         editingData={editingItem}
-        driverSuggestions={availableDrivers}
+        drivers={availableDrivers}
+        onAddDriver={addAmbulanceDriver}
       />
 
       {/* Detail Modal */}
