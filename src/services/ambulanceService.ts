@@ -43,7 +43,7 @@ export const subscribeAmbulanceExpeditions = (
           medicalRecordNumber: data.medicalRecordNumber || '',
           initialStatus: data.initialStatus || '',
           finalStatus: data.finalStatus || '',
-          ambulance: data.ambulance || 'HIACE',
+          ambulance: data.ambulance || 'EVALIA',
           driver: data.driver || '',
           startTime: data.startTime || '00:00',
           endTime: data.endTime || '00:00',

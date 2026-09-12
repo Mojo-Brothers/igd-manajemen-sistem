@@ -45,8 +45,9 @@ export const FINAL_STATUS_OPTIONS: FinalStatus[] = [
 ];
 
 export const AMBULANCE_FLEET_OPTIONS: AmbulanceFleetType[] = [
-  'HIACE',
-  'Grandmax'
+  'EVALIA',
+  'BSI',
+  'PHC'
 ];
 
 export const AMBULANCE_COLLECTION = 'ambulance_expeditions';

@@ -21,7 +21,7 @@ export type FinalStatus =
   | 'Meninggal'
   | 'Lainnya';
 
-export type AmbulanceFleetType = 'HIACE' | 'Grandmax' | string;
+export type AmbulanceFleetType = 'EVALIA' | 'BSI' | 'PHC' | string;
 
 export interface AmbulanceExpedition {
   id: string;
