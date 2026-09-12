@@ -9,6 +9,7 @@ import {
   FaList,
   FaIdCard,
   FaThLarge,
+  FaDownload,
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import {
@@ -32,6 +33,7 @@ import { AmbulanceFilters } from '../components/ambulance/AmbulanceFilters';
 import { AmbulanceTable, AmbulanceViewMode } from '../components/ambulance/AmbulanceTable';
 import { AmbulanceFormModal } from '../components/ambulance/AmbulanceFormModal';
 import { AmbulanceDetailModal } from '../components/ambulance/AmbulanceDetailModal';
+import { AmbulanceReportModal } from '../components/ambulance/AmbulanceReportModal';
 import { getTodayDateString } from '../utils/ambulanceUtils';
 import { DEFAULT_DRIVERS, DEFAULT_AMBULANCE_FLEETS } from '../utils/ambulanceConstants';
 
@@ -76,6 +78,7 @@ const AmbulanceFrontPage = () => {
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<IAmbulanceExpedition | null>(null);
   const [detailItem, setDetailItem] = useState<IAmbulanceExpedition | null>(null);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
   // Delete confirmation state
   const [deleteConfirmItem, setDeleteConfirmItem] = useState<IAmbulanceExpedition | null>(null);
@@ -324,14 +327,26 @@ const AmbulanceFrontPage = () => {
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={handleOpenAddModal}
-            className="w-full sm:w-auto px-5 py-3 bg-white hover:bg-blue-50 text-primary font-black text-sm rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 shrink-0"
-          >
-            <FaPlus size={13} />
-            <span>Catat Perjalanan Baru</span>
-          </button>
+          <div className="flex items-center gap-2.5 w-full sm:w-auto shrink-0 flex-wrap sm:flex-nowrap">
+            <button
+              type="button"
+              onClick={() => setIsReportModalOpen(true)}
+              className="w-full sm:w-auto px-4 py-3 bg-white/15 hover:bg-white/25 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 border border-white/20"
+              title="Unduh Laporan Bulanan (Excel & PDF)"
+            >
+              <FaDownload size={13} />
+              <span>Unduh Laporan Bulanan</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleOpenAddModal}
+              className="w-full sm:w-auto px-5 py-3 bg-white hover:bg-blue-50 text-primary font-black text-sm rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+            >
+              <FaPlus size={13} />
+              <span>Catat Perjalanan Baru</span>
+            </button>
+          </div>
         </div>
 
         {/* Real-time Summary Metrics */}
@@ -461,6 +476,13 @@ const AmbulanceFrontPage = () => {
         isOpen={Boolean(detailItem)}
         onClose={() => setDetailItem(null)}
         data={detailItem}
+      />
+
+      {/* Monthly Report Download Modal */}
+      <AmbulanceReportModal
+        isOpen={isReportModalOpen}
+        onClose={() => setIsReportModalOpen(false)}
+        expeditions={expeditions}
       />
 
       {/* Delete Confirmation Modal */}
