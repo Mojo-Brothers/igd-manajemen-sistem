@@ -95,6 +95,23 @@ const AmbulanceFrontPage = () => {
     driver: '',
   });
 
+  // Ensure viewport is always responsive device-width on mobile phones
+  useEffect(() => {
+    let metaTag = document.querySelector('meta[name="viewport"]') as HTMLMetaElement | null;
+    if (!metaTag) {
+      metaTag = document.createElement('meta');
+      metaTag.name = 'viewport';
+      document.head.appendChild(metaTag);
+    }
+    metaTag.content = 'width=device-width, initial-scale=1.0, maximum-scale=5.0';
+
+    return () => {
+      if (metaTag) {
+        metaTag.content = 'width=device-width, initial-scale=1.0';
+      }
+    };
+  }, []);
+
   // Real-time listener
   useEffect(() => {
     if (!isUnlocked) return;

@@ -40,7 +40,6 @@ export const useLinenMobileFriendly = () => {
       document.head.appendChild(metaTag);
     }
 
-    const previousContent = metaTag.content || 'width=device-width, initial-scale=1.0';
 
     if (isMobileFriendly) {
       metaTag.content = 'width=device-width, initial-scale=1.0';
@@ -50,9 +49,9 @@ export const useLinenMobileFriendly = () => {
     }
 
     return () => {
-      // Restore default mobile viewport on cleanup
+      // Always restore default mobile viewport on cleanup so other pages remain mobile-friendly
       if (metaTag) {
-        metaTag.content = previousContent || 'width=device-width, initial-scale=1.0';
+        metaTag.content = 'width=device-width, initial-scale=1.0';
       }
     };
   }, [isMobileFriendly]);

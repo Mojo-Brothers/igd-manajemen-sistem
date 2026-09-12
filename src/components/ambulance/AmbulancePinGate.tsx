@@ -35,6 +35,14 @@ export const AmbulancePinGate: React.FC<AmbulancePinGateProps> = ({ onUnlock }) 
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
+    let metaTag = document.querySelector('meta[name="viewport"]') as HTMLMetaElement | null;
+    if (!metaTag) {
+      metaTag = document.createElement('meta');
+      metaTag.name = 'viewport';
+      document.head.appendChild(metaTag);
+    }
+    metaTag.content = 'width=device-width, initial-scale=1.0, maximum-scale=5.0';
+
     const timer = setTimeout(() => {
       if (inputRefs.current[0]) {
         inputRefs.current[0]?.focus();
