@@ -33,7 +33,6 @@ export const STATUS_APPLICABLE_ACTIVITIES: AmbulanceActivityType[] = [
 export const INITIAL_STATUS_OPTIONS: InitialStatus[] = [
   'Rumah Pasien',
   'RS Lain',
-  'Lainnya'
 ];
 
 export const FINAL_STATUS_OPTIONS: FinalStatus[] = [
@@ -41,7 +40,6 @@ export const FINAL_STATUS_OPTIONS: FinalStatus[] = [
   'Dirujuk',
   'Rawat Jalan',
   'Meninggal',
-  'Lainnya'
 ];
 
 export const AMBULANCE_FLEET_OPTIONS: AmbulanceFleetType[] = [

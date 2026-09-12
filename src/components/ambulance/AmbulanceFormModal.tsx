@@ -78,12 +78,28 @@ export const AmbulanceFormModal: React.FC<AmbulanceFormModalProps> = ({
   const [newDriverName, setNewDriverName] = useState('');
   const [isSavingDriver, setIsSavingDriver] = useState(false);
 
+  // Manual custom status states (Tambahkan Lainnya)
+  const [isCustomInitialStatus, setIsCustomInitialStatus] = useState(false);
+  const [isCustomFinalStatus, setIsCustomFinalStatus] = useState(false);
+
   // Populate data when editingData changes or modal opens
   useEffect(() => {
     setShowPreview(false);
     setIsAddingDriver(false);
     setNewDriverName('');
     if (editingData) {
+      const isCustomInit = Boolean(
+        editingData.initialStatus &&
+        !INITIAL_STATUS_OPTIONS.includes(editingData.initialStatus as any)
+      );
+      setIsCustomInitialStatus(isCustomInit);
+
+      const isCustomFin = Boolean(
+        editingData.finalStatus &&
+        !FINAL_STATUS_OPTIONS.includes(editingData.finalStatus as any)
+      );
+      setIsCustomFinalStatus(isCustomFin);
+
       setFormData({
         date: editingData.date || getTodayDateString(),
         activityType: editingData.activityType || 'Jemput Pasien',
@@ -109,6 +125,9 @@ export const AmbulanceFormModal: React.FC<AmbulanceFormModalProps> = ({
       })();
 
       const duration = calculateDuration(nowTime, nextHourTime);
+
+      setIsCustomInitialStatus(false);
+      setIsCustomFinalStatus(false);
 
       setFormData({
         date: getTodayDateString(),
@@ -206,6 +225,18 @@ export const AmbulanceFormModal: React.FC<AmbulanceFormModalProps> = ({
     if (isPatientRequired && !formData.patientName?.trim()) {
       toast.error(`Nama Pasien wajib diisi untuk kegiatan "${formData.activityType}"`);
       return;
+    }
+
+    // Validasi Status Awal / Akhir jika memilih 'Tambahkan Lainnya'
+    if (isStatusApplicable) {
+      if (isCustomInitialStatus && !formData.initialStatus?.trim()) {
+        toast.error('Status Awal Pasien wajib diketik manual');
+        return;
+      }
+      if (isCustomFinalStatus && !formData.finalStatus?.trim()) {
+        toast.error('Status Akhir Pasien wajib diketik manual');
+        return;
+      }
     }
 
     // Validasi Jarak Tempuh
@@ -701,15 +732,28 @@ export const AmbulanceFormModal: React.FC<AmbulanceFormModalProps> = ({
               {/* Status Awal (Kondisional) */}
               {isStatusApplicable && (
                 <div>
-                  <div className="h-5 flex items-center mb-1">
+                  <div className="h-5 flex items-center justify-between mb-1">
                     <label className="block text-xs font-bold text-gray-700">
                       Status Awal Pasien
                     </label>
+                    {isCustomInitialStatus && (
+                      <span className="text-[10px] text-blue-600 font-semibold">Ketik Manual</span>
+                    )}
                   </div>
                   <div className="relative">
                     <select
-                      value={formData.initialStatus || ''}
-                      onChange={(e) => setFormData({ ...formData, initialStatus: e.target.value })}
+                      value={isCustomInitialStatus ? '__CUSTOM__' : (formData.initialStatus || '')}
+                      onChange={(e) => {
+                        if (e.target.value === '__CUSTOM__') {
+                          setIsCustomInitialStatus(true);
+                          if (INITIAL_STATUS_OPTIONS.includes(formData.initialStatus as any)) {
+                            setFormData({ ...formData, initialStatus: '' });
+                          }
+                        } else {
+                          setIsCustomInitialStatus(false);
+                          setFormData({ ...formData, initialStatus: e.target.value });
+                        }
+                      }}
                       className="w-full h-10 appearance-none pl-3.5 pr-10 py-2 text-sm bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all cursor-pointer"
                     >
                       <option value="">-- Pilih Status Awal --</option>
@@ -718,26 +762,65 @@ export const AmbulanceFormModal: React.FC<AmbulanceFormModalProps> = ({
                           {status}
                         </option>
                       ))}
+                      <option value="__CUSTOM__">+ Tambahkan Lainnya (Ketik Manual)</option>
                     </select>
                     <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3.5 text-gray-400">
                       <FaChevronDown size={12} />
                     </div>
                   </div>
+
+                  {isCustomInitialStatus && (
+                    <div className="mt-2 relative">
+                      <input
+                        type="text"
+                        autoFocus
+                        required
+                        value={formData.initialStatus || ''}
+                        onChange={(e) => setFormData({ ...formData, initialStatus: e.target.value })}
+                        placeholder="Ketik status awal lainnya..."
+                        className="w-full h-10 pl-3.5 pr-9 py-2 text-sm bg-white border-2 border-primary/60 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsCustomInitialStatus(false);
+                          setFormData({ ...formData, initialStatus: INITIAL_STATUS_OPTIONS[0] || '' });
+                        }}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1 cursor-pointer transition-colors"
+                        title="Batal / Pilih dari opsi standar"
+                      >
+                        <FaTimes size={13} />
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
 
               {/* Status Akhir (Kondisional) */}
               {isStatusApplicable && (
                 <div>
-                  <div className="h-5 flex items-center mb-1">
+                  <div className="h-5 flex items-center justify-between mb-1">
                     <label className="block text-xs font-bold text-gray-700">
                       Status Akhir Pasien
                     </label>
+                    {isCustomFinalStatus && (
+                      <span className="text-[10px] text-blue-600 font-semibold">Ketik Manual</span>
+                    )}
                   </div>
                   <div className="relative">
                     <select
-                      value={formData.finalStatus || ''}
-                      onChange={(e) => setFormData({ ...formData, finalStatus: e.target.value })}
+                      value={isCustomFinalStatus ? '__CUSTOM__' : (formData.finalStatus || '')}
+                      onChange={(e) => {
+                        if (e.target.value === '__CUSTOM__') {
+                          setIsCustomFinalStatus(true);
+                          if (FINAL_STATUS_OPTIONS.includes(formData.finalStatus as any)) {
+                            setFormData({ ...formData, finalStatus: '' });
+                          }
+                        } else {
+                          setIsCustomFinalStatus(false);
+                          setFormData({ ...formData, finalStatus: e.target.value });
+                        }
+                      }}
                       className="w-full h-10 appearance-none pl-3.5 pr-10 py-2 text-sm bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all cursor-pointer"
                     >
                       <option value="">-- Pilih Status Akhir --</option>
@@ -746,11 +829,37 @@ export const AmbulanceFormModal: React.FC<AmbulanceFormModalProps> = ({
                           {status}
                         </option>
                       ))}
+                      <option value="__CUSTOM__">+ Tambahkan Lainnya (Ketik Manual)</option>
                     </select>
                     <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3.5 text-gray-400">
                       <FaChevronDown size={12} />
                     </div>
                   </div>
+
+                  {isCustomFinalStatus && (
+                    <div className="mt-2 relative">
+                      <input
+                        type="text"
+                        autoFocus
+                        required
+                        value={formData.finalStatus || ''}
+                        onChange={(e) => setFormData({ ...formData, finalStatus: e.target.value })}
+                        placeholder="Ketik status akhir lainnya..."
+                        className="w-full h-10 pl-3.5 pr-9 py-2 text-sm bg-white border-2 border-primary/60 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsCustomFinalStatus(false);
+                          setFormData({ ...formData, finalStatus: FINAL_STATUS_OPTIONS[0] || '' });
+                        }}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1 cursor-pointer transition-colors"
+                        title="Batal / Pilih dari opsi standar"
+                      >
+                        <FaTimes size={13} />
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
