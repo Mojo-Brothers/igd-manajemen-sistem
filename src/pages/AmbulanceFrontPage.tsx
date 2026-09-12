@@ -10,8 +10,11 @@ import {
   FaIdCard,
   FaThLarge,
   FaDownload,
+  FaMobileAlt,
+  FaDesktop,
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
+import { useAmbulanceMobileFriendly } from '../hooks/useAmbulanceMobileFriendly';
 import {
   AmbulanceExpedition as IAmbulanceExpedition,
   AmbulanceExpeditionFormData,
@@ -95,22 +98,13 @@ const AmbulanceFrontPage = () => {
     driver: '',
   });
 
-  // Ensure viewport is always responsive device-width on mobile phones
-  useEffect(() => {
-    let metaTag = document.querySelector('meta[name="viewport"]') as HTMLMetaElement | null;
-    if (!metaTag) {
-      metaTag = document.createElement('meta');
-      metaTag.name = 'viewport';
-      document.head.appendChild(metaTag);
-    }
-    metaTag.content = 'width=device-width, initial-scale=1.0, maximum-scale=5.0';
-
-    return () => {
-      if (metaTag) {
-        metaTag.content = 'width=device-width, initial-scale=1.0';
-      }
-    };
-  }, []);
+  // Mobile Friendly vs Desktop View Mode Hook (Default mobile-friendly on smartphones)
+  const {
+    isMobileFriendly,
+    setMobileFriendly,
+    wrapperClass,
+    containerClass,
+  } = useAmbulanceMobileFriendly();
 
   // Real-time listener
   useEffect(() => {
@@ -289,51 +283,95 @@ const AmbulanceFrontPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-100 flex flex-col">
+    <div className={`min-h-screen bg-slate-100 flex flex-col ${wrapperClass}`}>
       {/* Mobile-Friendly Top Navigation */}
       <header className="sticky top-0 z-30 bg-primary text-white shadow-md">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-xl bg-white/15 backdrop-blur-xs flex items-center justify-center text-white shrink-0">
-              <FaAmbulance size={22} />
+        <div className={`mx-auto px-4 py-3 flex items-center justify-between gap-2 sm:gap-3 ${containerClass}`}>
+          <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white/15 backdrop-blur-xs flex items-center justify-center text-white shrink-0">
+              <FaAmbulance size={20} />
             </div>
-            <div>
-              <div className="flex items-center gap-1.5">
-                <h1 className="font-extrabold text-base sm:text-lg leading-tight tracking-tight">
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <h1 className="font-extrabold text-sm sm:text-lg leading-tight tracking-tight truncate">
                   Ekspedisi Ambulance
                 </h1>
-                <span className="hidden sm:inline-block px-2 py-0.5 rounded-full bg-blue-400/20 text-blue-100 text-[10px] font-bold border border-blue-400/30">
+                <span className="hidden md:inline-block px-2 py-0.5 rounded-full bg-blue-400/20 text-blue-100 text-[10px] font-bold border border-blue-400/30">
                   Front Workstation
                 </span>
               </div>
-              <p className="text-[11px] text-blue-100">
+              <p className="text-[10px] sm:text-[11px] text-blue-100 truncate">
                 Primaya Hospital • Logbook Operasional IGD
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            {/* Switch Mode: Mobile-Friendly vs Desktop */}
+            <div className="flex items-center bg-black/20 p-0.5 sm:p-1 rounded-xl border border-white/20">
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileFriendly(true);
+                  toast.success('Beralih ke Tampilan Mobile-Friendly 📱', { id: 'ambulance-view-mode' });
+                }}
+                className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  isMobileFriendly
+                    ? 'bg-white text-primary shadow-xs'
+                    : 'text-blue-100 hover:text-white'
+                }`}
+                title="Tampilan Mobile-Friendly (Dioptimalkan untuk Layar HP)"
+              >
+                <FaMobileAlt size={12} />
+                <span className="text-[10px] sm:text-xs">Mobile</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileFriendly(false);
+                  toast.success('Beralih ke Tampilan Desktop (PC View) 💻', { id: 'ambulance-view-mode' });
+                }}
+                className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  !isMobileFriendly
+                    ? 'bg-white text-primary shadow-xs'
+                    : 'text-blue-100 hover:text-white'
+                }`}
+                title="Tampilan Desktop (Mode PC Monitor Penuh)"
+              >
+                <FaDesktop size={12} />
+                <span className="text-[10px] sm:text-xs">Desktop</span>
+              </button>
+            </div>
+
             <button
               type="button"
               onClick={handleLock}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-white/15 hover:bg-white/25 active:scale-95 text-white font-bold text-xs rounded-xl border border-white/20 transition-all cursor-pointer shadow-xs"
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-white/15 hover:bg-white/25 active:scale-95 text-white font-bold text-xs rounded-xl border border-white/20 transition-all cursor-pointer shadow-xs shrink-0"
               title="Kunci Halaman (Kembali ke Login PIN)"
             >
-              <FaLock size={13} className="text-amber-300" />
-              <span>Kunci Halaman</span>
+              <FaLock size={12} className="text-amber-300" />
+              <span className="hidden sm:inline">Kunci</span>
             </button>
           </div>
         </div>
       </header>
 
       {/* Main Container */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-6 space-y-4 sm:space-y-6">
+      <main className={`flex-1 mx-auto p-3 sm:p-6 space-y-4 sm:space-y-6 ${containerClass}`}>
         {/* Mobile Quick Action Banner */}
         <div className="bg-gradient-to-r from-blue-700 to-primary text-white rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="space-y-1">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <span className="px-2 py-0.5 bg-white/20 rounded-md text-[10px] font-mono font-bold">
                 Waktu Operasional: {new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+              </span>
+              <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold border flex items-center gap-1 ${
+                isMobileFriendly
+                  ? 'bg-emerald-500/25 text-emerald-100 border-emerald-400/40'
+                  : 'bg-amber-400/25 text-amber-100 border-amber-300/40'
+              }`}>
+                {isMobileFriendly ? <FaMobileAlt size={9} /> : <FaDesktop size={9} />}
+                <span>{isMobileFriendly ? 'Mode Mobile-Friendly' : 'Mode Desktop Widescreen'}</span>
               </span>
             </div>
             <h2 className="text-lg sm:text-xl font-extrabold tracking-tight">
@@ -457,6 +495,7 @@ const AmbulanceFrontPage = () => {
             onDelete={(item) => handleDeleteClick(item)}
             onAddNew={handleOpenAddModal}
             viewMode={viewMode}
+            isMobileFriendly={isMobileFriendly}
           />
         </div>
       </main>

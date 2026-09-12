@@ -24,6 +24,7 @@ interface AmbulanceTableProps {
   onDelete: (item: AmbulanceExpedition) => void;
   onAddNew: () => void;
   viewMode?: AmbulanceViewMode;
+  isMobileFriendly?: boolean;
 }
 
 export const AmbulanceTable: React.FC<AmbulanceTableProps> = ({
@@ -34,6 +35,7 @@ export const AmbulanceTable: React.FC<AmbulanceTableProps> = ({
   onDelete,
   onAddNew,
   viewMode = 'list',
+  isMobileFriendly = true,
 }) => {
   if (loading) {
     return (
@@ -85,7 +87,7 @@ export const AmbulanceTable: React.FC<AmbulanceTableProps> = ({
   // 1. CARD VIEW
   if (viewMode === 'card') {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className={isMobileFriendly ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" : "grid grid-cols-2 lg:grid-cols-3 gap-4"}>
         {expeditions.map((item) => (
           <div
             key={item.id}
@@ -256,7 +258,7 @@ export const AmbulanceTable: React.FC<AmbulanceTableProps> = ({
   // 2. GRID VIEW (Compact High-Density Tiles)
   if (viewMode === 'grid') {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+      <div className={isMobileFriendly ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3" : "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3"}>
         {expeditions.map((item) => (
           <div
             key={item.id}
@@ -364,7 +366,7 @@ export const AmbulanceTable: React.FC<AmbulanceTableProps> = ({
   return (
     <div className="bg-white rounded-2xl shadow-xs border border-gray-100 overflow-hidden">
       {/* Desktop / Tablet Table View */}
-      <div className="hidden md:block overflow-x-auto">
+      <div className={isMobileFriendly ? "hidden md:block overflow-x-auto" : "block overflow-x-auto"}>
         <table className="w-full text-left border-collapse min-w-[1050px]">
           <thead>
             <tr className="bg-slate-50 text-gray-600 text-xs font-bold uppercase tracking-wider border-b border-gray-200/80">
@@ -539,8 +541,8 @@ export const AmbulanceTable: React.FC<AmbulanceTableProps> = ({
         </table>
       </div>
 
-      {/* Mobile Card View (md:hidden) */}
-      <div className="md:hidden divide-y divide-gray-100">
+      {/* Mobile Card View (md:hidden when mobile friendly, completely hidden in desktop mode) */}
+      <div className={isMobileFriendly ? "md:hidden divide-y divide-gray-100" : "hidden"}>
         {expeditions.map((item) => (
           <div key={item.id} className="p-4 space-y-3 hover:bg-gray-50/60 transition-colors">
             {/* Card Header */}
