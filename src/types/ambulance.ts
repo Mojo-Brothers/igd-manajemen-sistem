@@ -39,6 +39,9 @@ export interface AmbulanceExpedition {
   durationMinutes: number;
   durationFormatted: string;
   distanceKm: number;
+  destination?: string;
+  destinationLat?: number;
+  destinationLng?: number;
   notes?: string;
   createdAt?: unknown;
   updatedAt?: unknown;

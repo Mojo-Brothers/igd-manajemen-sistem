@@ -63,3 +63,25 @@ export const SETTINGS_COLLECTION = 'settings';
 export const AMBULANCE_CONFIG_DOC = 'ambulance_config';
 export const DEFAULT_AMBULANCE_PIN = '123456';
 
+/**
+ * Koordinat Pangkalan Asal (Primaya Hospital)
+ * Digunakan sebagai titik awal kalkulasi estimasi jarak (KM)
+ */
+export const HOSPITAL_BASE_COORDS = {
+  name: 'Primaya Hospital',
+  lat: -6.241584,
+  lng: 106.992416,
+};
+
+/**
+ * Daftar shortcut lokasi tujuan rujukan populer
+ */
+export const POPULAR_DESTINATIONS = [
+  { name: 'RSUD dr. Chasbullah Abdulmadjid', lat: -6.2425, lng: 106.9995 },
+  { name: 'RS Mitra Keluarga Bekasi Barat', lat: -6.2378, lng: 106.9856 },
+  { name: 'RS Siloam Bekasi Timur', lat: -6.2577, lng: 107.0182 },
+  { name: 'RS Hermina Bekasi', lat: -6.2361, lng: 106.9897 },
+  { name: 'RS Ananda Bekasi', lat: -6.2238, lng: 106.9782 },
+  { name: 'RS Bella Bekasi', lat: -6.2444, lng: 107.0125 },
+];
+

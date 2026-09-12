@@ -14,6 +14,8 @@ import {
   FaExclamationCircle,
   FaCalendarAlt,
   FaClipboardCheck,
+  FaMapMarkerAlt,
+  FaMapMarkedAlt,
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import {
@@ -28,15 +30,19 @@ import {
   INITIAL_STATUS_OPTIONS,
   FINAL_STATUS_OPTIONS,
   AMBULANCE_FLEET_OPTIONS,
-  STATUS_APPLICABLE_ACTIVITIES,
   DEFAULT_DRIVERS,
+  STATUS_APPLICABLE_ACTIVITIES,
 } from '../../utils/ambulanceConstants';
 import {
   calculateDuration,
+  formatDateIndo,
   getTodayDateString,
   getCurrentTimeString,
-  formatDateIndo,
 } from '../../utils/ambulanceUtils';
+import {
+  AmbulanceMapPickerModal,
+  MapSelectedLocation,
+} from './AmbulanceMapPickerModal';
 
 interface AmbulanceFormModalProps {
   isOpen: boolean;
@@ -69,6 +75,9 @@ export const AmbulanceFormModal: React.FC<AmbulanceFormModalProps> = ({
     durationMinutes: 60,
     durationFormatted: '1 Jam',
     distanceKm: 0,
+    destination: '',
+    destinationLat: undefined,
+    destinationLng: undefined,
     notes: '',
   });
 
@@ -77,6 +86,7 @@ export const AmbulanceFormModal: React.FC<AmbulanceFormModalProps> = ({
   const [isAddingDriver, setIsAddingDriver] = useState(false);
   const [newDriverName, setNewDriverName] = useState('');
   const [isSavingDriver, setIsSavingDriver] = useState(false);
+  const [isMapPickerOpen, setIsMapPickerOpen] = useState(false);
 
   // Manual custom status states (Tambahkan Lainnya)
   const [isCustomInitialStatus, setIsCustomInitialStatus] = useState(false);
@@ -87,6 +97,7 @@ export const AmbulanceFormModal: React.FC<AmbulanceFormModalProps> = ({
     setShowPreview(false);
     setIsAddingDriver(false);
     setNewDriverName('');
+    setIsMapPickerOpen(false);
     if (editingData) {
       const isCustomInit = Boolean(
         editingData.initialStatus &&
@@ -114,6 +125,9 @@ export const AmbulanceFormModal: React.FC<AmbulanceFormModalProps> = ({
         durationMinutes: editingData.durationMinutes || 0,
         durationFormatted: editingData.durationFormatted || '',
         distanceKm: editingData.distanceKm || 0,
+        destination: editingData.destination || '',
+        destinationLat: editingData.destinationLat,
+        destinationLng: editingData.destinationLng,
         notes: editingData.notes || '',
       });
     } else {
@@ -143,6 +157,9 @@ export const AmbulanceFormModal: React.FC<AmbulanceFormModalProps> = ({
         durationMinutes: duration.minutes,
         durationFormatted: duration.formatted,
         distanceKm: 0,
+        destination: '',
+        destinationLat: undefined,
+        destinationLng: undefined,
         notes: '',
       });
     }
@@ -189,6 +206,17 @@ export const AmbulanceFormModal: React.FC<AmbulanceFormModalProps> = ({
     } finally {
       setIsSavingDriver(false);
     }
+  };
+
+  const handleSelectLocationFromMap = (location: MapSelectedLocation) => {
+    setFormData((prev) => ({
+      ...prev,
+      destination: location.address,
+      destinationLat: location.lat,
+      destinationLng: location.lng,
+      distanceKm: prev.distanceKm === 0 ? location.estimatedDistanceKm : prev.distanceKm,
+    }));
+    toast.success(`Lokasi terpilih: ${location.address} (~${location.estimatedDistanceKm} KM)`);
   };
 
   if (!isOpen) return null;
@@ -457,6 +485,23 @@ export const AmbulanceFormModal: React.FC<AmbulanceFormModalProps> = ({
                     🚗 {formData.distanceKm} KM
                   </span>
                 </div>
+
+                {formData.destination && (
+                  <div className="bg-blue-50/40 p-3.5 rounded-xl border border-blue-100 sm:col-span-3 flex items-start gap-2.5">
+                    <FaMapMarkerAlt className="text-red-500 mt-0.5 shrink-0" size={14} />
+                    <div className="flex-1 min-w-0">
+                      <span className="block text-[11px] font-medium text-gray-500">Lokasi / Alamat Tujuan</span>
+                      <span className="text-sm font-bold text-gray-900 mt-0.5 block truncate">
+                        {formData.destination}
+                      </span>
+                      {formData.destinationLat && formData.destinationLng && (
+                        <span className="text-[10px] text-gray-400 font-mono mt-0.5 block">
+                          Koordinat: {formData.destinationLat.toFixed(5)}, {formData.destinationLng.toFixed(5)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -874,6 +919,62 @@ export const AmbulanceFormModal: React.FC<AmbulanceFormModalProps> = ({
               </h4>
             </div>
 
+            {/* Lokasi Tujuan & Tombol Pilih dari Map */}
+            <div>
+              <div className="h-5 flex items-center justify-between mb-1">
+                <label className="block text-xs font-bold text-gray-700 flex items-center gap-1.5">
+                  <FaMapMarkerAlt className="text-red-500" size={12} />
+                  <span>Lokasi / Alamat Tujuan</span>
+                </label>
+                {formData.destinationLat && formData.destinationLng ? (
+                  <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
+                    <span>📍</span> Koordinat Terpilih ({formData.destinationLat.toFixed(3)}, {formData.destinationLng.toFixed(3)})
+                  </span>
+                ) : (
+                  <span className="text-[10px] text-slate-400 font-normal">
+                    Pilih titik di peta atau ketik alamat
+                  </span>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <input
+                    type="text"
+                    value={formData.destination || ''}
+                    onChange={(e) => setFormData({ ...formData, destination: e.target.value })}
+                    placeholder="Ketik lokasi tujuan atau klik tombol Pilih dari Map..."
+                    className="w-full h-10 pl-3.5 pr-9 py-2 text-sm bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
+                  />
+                  {formData.destination && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setFormData({
+                          ...formData,
+                          destination: '',
+                          destinationLat: undefined,
+                          destinationLng: undefined,
+                        })
+                      }
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1 cursor-pointer transition-colors"
+                      title="Hapus Lokasi"
+                    >
+                      <FaTimes size={12} />
+                    </button>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsMapPickerOpen(true)}
+                  className="h-10 px-3.5 bg-blue-50 hover:bg-blue-100 text-primary border border-blue-200 hover:border-blue-300 font-black text-xs rounded-xl transition-all flex items-center gap-1.5 shrink-0 active:scale-95 cursor-pointer shadow-2xs"
+                  title="Pilih lokasi tujuan dari peta interaktif (Leaflet / OpenStreetMap)"
+                >
+                  <FaMapMarkedAlt size={14} className="text-blue-600" />
+                  <span>Pilih dari Map</span>
+                </button>
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
               {/* Waktu Mulai */}
               <div>
@@ -988,6 +1089,18 @@ export const AmbulanceFormModal: React.FC<AmbulanceFormModalProps> = ({
         </form>
       )}
     </div>
+
+    {/* Map Destination Picker Modal */}
+    {isMapPickerOpen && (
+      <AmbulanceMapPickerModal
+        isOpen={isMapPickerOpen}
+        onClose={() => setIsMapPickerOpen(false)}
+        onSelectLocation={handleSelectLocationFromMap}
+        initialLocationName={formData.destination}
+        initialLat={formData.destinationLat}
+        initialLng={formData.destinationLng}
+      />
+    )}
   </div>
   );
 };

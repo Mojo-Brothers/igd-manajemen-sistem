@@ -115,3 +115,30 @@ export const generateExpeditionNumber = (dateStr: string, sequenceNumber: number
   const seqPadded = String(sequenceNumber).padStart(3, '0');
   return `AMB-${cleanDate}-${seqPadded}`;
 };
+
+/**
+ * Menghitung estimasi jarak berkendara darat (KM) antara dua koordinat geografis.
+ * Menggunakan formula Haversine dengan faktor deviasi rute darat / jalan raya (~1.25x).
+ */
+export const calculateEstimatedDistance = (
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number
+): number => {
+  const R = 6371; // Radius bumi dalam KM
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const straightDistanceKm = R * c;
+
+  // Faktor estimasi jalan raya berliku darat (urban routing factor 1.25x)
+  const roadEstimatedKm = Math.round(straightDistanceKm * 1.25 * 10) / 10;
+  return Math.max(0.5, roadEstimatedKm);
+};

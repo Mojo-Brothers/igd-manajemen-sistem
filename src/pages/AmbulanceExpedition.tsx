@@ -1,6 +1,16 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { FaAmbulance, FaPlus, FaTrash, FaExclamationTriangle, FaExternalLinkAlt } from 'react-icons/fa';
+import {
+  FaAmbulance,
+  FaPlus,
+  FaTrash,
+  FaExclamationTriangle,
+  FaExternalLinkAlt,
+  FaRoute,
+  FaList,
+  FaIdCard,
+  FaThLarge,
+} from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
 import {
@@ -18,7 +28,7 @@ import {
 } from '../services/ambulanceService';
 import { AmbulanceStats } from '../components/ambulance/AmbulanceStats';
 import { AmbulanceFilters } from '../components/ambulance/AmbulanceFilters';
-import { AmbulanceTable } from '../components/ambulance/AmbulanceTable';
+import { AmbulanceTable, AmbulanceViewMode } from '../components/ambulance/AmbulanceTable';
 import { AmbulanceFormModal } from '../components/ambulance/AmbulanceFormModal';
 import { AmbulanceDetailModal } from '../components/ambulance/AmbulanceDetailModal';
 import { getTodayDateString } from '../utils/ambulanceUtils';
@@ -29,6 +39,28 @@ const AmbulanceExpedition = () => {
 
   const [expeditions, setExpeditions] = useState<IAmbulanceExpedition[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // View Mode: list (default), card, grid
+  const [viewMode, setViewMode] = useState<AmbulanceViewMode>(() => {
+    try {
+      const saved = localStorage.getItem('ambulance_view_mode') as AmbulanceViewMode;
+      if (saved === 'card' || saved === 'grid' || saved === 'list') {
+        return saved;
+      }
+    } catch {
+      // ignore
+    }
+    return 'list'; // Default : list
+  });
+
+  const handleViewModeChange = (mode: AmbulanceViewMode) => {
+    setViewMode(mode);
+    try {
+      localStorage.setItem('ambulance_view_mode', mode);
+    } catch {
+      // ignore
+    }
+  };
 
   // Modals state
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
@@ -283,15 +315,68 @@ const AmbulanceExpedition = () => {
         availableDrivers={availableDrivers}
       />
 
-      {/* Main Table / List */}
-      <AmbulanceTable
-        expeditions={filteredExpeditions}
-        loading={loading}
-        onDetail={(item) => setDetailItem(item)}
-        onEdit={handleOpenEditModal}
-        onDelete={handleDeleteClick}
-        onAddNew={handleOpenAddModal}
-      />
+      {/* Main Table / List / Cards / Grid */}
+      <div className="space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-1">
+          <h3 className="text-sm font-extrabold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+            <FaRoute className="text-primary" size={14} />
+            <span>Daftar Ekspedisi ({filteredExpeditions.length})</span>
+          </h3>
+
+          {/* View Mode Toggle: List, Card, Grid (Default: List) */}
+          <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 shadow-2xs self-start sm:self-auto">
+            <button
+              type="button"
+              onClick={() => handleViewModeChange('list')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                viewMode === 'list'
+                  ? 'bg-white text-primary shadow-xs'
+                  : 'text-gray-500 hover:text-gray-800'
+              }`}
+              title="Tampilan List (Tabel)"
+            >
+              <FaList size={11} />
+              <span>List</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleViewModeChange('card')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                viewMode === 'card'
+                  ? 'bg-white text-primary shadow-xs'
+                  : 'text-gray-500 hover:text-gray-800'
+              }`}
+              title="Tampilan Card"
+            >
+              <FaIdCard size={12} />
+              <span>Card</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleViewModeChange('grid')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                viewMode === 'grid'
+                  ? 'bg-white text-primary shadow-xs'
+                  : 'text-gray-500 hover:text-gray-800'
+              }`}
+              title="Tampilan Grid (Kompak)"
+            >
+              <FaThLarge size={11} />
+              <span>Grid</span>
+            </button>
+          </div>
+        </div>
+
+        <AmbulanceTable
+          expeditions={filteredExpeditions}
+          loading={loading}
+          onDetail={(item) => setDetailItem(item)}
+          onEdit={handleOpenEditModal}
+          onDelete={handleDeleteClick}
+          onAddNew={handleOpenAddModal}
+          viewMode={viewMode}
+        />
+      </div>
 
       {/* Form Modal (Create & Edit) */}
       <AmbulanceFormModal

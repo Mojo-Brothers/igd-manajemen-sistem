@@ -9,6 +9,7 @@ import {
   FaClipboardList,
   FaUserShield,
   FaMapMarkerAlt,
+  FaExternalLinkAlt,
 } from 'react-icons/fa';
 import { AmbulanceExpedition } from '../../types/ambulance';
 import { formatDateIndo } from '../../utils/ambulanceUtils';
@@ -134,6 +135,42 @@ export const AmbulanceDetailModal: React.FC<AmbulanceDetailModalProps> = ({
               </div>
             </div>
           </div>
+
+          {/* Section Lokasi Tujuan */}
+          {data.destination && (
+            <div className="bg-blue-50/50 p-4 rounded-2xl border border-blue-100 space-y-2">
+              <div className="flex items-center justify-between border-b border-blue-200/80 pb-2">
+                <div className="flex items-center gap-2">
+                  <FaMapMarkerAlt className="text-red-500" size={14} />
+                  <h5 className="text-xs font-bold text-blue-900 uppercase tracking-wide">
+                    Lokasi / Alamat Tujuan
+                  </h5>
+                </div>
+                <a
+                  href={
+                    data.destinationLat && data.destinationLng
+                      ? `https://www.google.com/maps/search/?api=1&query=${data.destinationLat},${data.destinationLng}`
+                      : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(data.destination)}`
+                  }
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-2.5 py-1 bg-white hover:bg-blue-50 text-blue-700 text-[11px] font-bold rounded-lg border border-blue-200 flex items-center gap-1 transition-all shadow-2xs cursor-pointer"
+                  title="Buka lokasi di Google Maps"
+                >
+                  <FaExternalLinkAlt size={10} />
+                  <span>Buka di Google Maps</span>
+                </a>
+              </div>
+              <p className="text-sm font-bold text-gray-900">
+                {data.destination}
+              </p>
+              {data.destinationLat && data.destinationLng && (
+                <p className="text-[11px] text-gray-500 font-mono">
+                  Koordinat: {data.destinationLat.toFixed(5)}, {data.destinationLng.toFixed(5)}
+                </p>
+              )}
+            </div>
+          )}
 
           {/* Section Status */}
           {(data.initialStatus || data.finalStatus) && (

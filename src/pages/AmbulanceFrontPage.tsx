@@ -3,13 +3,12 @@ import {
   FaAmbulance,
   FaPlus,
   FaLock,
-  FaCalendarAlt,
   FaRoute,
-  FaClock,
-  FaEye,
-  FaEdit,
   FaTrash,
   FaExclamationTriangle,
+  FaList,
+  FaIdCard,
+  FaThLarge,
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import {
@@ -28,9 +27,10 @@ import {
 import { AmbulancePinGate } from '../components/ambulance/AmbulancePinGate';
 import { AmbulanceStats } from '../components/ambulance/AmbulanceStats';
 import { AmbulanceFilters } from '../components/ambulance/AmbulanceFilters';
+import { AmbulanceTable, AmbulanceViewMode } from '../components/ambulance/AmbulanceTable';
 import { AmbulanceFormModal } from '../components/ambulance/AmbulanceFormModal';
 import { AmbulanceDetailModal } from '../components/ambulance/AmbulanceDetailModal';
-import { getTodayDateString, formatDateIndo } from '../utils/ambulanceUtils';
+import { getTodayDateString } from '../utils/ambulanceUtils';
 import { DEFAULT_DRIVERS } from '../utils/ambulanceConstants';
 
 const AmbulanceFrontPage = () => {
@@ -46,6 +46,28 @@ const AmbulanceFrontPage = () => {
   const [expeditions, setExpeditions] = useState<IAmbulanceExpedition[]>([]);
   const [drivers, setDrivers] = useState<string[]>(DEFAULT_DRIVERS);
   const [loading, setLoading] = useState(true);
+
+  // View Mode: list (default), card, grid
+  const [viewMode, setViewMode] = useState<AmbulanceViewMode>(() => {
+    try {
+      const saved = localStorage.getItem('ambulance_view_mode') as AmbulanceViewMode;
+      if (saved === 'card' || saved === 'grid' || saved === 'list') {
+        return saved;
+      }
+    } catch {
+      // ignore
+    }
+    return 'list'; // Default : list
+  });
+
+  const handleViewModeChange = (mode: AmbulanceViewMode) => {
+    setViewMode(mode);
+    try {
+      localStorage.setItem('ambulance_view_mode', mode);
+    } catch {
+      // ignore
+    }
+  };
 
   // Modals state
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
@@ -317,170 +339,74 @@ const AmbulanceFrontPage = () => {
 
         {/* Trip List / Cards / Table */}
         <div className="space-y-3">
-          <div className="flex items-center justify-between px-1">
-            <h3 className="text-sm font-extrabold text-slate-800 uppercase tracking-wider flex items-center gap-2">
-              <FaRoute className="text-primary" size={14} />
-              <span>Daftar Ekspedisi ({filteredExpeditions.length})</span>
-            </h3>
-            {filters.datePreset === 'today' && (
-              <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
-                Mode Hari Ini
-              </span>
-            )}
-          </div>
-
-          {loading ? (
-            <div className="bg-white rounded-2xl p-12 shadow-xs border border-gray-200 flex flex-col items-center justify-center gap-3 text-center">
-              <div className="animate-spin rounded-full h-9 w-9 border-b-2 border-primary"></div>
-              <p className="text-xs font-semibold text-gray-600">Memuat log perjalanan ambulance...</p>
+          {/* Header with View Mode Switcher */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-1">
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-extrabold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                <FaRoute className="text-primary" size={14} />
+                <span>Daftar Ekspedisi ({filteredExpeditions.length})</span>
+              </h3>
+              {filters.datePreset === 'today' && (
+                <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                  Mode Hari Ini
+                </span>
+              )}
             </div>
-          ) : filteredExpeditions.length === 0 ? (
-            <div className="bg-white rounded-2xl p-10 shadow-xs border border-gray-200 text-center space-y-3">
-              <div className="w-14 h-14 rounded-2xl bg-blue-50 text-primary flex items-center justify-center mx-auto shadow-2xs">
-                <FaAmbulance size={28} />
-              </div>
-              <div>
-                <h4 className="text-base font-bold text-gray-800">Tidak ada data kegiatan</h4>
-                <p className="text-xs text-gray-500 mt-1">
-                  Belum ada aktivitas perjalanan tercatat untuk filter ini.
-                </p>
-              </div>
+
+            {/* View Mode Toggle: List, Card, Grid (Default: List) */}
+            <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 shadow-2xs self-start sm:self-auto">
               <button
                 type="button"
-                onClick={handleOpenAddModal}
-                className="px-5 py-2.5 text-xs font-bold text-white bg-primary hover:bg-blue-800 rounded-xl shadow-xs transition-all inline-flex items-center gap-1.5 cursor-pointer active:scale-95"
+                onClick={() => handleViewModeChange('list')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                  viewMode === 'list'
+                    ? 'bg-white text-primary shadow-xs'
+                    : 'text-gray-500 hover:text-gray-800'
+                }`}
+                title="Tampilan List (Tabel)"
               >
-                <FaPlus size={11} />
-                <span>Catat Kegiatan Pertama</span>
+                <FaList size={11} />
+                <span>List</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleViewModeChange('card')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                  viewMode === 'card'
+                    ? 'bg-white text-primary shadow-xs'
+                    : 'text-gray-500 hover:text-gray-800'
+                }`}
+                title="Tampilan Card"
+              >
+                <FaIdCard size={12} />
+                <span>Card</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleViewModeChange('grid')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                  viewMode === 'grid'
+                    ? 'bg-white text-primary shadow-xs'
+                    : 'text-gray-500 hover:text-gray-800'
+                }`}
+                title="Tampilan Grid (Kompak)"
+              >
+                <FaThLarge size={11} />
+                <span>Grid</span>
               </button>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
-              {filteredExpeditions.map((item) => {
-                const isJemput = item.activityType === 'Jemput Pasien';
-                const isRujuk = item.activityType === 'Merujuk Pasien';
-                const isPulang = item.activityType === 'Antar Pasien Pulang';
+          </div>
 
-                const badgeBg = isJemput
-                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                  : isRujuk
-                  ? 'bg-amber-50 text-amber-700 border-amber-200'
-                  : isPulang
-                  ? 'bg-blue-50 text-blue-700 border-blue-200'
-                  : 'bg-slate-100 text-slate-700 border-slate-200';
-
-                return (
-                  <div
-                    key={item.id}
-                    className="bg-white rounded-2xl p-4 shadow-xs border border-slate-200 hover:shadow-md transition-all space-y-3 flex flex-col justify-between"
-                  >
-                    {/* Header Card */}
-                    <div className="flex items-start justify-between gap-2 border-b border-slate-100 pb-2.5">
-                      <div>
-                        <span className="font-mono text-xs font-extrabold text-primary px-2 py-0.5 bg-blue-50 rounded-md border border-blue-100">
-                          {item.expeditionNumber}
-                        </span>
-                        <p className="text-[11px] text-gray-500 font-semibold mt-1 flex items-center gap-1">
-                          <FaCalendarAlt size={10} />
-                          {formatDateIndo(item.date, 'long')}
-                        </p>
-                      </div>
-
-                      <span
-                        className={`text-[11px] font-bold px-2.5 py-0.5 rounded-lg border ${badgeBg}`}
-                      >
-                        {item.activityType}
-                      </span>
-                    </div>
-
-                    {/* Body Card */}
-                    <div className="space-y-2 text-xs">
-                      {item.patientName && (
-                        <div className="p-2.5 bg-slate-50 rounded-xl space-y-0.5">
-                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                            Pasien
-                          </p>
-                          <p className="font-bold text-gray-800 text-sm">
-                            {item.patientName}
-                          </p>
-                          {item.medicalRecordNumber && (
-                            <p className="text-[10px] font-mono text-gray-500">
-                              No. RM: {item.medicalRecordNumber}
-                            </p>
-                          )}
-                        </div>
-                      )}
-
-                      <div className="grid grid-cols-2 gap-2 pt-1">
-                        <div className="p-2 bg-blue-50/60 rounded-xl">
-                          <p className="text-[10px] font-semibold text-blue-600">Armada</p>
-                          <p className="font-bold text-gray-800">{item.ambulance}</p>
-                        </div>
-                        <div className="p-2 bg-blue-50/60 rounded-xl">
-                          <p className="text-[10px] font-semibold text-blue-600">Driver</p>
-                          <p className="font-bold text-gray-800 truncate">{item.driver}</p>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-2">
-                        <div className="p-2 bg-slate-50 rounded-xl">
-                          <p className="text-[10px] font-semibold text-gray-500 flex items-center gap-1">
-                            <FaClock size={9} /> Jam & Durasi
-                          </p>
-                          <p className="font-bold text-blue-700">
-                            {item.startTime} - {item.endTime}
-                          </p>
-                          <p className="text-[10px] text-gray-500 font-semibold">
-                            {item.durationFormatted}
-                          </p>
-                        </div>
-                        <div className="p-2 bg-slate-50 rounded-xl">
-                          <p className="text-[10px] font-semibold text-gray-500 flex items-center gap-1">
-                            <FaRoute size={9} /> Jarak Tempuh
-                          </p>
-                          <p className="font-bold text-indigo-700 text-sm">
-                            {item.distanceKm} KM
-                          </p>
-                        </div>
-                      </div>
-
-                      {item.notes && (
-                        <p className="text-[11px] text-gray-500 italic bg-amber-50/60 p-2 rounded-xl border border-amber-100 line-clamp-2">
-                          {item.notes}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div className="pt-2 border-t border-slate-100 flex items-center justify-end gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() => setDetailItem(item)}
-                        className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-lg text-xs flex items-center gap-1 transition-colors cursor-pointer"
-                      >
-                        <FaEye size={11} /> Detail
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleOpenEditModal(item)}
-                        className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold rounded-lg text-xs flex items-center gap-1 transition-colors cursor-pointer"
-                      >
-                        <FaEdit size={11} /> Edit
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteClick(item)}
-                        className="px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-lg text-xs flex items-center gap-1 transition-colors cursor-pointer"
-                        title="Hapus"
-                      >
-                        <FaTrash size={11} />
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+          {/* Render Expeditions View */}
+          <AmbulanceTable
+            expeditions={filteredExpeditions}
+            loading={loading}
+            onDetail={(item) => setDetailItem(item)}
+            onEdit={(item) => handleOpenEditModal(item)}
+            onDelete={(item) => handleDeleteClick(item)}
+            onAddNew={handleOpenAddModal}
+            viewMode={viewMode}
+          />
         </div>
       </main>
 
