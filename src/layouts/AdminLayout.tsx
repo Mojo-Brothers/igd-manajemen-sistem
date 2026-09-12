@@ -154,7 +154,7 @@ const AdminLayout = () => {
                 )}
               </Link>
             </div>
-          ) : (
+          ) : location.pathname.startsWith('/admin/ambulance') ? null : (
             <Link 
               to={location.pathname.includes('on-call') ? '/on-call' : '/display'} 
               target="_blank" 
