@@ -255,16 +255,6 @@ const AmbulanceFrontPage = () => {
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={handleOpenAddModal}
-              className="bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white font-bold text-xs sm:text-sm px-3.5 py-2 rounded-xl shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
-            >
-              <FaPlus size={12} />
-              <span className="hidden sm:inline">Tambah Kegiatan</span>
-              <span className="sm:hidden">Tambah</span>
-            </button>
-
-            <button
-              type="button"
               onClick={handleLock}
               className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-xl transition-colors cursor-pointer"
               title="Kunci Halaman"
