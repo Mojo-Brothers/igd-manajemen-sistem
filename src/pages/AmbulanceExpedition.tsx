@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import {
   FaAmbulance,
-  FaPlus,
   FaTrash,
   FaExclamationTriangle,
   FaExternalLinkAlt,
@@ -215,11 +214,6 @@ const AmbulanceExpedition = () => {
   }, [expeditions, filters]);
 
   // Handlers for Form
-  const handleOpenAddModal = () => {
-    setEditingItem(null);
-    setIsFormModalOpen(true);
-  };
-
   const handleOpenEditModal = (item: IAmbulanceExpedition) => {
     setEditingItem(item);
     setIsFormModalOpen(true);
@@ -287,15 +281,6 @@ const AmbulanceExpedition = () => {
           >
             <FaDownload size={12} />
             <span>Unduh Laporan Bulanan</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={handleOpenAddModal}
-            className="w-full sm:w-auto px-5 py-2.5 bg-primary hover:bg-blue-800 text-white font-bold text-sm rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
-          >
-            <FaPlus size={13} />
-            <span>Tambah Kegiatan</span>
           </button>
         </div>
       </div>
@@ -409,7 +394,6 @@ const AmbulanceExpedition = () => {
           onDetail={(item) => setDetailItem(item)}
           onEdit={handleOpenEditModal}
           onDelete={handleDeleteClick}
-          onAddNew={handleOpenAddModal}
           viewMode={viewMode}
         />
       </div>

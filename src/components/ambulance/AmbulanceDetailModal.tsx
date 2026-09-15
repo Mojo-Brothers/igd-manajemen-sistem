@@ -128,18 +128,10 @@ export const AmbulanceDetailModal: React.FC<AmbulanceDetailModalProps> = ({
               </div>
               <div>
                 <p className="text-xs text-gray-500 font-medium">Jarak Tempuh</p>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <p className="font-bold text-indigo-700 flex items-center gap-1">
-                    <FaRoad size={12} className="text-indigo-400" />
-                    {data.distanceKm} KM
-                  </p>
-                  <span
-                    className="text-[10px] font-bold text-amber-800 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-md"
-                    title="Penyesuaian jarak manual input (oleh driver)"
-                  >
-                    Manual (Driver)
-                  </span>
-                </div>
+                <p className="font-bold text-indigo-700 flex items-center gap-1">
+                  <FaRoad size={12} className="text-indigo-400" />
+                  {data.distanceKm} KM
+                </p>
               </div>
             </div>
           </div>

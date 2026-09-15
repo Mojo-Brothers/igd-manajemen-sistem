@@ -22,7 +22,7 @@ interface AmbulanceTableProps {
   onDetail: (item: AmbulanceExpedition) => void;
   onEdit: (item: AmbulanceExpedition) => void;
   onDelete: (item: AmbulanceExpedition) => void;
-  onAddNew: () => void;
+  onAddNew?: () => void;
   viewMode?: AmbulanceViewMode;
   isMobileFriendly?: boolean;
 }
@@ -58,14 +58,16 @@ export const AmbulanceTable: React.FC<AmbulanceTableProps> = ({
             Belum ada aktivitas operasional ambulance yang tercatat atau sesuai dengan filter yang dipilih.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={onAddNew}
-          className="px-5 py-2.5 text-sm font-bold text-white bg-primary hover:bg-blue-800 rounded-xl shadow-sm transition-all flex items-center gap-2 cursor-pointer active:scale-95"
-        >
-          <FaPlus size={13} />
-          <span>Tambah Kegiatan Pertama</span>
-        </button>
+        {onAddNew && (
+          <button
+            type="button"
+            onClick={onAddNew}
+            className="px-5 py-2.5 text-sm font-bold text-white bg-primary hover:bg-blue-800 rounded-xl shadow-sm transition-all flex items-center gap-2 cursor-pointer active:scale-95"
+          >
+            <FaPlus size={13} />
+            <span>Tambah Kegiatan Pertama</span>
+          </button>
+        )}
       </div>
     );
   }

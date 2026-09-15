@@ -16,7 +16,6 @@ import {
   FaClipboardCheck,
   FaMapMarkerAlt,
   FaMapMarkedAlt,
-  FaInfoCircle,
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import {
@@ -522,12 +521,7 @@ export const AmbulanceFormModal: React.FC<AmbulanceFormModalProps> = ({
                 </div>
 
                 <div className="bg-gray-50/80 p-3.5 rounded-xl border border-gray-100">
-                  <div className="flex items-center justify-between">
-                    <span className="block text-[11px] font-medium text-gray-500">Jarak Tempuh</span>
-                    <span className="text-[10px] text-amber-700 font-bold bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded">
-                      Manual (Driver)
-                    </span>
-                  </div>
+                  <span className="block text-[11px] font-medium text-gray-500">Jarak Tempuh</span>
                   <span className="text-sm font-bold text-gray-900 mt-1 block">
                     🚗 {formData.distanceKm} KM
                   </span>
@@ -1128,16 +1122,10 @@ export const AmbulanceFormModal: React.FC<AmbulanceFormModalProps> = ({
 
               {/* Jarak Tempuh (KM) */}
               <div>
-                <div className="h-5 flex items-center justify-between mb-1">
+                <div className="h-5 flex items-center mb-1">
                   <label className="block text-xs font-bold text-gray-700">
                     Jarak Tempuh (KM)
                   </label>
-                  <span
-                    className="text-[10px] text-amber-700 font-bold bg-amber-50 border border-amber-200/80 px-1.5 py-0.5 rounded-md flex items-center gap-1 shadow-2xs"
-                    title="Penyesuaian jarak manual input (oleh driver)"
-                  >
-                    Manual (Driver)
-                  </span>
                 </div>
                 <input
                   type="number"
@@ -1150,10 +1138,6 @@ export const AmbulanceFormModal: React.FC<AmbulanceFormModalProps> = ({
                   placeholder="0.0"
                   className="w-full h-10 px-3.5 py-2 text-sm bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
                 />
-                <div className="mt-1.5 flex items-center gap-1.5 px-2 py-1 rounded-lg bg-amber-50/90 border border-amber-200 text-amber-800 text-[10px] font-medium leading-tight shadow-2xs">
-                  <FaInfoCircle size={11} className="text-amber-600 shrink-0" />
-                  <span>Penyesuaian jarak manual input (oleh driver)</span>
-                </div>
               </div>
             </div>
           </div>
