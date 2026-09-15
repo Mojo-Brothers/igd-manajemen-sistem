@@ -219,6 +219,35 @@ Aplikasi telah diuji dan dioptimalkan secara menyeluruh di berbagai resolusi lay
 
 ---
 
+## 🗺️ Rencana & Rekomendasi Pengembangan Lanjutan (Future Architecture Roadmap - JCI Ready)
+
+Untuk persiapan ekspansi sistem informasi rumah sakit (HIS) ke tingkat enterprise dan standardisasi akreditasi **Joint Commission International (JCI)** di masa mendatang, rancangan modul **Ekspedisi Ambulans** telah dilengkapi dengan kajian arsitektur komprehensif yang siap diaktifkan sewaktu-waktu dibutuhkan oleh korporasi:
+
+1. **Tata Kelola Klinis & Keselamatan Pasien (JCI IPSG & COP.3):**
+   - Pencatatan formal **Tim Medis Pendamping** (*Dokter & Perawat Pendamping*) bersertifikasi ATLS/ACLS/BTCLS saat transfer pasien rujukan/penjemputan.
+   - Klasifikasi derajat kegawatan transfer (**Patient Transfer Acuity Level 0 - 3**).
+   - Dokumentasi serah terima medis SBAR digital & pemantauan tanda-tanda vital (TTV *Pre-Departure* vs *Arrival/Handover*).
+2. **Kesiapan Armada & Keselamatan Fasilitas (JCI FMS.7):**
+   - Formulir digital inspeksi harian armada (*Daily Ambulance Pre-Trip Checklist*): tekanan tabung oksigen (Bar/PSI), baterai defibrillator/AED/suction pump, dan kelengkapan obat emergensi.
+   - Perhitungan jarak tempuh berbasis **KM Odometer (Awal - Akhir)** untuk mencegah estimasi manual serta memicu jadwal servis/ganti oli berkala secara otomatis.
+   - Pencatatan log operasional BBM, tiket tol, dan bukti pengeluaran darurat pengemudi di lapangan.
+3. **Siklus Hidup Misi Real-Time (*Live Dispatch State Machine*):**
+   - Transisi status dinamis: `Dispatched` ➔ `En Route to Pickup` ➔ `At Scene` ➔ `En Route to Hospital` ➔ `Handover` ➔ `Decontamination` ➔ `Ready`.
+   - Tombol *One-Tap Geo-Timestamping* di antarmuka mobile pengemudi/perawat untuk mencatat waktu dan titik koordinat GPS secara instan tanpa mengetik manual saat armada melaju.
+4. **Integrasi & Keuangan:**
+   - Auto-lookup nomor Rekam Medis (No. RM) terhubung ke master data pasien HIS IGD.
+   - Modul kalkulasi tarif zonasi / per KM terintegrasi dengan sistem kasir (Billing).
+
+> *Dokumen teknis lengkap, skema database Firestore enterprise, dan diagram state machine dapat ditinjau pada [docs/AMBULANCE_EXPEDITION_ROADMAP.md](docs/AMBULANCE_EXPEDITION_ROADMAP.md).*
+
+<br/>
+
+**Catatan Strategis Arsitektur & Rencana Masa Depan Sistem Disusun Oleh:**  
+Tertanda,  
+**Roby Viori Fansya**
+
+---
+
 ## 👨‍💻 Hak Cipta & Lisensi
 
 - **Pengembang**: Roby Viory Fansya (Mojo-Brothers)
