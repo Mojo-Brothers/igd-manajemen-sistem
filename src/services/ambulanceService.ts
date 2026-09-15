@@ -12,7 +12,7 @@ import {
   serverTimestamp,
 } from 'firebase/firestore';
 import { db } from '../firebase/config';
-import { AmbulanceExpedition } from '../types/ambulance';
+import { AmbulanceExpedition, AmbulanceFleet } from '../types/ambulance';
 import {
   AMBULANCE_COLLECTION,
   DRIVERS_COLLECTION,
@@ -288,8 +288,7 @@ export const addAmbulanceDriver = async (name: string): Promise<string> => {
 };
 
 /**
- * Real-time listener untuk daftar armada ambulance.
- * Menggabungkan armada default (EVALIA, BSI, PHC) dengan armada baru dari Firestore.
+ * Real-time listener untuk daftar armada ambulance (nama saja, kompatibel dengan dropdown).
  */
 export const subscribeAmbulanceFleets = (
   callback: (fleets: string[]) => void,
@@ -301,13 +300,17 @@ export const subscribeAmbulanceFleets = (
   return onSnapshot(
     q,
     (snapshot) => {
-      const customFleets = snapshot.docs
+      if (snapshot.empty) {
+        callback(DEFAULT_AMBULANCE_FLEETS);
+        return;
+      }
+      const fleets = snapshot.docs
         .map((docSnap) => docSnap.data().name as string)
         .filter(Boolean);
 
-      const combined = Array.from(new Set([...DEFAULT_AMBULANCE_FLEETS, ...customFleets]));
-      combined.sort((a, b) => a.localeCompare(b, 'id'));
-      callback(combined);
+      const unique = Array.from(new Set(fleets));
+      unique.sort((a, b) => a.localeCompare(b, 'id'));
+      callback(unique);
     },
     (err) => {
       console.error('Error subscribing to ambulance fleets:', err);
@@ -318,18 +321,146 @@ export const subscribeAmbulanceFleets = (
 };
 
 /**
+ * Real-time listener lengkap untuk manajemen armada ambulance (dengan ID, Plat Nomor, Status, & Catatan).
+ * Jika Firestore belum memiliki data armada, secara otomatis melakukan seeding armada default (EVALIA, BSI, PHC).
+ */
+export const subscribeAmbulanceFleetDetails = (
+  callback: (fleets: AmbulanceFleet[]) => void,
+  onError?: (error: Error) => void
+): (() => void) => {
+  const colRef = collection(db, FLEETS_COLLECTION);
+  const q = query(colRef);
+
+  return onSnapshot(
+    q,
+    async (snapshot) => {
+      if (snapshot.empty) {
+        // Otomatis seeding armada default jika koleksi belum ada data
+        try {
+          for (const defaultName of DEFAULT_AMBULANCE_FLEETS) {
+            const docRef = doc(collection(db, FLEETS_COLLECTION));
+            await setDoc(docRef, {
+              name: defaultName,
+              plateNumber: '',
+              status: 'Aktif',
+              notes: 'Armada Standby IGD',
+              createdAt: serverTimestamp(),
+              updatedAt: serverTimestamp(),
+            });
+          }
+        } catch (e) {
+          console.warn('Seeding default fleets skipped:', e);
+        }
+        callback(
+          DEFAULT_AMBULANCE_FLEETS.map((name) => ({
+            id: name,
+            name,
+            status: 'Aktif',
+          }))
+        );
+        return;
+      }
+
+      const items: AmbulanceFleet[] = snapshot.docs.map((docSnap) => {
+        const data = docSnap.data();
+        return {
+          id: docSnap.id,
+          name: data.name || '',
+          plateNumber: data.plateNumber || '',
+          status: data.status || 'Aktif',
+          notes: data.notes || '',
+          createdAt: data.createdAt,
+          updatedAt: data.updatedAt,
+        };
+      });
+
+      items.sort((a, b) => a.name.localeCompare(b.name, 'id'));
+      callback(items);
+    },
+    (err) => {
+      console.error('Error subscribing to ambulance fleet details:', err);
+      callback(
+        DEFAULT_AMBULANCE_FLEETS.map((name) => ({
+          id: name,
+          name,
+          status: 'Aktif',
+        }))
+      );
+      if (onError) onError(err);
+    }
+  );
+};
+
+/**
  * Menambahkan armada ambulance baru ke Firestore
  */
-export const addAmbulanceFleet = async (name: string): Promise<string> => {
-  const trimmed = name.trim().toUpperCase();
-  if (!trimmed) throw new Error('Nama armada ambulance tidak boleh kosong');
+export const addAmbulanceFleet = async (
+  fleetOrName: string | Omit<AmbulanceFleet, 'id' | 'createdAt' | 'updatedAt'>
+): Promise<string> => {
+  const payload: Record<string, any> =
+    typeof fleetOrName === 'string'
+      ? {
+          name: fleetOrName.trim().toUpperCase(),
+          plateNumber: '',
+          status: 'Aktif',
+          notes: '',
+        }
+      : {
+          name: fleetOrName.name.trim().toUpperCase(),
+          plateNumber: fleetOrName.plateNumber?.trim().toUpperCase() || '',
+          status: fleetOrName.status || 'Aktif',
+          notes: fleetOrName.notes?.trim() || '',
+        };
+
+  if (!payload.name) {
+    throw new Error('Nama armada ambulance tidak boleh kosong');
+  }
 
   const docRef = doc(collection(db, FLEETS_COLLECTION));
   await setDoc(docRef, {
-    name: trimmed,
+    ...payload,
     createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
   });
   return docRef.id;
+};
+
+/**
+ * Mengupdate data armada ambulance yang sudah ada
+ */
+export const updateAmbulanceFleet = async (
+  id: string,
+  data: Partial<Omit<AmbulanceFleet, 'id' | 'createdAt' | 'updatedAt'>>
+): Promise<void> => {
+  const docRef = doc(db, FLEETS_COLLECTION, id);
+  const updateData: Record<string, any> = {
+    updatedAt: serverTimestamp(),
+  };
+
+  if (data.name !== undefined) {
+    const trimmed = data.name.trim().toUpperCase();
+    if (!trimmed) throw new Error('Nama armada tidak boleh kosong');
+    updateData.name = trimmed;
+  }
+  if (data.plateNumber !== undefined) {
+    updateData.plateNumber = data.plateNumber.trim().toUpperCase();
+  }
+  if (data.status !== undefined) {
+    updateData.status = data.status;
+  }
+  if (data.notes !== undefined) {
+    updateData.notes = data.notes.trim();
+  }
+
+  await updateDoc(docRef, updateData);
+};
+
+/**
+ * Menghapus armada ambulance dari Firestore
+ */
+export const deleteAmbulanceFleet = async (id: string): Promise<void> => {
+  const docRef = doc(db, FLEETS_COLLECTION, id);
+  await deleteDoc(docRef);
 };
 
 /**

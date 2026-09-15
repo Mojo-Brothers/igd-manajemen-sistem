@@ -29,6 +29,17 @@ export type FinalStatus =
   | 'Lainnya';
 
 export type AmbulanceFleetType = 'EVALIA' | 'BSI' | 'PHC' | string;
+export type AmbulanceFleetStatus = 'Aktif' | 'Perbaikan' | 'Nonaktif';
+
+export interface AmbulanceFleet {
+  id: string;
+  name: string;
+  plateNumber?: string;
+  status?: AmbulanceFleetStatus;
+  notes?: string;
+  createdAt?: unknown;
+  updatedAt?: unknown;
+}
 
 export interface AmbulanceExpedition {
   id: string;

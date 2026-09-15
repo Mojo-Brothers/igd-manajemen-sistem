@@ -34,6 +34,7 @@ import { AmbulanceTable, AmbulanceViewMode } from '../components/ambulance/Ambul
 import { AmbulanceFormModal } from '../components/ambulance/AmbulanceFormModal';
 import { AmbulanceDetailModal } from '../components/ambulance/AmbulanceDetailModal';
 import { AmbulanceReportModal } from '../components/ambulance/AmbulanceReportModal';
+import { AmbulanceFleetModal } from '../components/ambulance/AmbulanceFleetModal';
 import { getTodayDateString } from '../utils/ambulanceUtils';
 import { DEFAULT_DRIVERS, DEFAULT_AMBULANCE_FLEETS } from '../utils/ambulanceConstants';
 
@@ -70,6 +71,7 @@ const AmbulanceExpedition = () => {
   const [editingItem, setEditingItem] = useState<IAmbulanceExpedition | null>(null);
   const [detailItem, setDetailItem] = useState<IAmbulanceExpedition | null>(null);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [isFleetModalOpen, setIsFleetModalOpen] = useState(false);
 
   // Delete confirmation state
   const [deleteConfirmItem, setDeleteConfirmItem] = useState<IAmbulanceExpedition | null>(null);
@@ -297,6 +299,16 @@ const AmbulanceExpedition = () => {
         <div className="flex items-center gap-2.5 w-full sm:w-auto shrink-0 flex-wrap sm:flex-nowrap">
           <button
             type="button"
+            onClick={() => setIsFleetModalOpen(true)}
+            className="w-full sm:w-auto px-4 py-2.5 bg-blue-50 hover:bg-blue-100 text-primary border border-blue-200 font-bold text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+            title="Kelola Armada Ambulance (Tambah, Edit, Hapus Unit)"
+          >
+            <FaAmbulance size={14} />
+            <span>Kelola Armada</span>
+          </button>
+
+          <button
+            type="button"
             onClick={() => setIsReportModalOpen(true)}
             className="w-full sm:w-auto px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 font-bold text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
             title="Unduh Laporan Bulanan (Excel & PDF)"
@@ -450,6 +462,13 @@ const AmbulanceExpedition = () => {
       <AmbulanceReportModal
         isOpen={isReportModalOpen}
         onClose={() => setIsReportModalOpen(false)}
+        expeditions={expeditions}
+      />
+
+      {/* Ambulance Fleet Management Modal */}
+      <AmbulanceFleetModal
+        isOpen={isFleetModalOpen}
+        onClose={() => setIsFleetModalOpen(false)}
         expeditions={expeditions}
       />
 
