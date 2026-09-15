@@ -147,13 +147,11 @@ const AmbulanceExpedition = () => {
     const today = new Date();
     const todayStr = getTodayDateString();
 
-    // Helper calculate week start / month start
+    // Helper calculate week start
     const startOfWeek = new Date(today);
     const dayOfWeek = today.getDay() || 7; // Monday = 1
     startOfWeek.setDate(today.getDate() - dayOfWeek + 1);
     startOfWeek.setHours(0, 0, 0, 0);
-
-    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
     return expeditions.filter((item) => {
       // 1. Search Query
@@ -187,8 +185,7 @@ const AmbulanceExpedition = () => {
         const itemDate = new Date(item.date);
         if (itemDate < startOfWeek) return false;
       } else if (filters.datePreset === 'this_month') {
-        const itemDate = new Date(item.date);
-        if (itemDate < startOfMonth) return false;
+        if (!item.date.startsWith(todayStr.substring(0, 7))) return false;
       } else if (filters.datePreset === 'custom') {
         if (filters.startDate && item.date < filters.startDate) return false;
         if (filters.endDate && item.date > filters.endDate) return false;
@@ -212,6 +209,31 @@ const AmbulanceExpedition = () => {
       return true;
     });
   }, [expeditions, filters]);
+
+  // Handler for Month Filter from Stats Card
+  const handleFilterTableByMonth = (ym: string) => {
+    if (ym === 'all') {
+      setFilters((prev) => ({
+        ...prev,
+        datePreset: 'all',
+        startDate: '',
+        endDate: '',
+      }));
+    } else {
+      const [yearStr, monthStr] = ym.split('-');
+      const year = parseInt(yearStr, 10);
+      const month = parseInt(monthStr, 10);
+      const lastDay = new Date(year, month, 0).getDate();
+      const startDate = `${ym}-01`;
+      const endDate = `${ym}-${String(lastDay).padStart(2, '0')}`;
+      setFilters((prev) => ({
+        ...prev,
+        datePreset: 'custom',
+        startDate,
+        endDate,
+      }));
+    }
+  };
 
   // Handlers for Form
   const handleOpenEditModal = (item: IAmbulanceExpedition) => {
@@ -315,7 +337,10 @@ const AmbulanceExpedition = () => {
       </div>
 
       {/* Summary Metrics Dashboard */}
-      <AmbulanceStats expeditions={expeditions} />
+      <AmbulanceStats
+        expeditions={expeditions}
+        onFilterTableByMonth={handleFilterTableByMonth}
+      />
 
       {/* Filters & Search Component */}
       <AmbulanceFilters

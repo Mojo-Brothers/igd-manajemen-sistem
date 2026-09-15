@@ -142,3 +142,22 @@ export const calculateEstimatedDistance = (
   const roadEstimatedKm = Math.round(straightDistanceKm * 1.25 * 10) / 10;
   return Math.max(0.5, roadEstimatedKm);
 };
+
+/**
+ * Format string YYYY-MM ke nama bulan dan tahun Indonesia (e.g. "September 2026" atau "Sep 2026")
+ */
+export const formatMonthIndo = (yearMonthStr: string, formatStyle: 'short' | 'long' = 'long'): string => {
+  if (!yearMonthStr || yearMonthStr === 'all') return 'Semua Waktu';
+  try {
+    const [year, month] = yearMonthStr.split('-').map(Number);
+    if (!year || !month) return yearMonthStr;
+    const date = new Date(year, month - 1, 1);
+    return date.toLocaleDateString('id-ID', {
+      month: formatStyle === 'long' ? 'long' : 'short',
+      year: 'numeric',
+    });
+  } catch {
+    return yearMonthStr;
+  }
+};
+
