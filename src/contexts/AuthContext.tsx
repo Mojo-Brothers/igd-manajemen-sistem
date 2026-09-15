@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { User, onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth';
+import { User, onAuthStateChanged, signOut as firebaseSignOut, signInAnonymously } from 'firebase/auth';
 import { auth } from '../firebase/config';
 
 interface AuthContextType {
@@ -24,6 +24,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
       setLoading(false);
+
+      // Jika belum ada user terotentikasi (seperti di browser mobile lain), coba autentikasi anonim
+      if (!user) {
+        signInAnonymously(auth).catch(() => {
+          // Abaikan jika anonymous auth dinonaktifkan di Firebase Console
+        });
+      }
     });
 
     return unsubscribe;

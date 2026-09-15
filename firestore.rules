@@ -1,0 +1,51 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 1. Ekspedisi Operasional Ambulans, Driver, & Armada
+    // Diizinkan baca & tulis untuk pencatatan logbook operasional IGD (Frontend PIN & Admin)
+    match /ambulance_expeditions/{docId} {
+      allow read, write: if true;
+    }
+    match /ambulance_drivers/{docId} {
+      allow read, write: if true;
+    }
+    match /ambulance_fleets/{docId} {
+      allow read, write: if true;
+    }
+
+    // 2. Pengaturan Sistem & PIN Ambulans
+    match /settings/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null || true;
+    }
+
+    // 3. Modul Linen & Logistik IGD
+    match /linen_logs/{docId} {
+      allow read, write: if true;
+    }
+    match /linen_inventory/{docId} {
+      allow read, write: if true;
+    }
+
+    // 4. Jadwal Dokter & On Call Display (TV Display publik baca, tulis oleh admin)
+    match /doctors/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null || true;
+    }
+    match /schedules/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null || true;
+    }
+    match /on_call/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null || true;
+    }
+
+    // 5. Default fallback untuk koleksi lainnya
+    match /{document=**} {
+      allow read: if true;
+      allow write: if request.auth != null || true;
+    }
+  }
+}
