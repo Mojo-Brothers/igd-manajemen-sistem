@@ -219,7 +219,8 @@ Aplikasi telah diuji dan dioptimalkan secara menyeluruh di berbagai resolusi lay
 
 ---
 
-## 👨‍💻 Kontributor & Lisensi
+## 👨‍💻 Hak Cipta & Lisensi
 
-- **Pengembang**: Tim Pengembang IGD Primaya Hospital / Mojo-Brothers
-- **Hak Cipta**: © 2026 Primaya Hospital. Seluruh hak cipta dilindungi undang-undang.
+- **Pengembang**: Roby Viory Fansya (Mojo-Brothers)
+- **Hak Cipta**: © 2026 Roby Viory Fansya. Seluruh hak cipta dilindungi undang-undang (*All rights reserved*).
+- **Lisensi**: Hak Cipta Lisensi Resmi oleh **Roby Viory Fansya**.
