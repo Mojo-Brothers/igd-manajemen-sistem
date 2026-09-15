@@ -64,7 +64,7 @@ export const AmbulanceReportModal: React.FC<AmbulanceReportModalProps> = ({
         year: selectedYear,
         hospitalName: 'PRIMAYA HOSPITAL',
         unitName: 'INSTALASI GAWAT DARURAT (IGD)',
-        printedBy: 'Petugas Logistik Ambulance IGD',
+        printedBy: 'Petugas Admin Ambulance IGD',
       };
 
       if (formatType === 'XLSX') {

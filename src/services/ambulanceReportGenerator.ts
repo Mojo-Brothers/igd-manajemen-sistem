@@ -59,7 +59,7 @@ export const generateAmbulanceMonthlyExcel = (params: MonthlyReportParams): void
     year,
     hospitalName = 'PRIMAYA HOSPITAL',
     unitName = 'INSTALASI GAWAT DARURAT (IGD)',
-    printedBy = 'Petugas Logistik Ambulance IGD',
+    printedBy = 'Petugas Admin Ambulance IGD',
   } = params;
 
   const monthLabel = INDONESIAN_MONTHS.find((m) => m.value === month)?.label || String(month);
@@ -207,7 +207,7 @@ export const generateAmbulanceMonthlyPdf = (params: MonthlyReportParams): void =
     year,
     hospitalName = 'PRIMAYA HOSPITAL',
     unitName = 'INSTALASI GAWAT DARURAT (IGD)',
-    printedBy = 'Petugas Logistik Ambulance IGD',
+    printedBy = 'Petugas Admin Ambulance IGD',
   } = params;
 
   const monthLabel = INDONESIAN_MONTHS.find((m) => m.value === month)?.label || String(month);
