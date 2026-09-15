@@ -220,31 +220,6 @@ const AmbulanceFrontPage = () => {
     });
   }, [expeditions, filters]);
 
-  // Handler for Month Filter from Stats Card
-  const handleFilterTableByMonth = (ym: string) => {
-    if (ym === 'all') {
-      setFilters((prev) => ({
-        ...prev,
-        datePreset: 'all',
-        startDate: '',
-        endDate: '',
-      }));
-    } else {
-      const [yearStr, monthStr] = ym.split('-');
-      const year = parseInt(yearStr, 10);
-      const month = parseInt(monthStr, 10);
-      const lastDay = new Date(year, month, 0).getDate();
-      const startDate = `${ym}-01`;
-      const endDate = `${ym}-${String(lastDay).padStart(2, '0')}`;
-      setFilters((prev) => ({
-        ...prev,
-        datePreset: 'custom',
-        startDate,
-        endDate,
-      }));
-    }
-  };
-
   // Lock handler
   const handleLock = () => {
     try {
@@ -430,7 +405,7 @@ const AmbulanceFrontPage = () => {
         {/* Real-time Summary Metrics */}
         <AmbulanceStats
           expeditions={expeditions}
-          onFilterTableByMonth={handleFilterTableByMonth}
+          showMonthlyFilter={false}
         />
 
         {/* Filters and Search */}

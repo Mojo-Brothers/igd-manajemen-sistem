@@ -339,6 +339,7 @@ const AmbulanceExpedition = () => {
       {/* Summary Metrics Dashboard */}
       <AmbulanceStats
         expeditions={expeditions}
+        showMonthlyFilter={true}
         onFilterTableByMonth={handleFilterTableByMonth}
       />
 

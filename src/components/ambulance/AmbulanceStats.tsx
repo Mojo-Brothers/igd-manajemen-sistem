@@ -15,11 +15,13 @@ import { getTodayDateString, formatMonthIndo } from '../../utils/ambulanceUtils'
 
 interface AmbulanceStatsProps {
   expeditions: AmbulanceExpedition[];
+  showMonthlyFilter?: boolean;
   onFilterTableByMonth?: (yearMonth: string) => void;
 }
 
 export const AmbulanceStats: React.FC<AmbulanceStatsProps> = ({
   expeditions,
+  showMonthlyFilter = false,
   onFilterTableByMonth,
 }) => {
   const todayStr = getTodayDateString();
@@ -100,7 +102,16 @@ export const AmbulanceStats: React.FC<AmbulanceStatsProps> = ({
     (item) => item.activityType === 'Merujuk Pasien'
   ).length;
 
-  // 4. Perhitungan Akumulasi Jarak Tempuh Berdasarkan Filter Bulan
+  // 4. Jarak Akumulasi Seluruh Trip (Standar / Frontend)
+  const allTimeDistance = useMemo(() => {
+    const dist = expeditions.reduce(
+      (acc, curr) => acc + (Number(curr.distanceKm) || 0),
+      0
+    );
+    return dist % 1 === 0 ? dist : Number(dist.toFixed(1));
+  }, [expeditions]);
+
+  // 5. Perhitungan Akumulasi Jarak Tempuh Berdasarkan Filter Bulan (Admin Dashboard)
   const { distanceValue, tripCount } = useMemo(() => {
     let filtered = expeditions;
 
@@ -155,6 +166,61 @@ export const AmbulanceStats: React.FC<AmbulanceStatsProps> = ({
     },
   ];
 
+  // Tampilan sederhana tanpa filter untuk Frontend
+  if (!showMonthlyFilter) {
+    const frontendStats = [
+      ...baseStats,
+      {
+        title: 'Total Jarak Tempuh',
+        value: allTimeDistance,
+        unit: 'KM',
+        description: 'Akumulasi jarak seluruh trip',
+        icon: <FaRoad size={22} />,
+        bgColor: 'bg-indigo-500',
+        textColor: 'text-indigo-700',
+        borderColor: 'border-indigo-100',
+      },
+    ];
+
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+        {frontendStats.map((stat, idx) => (
+          <div
+            key={idx}
+            className={`bg-white rounded-2xl p-5 shadow-xs border ${stat.borderColor} hover:shadow-md transition-all duration-200 flex flex-col justify-between`}
+          >
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
+                  {stat.title}
+                </p>
+                <div className="flex items-baseline gap-1.5 my-1">
+                  <span className="text-3xl font-extrabold text-gray-800 tracking-tight">
+                    {stat.value}
+                  </span>
+                  <span className={`text-xs font-bold ${stat.textColor}`}>
+                    {stat.unit}
+                  </span>
+                </div>
+              </div>
+
+              <div
+                className={`w-11 h-11 rounded-xl ${stat.bgColor} text-white flex items-center justify-center shadow-md shrink-0`}
+              >
+                {stat.icon}
+              </div>
+            </div>
+
+            <p className="text-xs text-gray-400 mt-2">
+              {stat.description}
+            </p>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  // Tampilan Dashboard Admin (dengan filter akumulasi jarak perbulan)
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
       {/* 3 Kartu Metrik Standar */}
@@ -191,7 +257,7 @@ export const AmbulanceStats: React.FC<AmbulanceStatsProps> = ({
         </div>
       ))}
 
-      {/* 4. Total Jarak Tempuh (Default Perbulan dengan Filter Interaktif) */}
+      {/* 4. Total Jarak Tempuh (Khusus Dashboard Admin: Filter Interaktif Perbulan) */}
       <div className="bg-white rounded-2xl p-5 shadow-xs border border-indigo-100 hover:shadow-md transition-all duration-200 flex flex-col justify-between relative group">
         <div>
           {/* Header Kartu: Judul + Ikon */}
