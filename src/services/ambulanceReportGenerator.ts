@@ -394,16 +394,13 @@ export const generateAmbulanceMonthlyPdf = (params: MonthlyReportParams): void =
   doc.setTextColor(100, 116, 139);
   doc.text('Tim Operasional Ambulance IGD', 14, sigY + 24);
 
-  // Kolom Kanan: Mengetahui Kepala Unit IGD
+  // Kolom Kanan: Mengetahui Koordinator IGD
   doc.setFontSize(8);
   doc.setTextColor(15, 23, 42);
   const rightColX = pageWidth - 14 - colWidth;
   doc.text('Mengetahui,', rightColX, sigY);
-  doc.text('Kepala Instalasi Gawat Darurat (IGD)', rightColX, sigY + 4);
+  doc.text('Koordinator IGD', rightColX, sigY + 4);
   doc.text('( ..................................................... )', rightColX, sigY + 20);
-  doc.setFontSize(7);
-  doc.setTextColor(100, 116, 139);
-  doc.text('NIP / ID Dokter Penanggung Jawab', rightColX, sigY + 24);
 
   // Trigger Download
   const filename = `Laporan_Bulanan_Ambulans_${monthLabel}_${year}.pdf`;
