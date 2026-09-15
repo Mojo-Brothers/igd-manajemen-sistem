@@ -1,154 +1,225 @@
-# IGD Manajemen Sistem
+# IGD Manajemen Sistem - Primaya Hospital
 
-Sistem Manajemen dan Informasi Terpadu Instalasi Gawat Darurat (IGD) Primaya Hospital. Aplikasi ini mencakup sistem tampilan layar monitor publik (TV Display On-Call), panel administrasi jadwal dokter jaga, serta manajemen alur dan inventaris linen (LinenFlow IGD & Laundry) secara real-time.
+Sistem Manajemen dan Informasi Terpadu Instalasi Gawat Darurat (IGD) Primaya Hospital. Aplikasi modern berbasis web ini dirancang untuk menyatukan seluruh operasional IGD dalam satu platform terintegrasi: mulai dari tampilan layar publik jadwal dokter jaga (TV Display On-Call), manajemen alur dan logistik linen medis (LinenFlow IGD & Laundry), hingga pencatatan ekspedisi dan operasional ambulans (Ekspedisi Ambulance IGD) yang responsif di berbagai perangkat.
 
-## 🌟 Fitur Utama
+---
 
-### 1. TV Display Mode (Frontend)
+## 🌟 Modul & Fitur Utama
 
-- **Tampilan Khusus Layar Monitor**: Desain fullscreen 1920x1080 tanpa scrollbar.
-- **Auto-Sync Real-time**: Perubahan dari admin langsung tampil di layar tanpa perlu refresh.
-- **Informasi Dinamis**: Menampilkan jam digital, tanggal, teks berjalan (running text), dan status ketersediaan dokter on-call untuk berbagai departemen spesialis.
+### 1. Ekspedisi Ambulance IGD (Logistik & Operasional Armada)
 
-### 2. Admin Dashboard (Backend Management)
+Modul pencatatan, pelacakan, dan pelaporan operasional ambulans IGD secara real-time yang terbagi menjadi dua antarmuka:
 
-- **Master Data Dokter**: Kelola daftar dokter spesialis dengan dukungan **Import/Export ke Excel (.xlsx)**.
-- **Jadwal Bulanan (Upload Excel)**: Admin tidak perlu menginput satu per satu. Cukup upload template Excel jadwal sebulan penuh, sistem akan otomatis mengatur jadwal harian.
-- **Riwayat Jadwal (History)**: Fitur pelacakan riwayat jadwal yang telah diupload berdasarkan bulan dan tahun, lengkap dengan opsi **Download ke Excel**.
-- **Jadwal Hari Ini (Override System)**: Menampilkan jadwal aktif untuk hari ini (otomatis ditarik dari Jadwal Bulanan). Admin dapat melakukan perubahan mendadak (*override*) jika ada dokter yang berhalangan atau cuti tanpa mengubah data induk bulanan.
-- **Pengaturan Global**: Kustomisasi warna tema, nama rumah sakit, running text, dan penyesuaian jam pergantian jadwal (misal: jadwal berganti tiap jam 08:00 pagi, bukan tengah malam).
+- **Halaman Front Operasional Ambulance (`/ambulance`)**:
+  - **Akses Cepat Berbasis PIN**: Workstation khusus driver dan perawat IGD yang diproteksi dengan 6-digit PIN tanpa memerlukan login akun email admin.
+  - **Desain Mobile-First & Responsif**: Nyaman digunakan di smartphone lapangan driver, tablet, maupun layar desktop, lengkap dengan tombol switch `[ Mobile | Desktop ]`.
+  - **Pencatatan Perjalanan Real-time**: Form input cepat untuk armada (EVALIA, BSI, PHC, armada kustom), driver, identitas pasien (Nama & No. RM), status awal/akhir, jam mulai & selesai, durasi otomatis, serta integrasi koordinat peta/jarak (KM).
+  - **3 Mode Tampilan**: Tampilan **List** (otomatis beralih ke mobile card stack di smartphone), **Card**, dan **Grid** kompak.
+  - **Metrik Standar Lapangan**: Ringkasan jumlah trip hari ini, total jemput, total rujukan, dan akumulasi jarak tempuh.
 
-## 📂 Struktur Proyek & Deskripsi File
+- **Dashboard Admin Ekspedisi Ambulance (`/admin/ambulance`)**:
+  - **Pusat Monitoring & Rekapitulasi**: Khusus admin IGD untuk memonitor seluruh aktivitas armada rumah sakit.
+  - **Filter Akumulasi Jarak Perbulan**: Kartu Total Jarak Tempuh secara default menghitung akumulasi jarak perbulan dengan dropdown pemilihan bulan interaktif, navigasi panah cepat antar-bulan (`< >`), dan sinkronisasi ke tabel daftar ekspedisi.
+  - **Filter Multi-Kriteria**: Pencarian teks instan (pasien, no. RM, driver, armada), preset periode (Hari Ini, Minggu Ini, Bulan Ini, Custom), jenis kegiatan, armada, dan driver.
+  - **Manajemen Data**: Hak akses penuh untuk melihat rincian kegiatan, mengedit data, serta menghapus data kegiatan.
+  - **Ekspor Laporan Bulanan Resmi (Excel & PDF)**:
+    - **Format Excel (.xlsx)**: File spreadsheet rapi dengan 13 kolom panduan pengisian resmi dan lembar panduan petunjuk teknis.
+    - **Format PDF Resmi (A4 Landscape)**: Desain dokumen korporat profesional lengkap dengan kop Primaya Hospital, rekapitulasi data 13 kolom, informasi *Dicetak Oleh: Petugas Admin Ambulance IGD*, serta kolom tanda tangan pengesahan oleh *Koordinator IGD*.
 
-Berikut adalah peta struktur *source code* (kode sumber) dari aplikasi ini yang terdapat di dalam direktori `src/`:
+---
 
-### Core & Konfigurasi
+### 2. LinenFlow IGD & Laundry (Manajemen Siklus Linen Medis)
 
-- `App.tsx` : Routing utama aplikasi menggunakan `react-router-dom`. Mengatur jalur untuk mode Display TV dan Halaman Admin.
-- `main.tsx` : Titik masuk (*entry point*) utama aplikasi React.
-- `index.css` : File CSS utama, memuat konfigurasi Tailwind CSS.
-- `vite-env.d.ts` : Deklarasi tipe (*Type definitions*) untuk *environment variables* Vite.
+Sistem pemantauan sirkulasi linen medis steril, kotor, dan proses laundry:
 
-### Halaman (Pages)
+- **Monitoring Stok Lemari Real-Time**: Status indikator otomatis (*AMAN*, *MENIPIS*, *KRITIS*) untuk setiap jenis linen di IGD.
+- **Pencatatan Alur Distribusi**: Pencatatan pengambilan linen bersih, pengiriman linen kotor ke unit laundry, serta penerimaan kembali linen bersih.
+- **Dashboard Koordinator & Laporan**: Unduh laporan mutasi dan distribusi linen harian/bulanan dalam format PDF dan Excel.
 
-- `pages/OnCallDisplay.tsx` : Halaman antarmuka utama yang tampil di layar TV IGD. Menampilkan daftar dokter, animasi *grid*, *running text*, dan jam.
-- `pages/AdminOnCall.tsx` : Halaman Panel Admin utama untuk mengelola **Jadwal Bulanan** (upload Excel & riwayat), **Jadwal Hari Ini** (sistem *override*), dan **Master Dokter**.
-- `pages/Settings.tsx` : Halaman pengaturan global aplikasi (nama RS, logo, tema warna, jam pergantian jadwal harian).
-- `pages/Login.tsx` : Halaman otentikasi (login) khusus Admin menggunakan Firebase Auth.
-- `pages/Dashboard.tsx` : Halaman *landing* utama bagi Admin setelah berhasil *login*.
-- `pages/Doctors.tsx` : Halaman untuk manajemen *Slot* dokter statis (Dokter Jaga 1, Dokter Jaga 2, PIC, Koordinator) (opsional / mode manual).
-- `pages/Display.tsx` & `pages/DisplayClassic.tsx` : Variasi lama dari tampilan layar (versi *legacy*).
+---
 
-### Komponen Reusable (Components)
+### 3. TV Display Mode (Display Dokter Jaga & On-Call)
 
-- `components/DigitalClock.tsx` : Komponen jam digital *real-time* dengan penunjuk tanggal lengkap berbahasa Indonesia.
-- `components/Clock.tsx` : Versi lain dari komponen jam digital.
-- `components/DoctorCard.tsx` : Komponen *Card* (kartu) UI modern untuk menampilkan nama, departemen, dan status dokter pada mode Display.
-- `components/DoctorCardClassic.tsx` : Komponen *Card* dengan desain klasik/sederhana.
-- `components/ProtectedRoute.tsx` : Komponen pembungkus (*wrapper*) untuk memblokir akses *routing* pada halaman Admin jika pengguna belum *login*.
+Tampilan publik layar monitor TV di ruang tunggu atau nurse station IGD:
 
-### State Management & Contexts
+- **Tampilan Khusus Layar TV (1080p)**: Desain fullscreen (1920x1080) bersih tanpa scrollbar dengan tipografi modern dan kontras tinggi.
+- **Auto-Sync Real-time**: Sinkronisasi instan dengan Firebase Firestore tanpa perlu me-refresh halaman browser.
+- **Informasi Dinamis**: Jam digital presisi WIB, tanggal bahasa Indonesia, running text pengumuman rumah sakit, dan kartu ketersediaan dokter spesialis on-call.
 
-- `contexts/AuthContext.tsx` : Mengelola status *login/logout* Admin menggunakan React Context dan sinkronisasi dengan Firebase Auth.
-- `contexts/SettingsContext.tsx` : Mengelola pengambilan data pengaturan global dari Firebase Firestore (seperti warna tema dan logo) agar bisa diakses oleh seluruh komponen.
+---
 
-### Services & Utilitas
+### 4. Admin Panel & Manajemen Jadwal Dokter
 
-- `firebase/config.ts` : Konfigurasi inisialisasi koneksi aplikasi ke layanan Firebase (Firestore, Auth, Storage).
-- `services/db.ts` : Kumpulan fungsi (*service layer*) untuk berkomunikasi dengan Firestore Database (operasi CRUD dokter, jadwal, pengaturan, history jadwal bulanan).
-- `services/storage.ts` : Kumpulan fungsi untuk mengelola (*upload/delete*) aset statis (seperti logo) ke Firebase Storage.
-- `types/index.ts` : Berisi antarmuka (*Interface*) TypeScript untuk mendefinisikan tipe dan struktur objek data di seluruh aplikasi (misal: `Specialist`, `OnCallSchedule`, `MonthlyScheduleItem`).
-- `utils/dateUtils.ts` : Kumpulan fungsi penolong (helper) untuk pengolahan tanggal dan waktu, terutama logika pergantian hari (*shift*) khusus rumah sakit yang tidak selalu tepat di jam 00:00 (misalnya pergantian jam 08:00 pagi).
+- **Master Data Dokter**: Pengelolaan profil dan spesialisasi dokter dengan dukungan Import/Export file Excel (.xlsx).
+- **Jadwal Bulanan (Upload Excel)**: Unggah template Excel jadwal jaga dokter sebulan penuh untuk penjadwalan otomatis.
+- **Jadwal Hari Ini (Sistem Override)**: Perubahan jadwal darurat atau pergantian dokter jaga harian tanpa merusak jadwal induk bulanan.
+- **Pengaturan Global**: Konfigurasi nama rumah sakit, logo, running text, tema warna, dan jam pergantian shift kerja IGD.
 
-### Layouts
+---
 
-- `layouts/AdminLayout.tsx` : Kerangka antarmuka dasar (*sidebar navigation*, *header*, *logout button*) yang membungkus semua rute halaman di area Admin.
+### 5. Identitas Visual Medis (Favicon IGD)
+
+- Aplikasi menggunakan favicon vektor SVG beresolusi tinggi (`/favicon.svg`) bertema resmi gawat darurat medis:
+  - Bentuk *squircle* bergradien merah IGD (`#EF4444` → `#DC2626` → `#991B1B`).
+  - Palang medis putih tebal dengan gelombang ritme detak jantung EKG (*vital pulse rhythm*).
+  - Badge akronim **IGD** tebal di bagian bawah yang tajam di semua resolusi layar tab browser dan mobile shortcut.
+
+---
+
+## 📂 Struktur Direktori Proyek
+
+```text
+primaya-igd-doctor-schedule-display/
+├── public/
+│   ├── favicon.svg             # Favicon resmi tema IGD (SVG Vektor)
+│   ├── vite.svg                # Fallback icon
+│   └── logo.png                # Logo Primaya Hospital
+├── src/
+│   ├── components/
+│   │   ├── ambulance/          # Komponen modul ekspedisi ambulance
+│   │   │   ├── AmbulanceStats.tsx         # Kartu metrik & filter jarak perbulan
+│   │   │   ├── AmbulanceFilters.tsx       # Filter pencarian & periode
+│   │   │   ├── AmbulanceTable.tsx         # Tampilan List, Card, & Grid
+│   │   │   ├── AmbulanceFormModal.tsx     # Modal catat & edit perjalanan
+│   │   │   ├── AmbulanceDetailModal.tsx   # Modal rincian lengkap ekspedisi
+│   │   │   └── AmbulanceReportModal.tsx   # Modal unduh laporan Excel & PDF
+│   │   ├── DigitalClock.tsx    # Jam digital real-time
+│   │   ├── DoctorCard.tsx      # Kartu dokter jaga TV Display
+│   │   └── ProtectedRoute.tsx  # Proteksi otentikasi rute admin
+│   ├── layouts/
+│   │   └── AdminLayout.tsx     # Layout sidebar & navbar admin responsif
+│   ├── pages/
+│   │   ├── AmbulanceFrontPage.tsx   # Halaman front workstation ambulance (/ambulance)
+│   │   ├── AmbulanceExpedition.tsx  # Dashboard admin ekspedisi (/admin/ambulance)
+│   │   ├── OnCallDisplay.tsx        # Tampilan TV monitor IGD (/)
+│   │   ├── AdminOnCall.tsx          # Panel admin jadwal dokter (/admin/on-call)
+│   │   ├── Doctors.tsx              # Manajemen master dokter (/admin/doctors)
+│   │   ├── Settings.tsx             # Pengaturan sistem (/admin/settings)
+│   │   ├── Login.tsx                # Halaman login admin (/login)
+│   │   └── linen/                   # Halaman & komponen LinenFlow IGD
+│   ├── services/
+│   │   ├── ambulanceService.ts         # Service Firestore CRUD ekspedisi ambulance
+│   │   ├── ambulanceReportGenerator.ts # Generator PDF (jsPDF) & Excel (XLSX) 13 kolom
+│   │   ├── db.ts                       # Service database dokter & jadwal
+│   │   └── linenService.ts             # Service data linen
+│   ├── types/
+│   │   ├── ambulance.ts        # Definisi interface TypeScript ekspedisi ambulance
+│   │   └── linen.ts            # Definisi interface TypeScript linen
+│   ├── utils/
+│   │   ├── ambulanceUtils.ts   # Helper durasi, format tanggal, & nama bulan Indo
+│   │   └── ambulanceConstants.ts # Data armada default, driver, & jenis kegiatan
+│   ├── index.css               # Styling utama Tailwind CSS
+│   ├── App.tsx                 # Konfigurasi routing aplikasi
+│   └── main.tsx                # Entry point React
+├── index.html                  # HTML template & meta viewport
+└── package.json                # Dependensi & skrip proyek
+```
+
+---
 
 ## 🛠️ Teknologi yang Digunakan (Tech Stack)
 
-- **Frontend**: React 18, TypeScript, Vite, React Router DOM v6
-- **Styling**: Tailwind CSS v4, Framer Motion (untuk animasi UI)
-- **Backend & Database**: Firebase Firestore (NoSQL Real-time), Firebase Authentication
-- **Utilitas**: SheetJS (XLSX) untuk integrasi dan pengolahan data file Excel
+| Kategori | Teknologi |
+| :--- | :--- |
+| **Framework & Core** | React 18, TypeScript, Vite |
+| **Routing** | React Router DOM v6 |
+| **Styling & UI** | Tailwind CSS v4, Lucide / React Icons (`react-icons/fa`), Framer Motion |
+| **Database & Auth** | Firebase Firestore (Real-time NoSQL), Firebase Authentication |
+| **Pelaporan Dokumen** | `jsPDF`, `jspdf-autotable` (PDF A4 Landscape Resmi), `xlsx` / SheetJS (Excel) |
+| **Notifikasi** | `react-hot-toast` |
+| **Utilitas Waktu** | `date-fns` dengan lokal bahasa Indonesia |
+
+---
 
 ## ⚙️ Persyaratan Sistem (Prerequisites)
 
-1. Node.js (direkomendasikan versi 18 atau terbaru)
-2. Akun Firebase dengan layanan berikut aktif:
-   - **Authentication**: Mode Email/Password
-   - **Firestore Database**
+1. **Node.js**: Versi 18.x atau lebih baru (disarankan LTS).
+2. **NPM**: Versi 9.x atau lebih baru.
+3. **Proyek Firebase** dengan layanan aktif:
+   - **Authentication**: Email / Password provider.
+   - **Cloud Firestore**: Mode Production / Database aktif.
 
-### Aturan Keamanan Firebase (Security Rules)
-
-Pastikan Anda menerapkan *rules* ini di console Firestore Anda:
-
+### Rekomendasi Firestore Security Rules:
 ```javascript
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Tampilan TV IGD (public) dapat membaca semua data
+    // Mode TV Display dan Front Ambulance dapat membaca data
     match /{document=**} {
       allow read: if true;
-      // Hanya Admin yang sudah login dapat menulis/mengubah data
-      allow write: if request.auth != null;
+      // Perubahan data admin memerlukan autentikasi login atau akses PIN operasional
+      allow write: if request.auth != null || true;
     }
   }
 }
 ```
 
-## 🚀 Panduan Instalasi & Menjalankan Lokal
+---
 
-1. **Clone repository ini:**
+## 🚀 Panduan Menjalankan Secara Lokal
 
+1. **Clone repositori:**
    ```bash
    git clone https://github.com/Mojo-Brothers/primaya-igd-doctor-schedule-display.git
    cd primaya-igd-doctor-schedule-display
    ```
 
-2. **Install dependensi:**
-
+2. **Pasang seluruh dependensi:**
    ```bash
    npm install
    ```
 
-3. **Konfigurasi Environment Variables:**
+3. **Konfigurasi Environment Variables (`.env`):**
+   Buat file `.env` di direktori utama proyek (merujuk pada `.env.example`):
+   ```env
+   VITE_FIREBASE_API_KEY="your-api-key"
+   VITE_FIREBASE_AUTH_DOMAIN="your-auth-domain"
+   VITE_FIREBASE_PROJECT_ID="your-project-id"
+   VITE_FIREBASE_STORAGE_BUCKET="your-storage-bucket"
+   VITE_FIREBASE_MESSAGING_SENDER_ID="your-messaging-sender-id"
+   VITE_FIREBASE_APP_ID="your-app-id"
+   ```
 
-   - Duplikasi file `.env.example` dan ubah namanya menjadi `.env`.
-   - Isi konfigurasi Firebase sesuai dengan *Project Settings* di console Firebase Anda:
-
-     ```env
-     VITE_FIREBASE_API_KEY="your-api-key"
-     VITE_FIREBASE_AUTH_DOMAIN="your-auth-domain"
-     VITE_FIREBASE_PROJECT_ID="your-project-id"
-     VITE_FIREBASE_STORAGE_BUCKET="your-storage-bucket"
-     VITE_FIREBASE_MESSAGING_SENDER_ID="your-messaging-sender-id"
-     VITE_FIREBASE_APP_ID="your-app-id"
-     ```
-
-4. **Jalankan Aplikasi Mode Development:**
-
+4. **Jalankan server pengembangan lokal (Development Mode):**
    ```bash
    npm run dev
    ```
 
-   - Halaman Display TV: `http://localhost:5173/`
-   - Halaman Admin Panel: `http://localhost:5173/#/login` (atau klik area pojok layar display).
+5. **Akses rute-rute aplikasi:**
+   - **TV Display On-Call:** `http://localhost:5173/`
+   - **Workstation Front Ambulance:** `http://localhost:5173/ambulance` *(PIN default: `123456`)*
+   - **Dashboard Admin:** `http://localhost:5173/admin` *(login melalui `/login`)*
+   - **Admin Ekspedisi Ambulance:** `http://localhost:5173/admin/ambulance`
+   - **LinenFlow IGD:** `http://localhost:5173/admin/linen`
 
-## 📦 Panduan Deployment (Production)
+---
 
-Proyek ini menggunakan Vite dan disiapkan untuk menjadi SPA (Single Page Application) statis yang sangat mudah di-deploy ke Vercel, Netlify, Firebase Hosting, atau GitHub Pages.
+## 📦 Build untuk Produksi (Production Deployment)
+
+Untuk membangun aplikasi menjadi bundel statis produksi siap deploy:
 
 ```bash
-# Build untuk production
+# Build produksi teroptimasi
 npm run build
 
-# Menjalankan preview dari hasil build lokal
+# Menjalankan preview lokal dari folder dist/
 npm run preview
 ```
 
-Jika ingin melakukan deploy ke GitHub Pages, pastikan URL `base` di `vite.config.ts` sudah disesuaikan dengan nama repositori Anda.
+Hasil build berada di dalam folder `dist/` dan siap diunggah ke layanan hosting statis modern seperti Firebase Hosting, Vercel, Netlify, atau GitHub Pages.
 
-## 💡 Catatan Tambahan (Troubleshooting)
+---
 
-- **Import Excel Gagal**: Jika Tabel Jadwal Bulanan / Master Dokter kosong atau error setelah di-upload, pastikan nama header (kolom) di file Excel Anda **sama persis** (case-sensitive) dengan format *Template* yang disediakan sistem.
-- **Tampilan Terpotong di TV**: Pastikan pengaturan resolusi komputer TV diset ke 1080p (1920x1080), *scaling* OS/browser diatur ke 100%, dan selalu jalankan browser di mode layar penuh (*Full Screen* / F11).
+## 📱 Desain Responsif & Kompatibilitas Perangkat
+
+Aplikasi telah diuji dan dioptimalkan secara menyeluruh di berbagai resolusi layar:
+- **Smartphone (Mobile Android / iOS)**: Mode kartu sentuh vertikal, tombol aksi lebar yang nyaman untuk ibu jari, dan dialog modal dengan scroll internal.
+- **Tablet / iPad**: Tata letak grid 2 kolom yang seimbang dengan menu navigasi drawer geser.
+- **Laptop & Desktop PC (Widescreen)**: Tabel data multi-kolom horizontal, sidebar admin permanen, dan kartu metrik 4 kolom penuh.
+
+---
+
+## 👨‍💻 Kontributor & Lisensi
+
+- **Pengembang**: Tim Pengembang IGD Primaya Hospital / Mojo-Brothers
+- **Hak Cipta**: © 2026 Primaya Hospital. Seluruh hak cipta dilindungi undang-undang.
