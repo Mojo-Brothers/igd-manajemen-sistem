@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Primaya Ambulans IGD</string>
+    <string name="title_activity_main">Primaya Ambulans IGD</string>
+    <string name="package_name">com.primaya.ambulance</string>
+    <string name="custom_url_scheme">com.primaya.ambulance</string>
+</resources>

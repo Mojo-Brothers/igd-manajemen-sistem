@@ -12,6 +12,7 @@ import {
   FaDownload,
   FaMobileAlt,
   FaDesktop,
+  FaAndroid,
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import { useAmbulanceMobileFriendly } from '../hooks/useAmbulanceMobileFriendly';
@@ -37,6 +38,7 @@ import { AmbulanceTable, AmbulanceViewMode } from '../components/ambulance/Ambul
 import { AmbulanceFormModal } from '../components/ambulance/AmbulanceFormModal';
 import { AmbulanceDetailModal } from '../components/ambulance/AmbulanceDetailModal';
 import { AmbulanceReportModal } from '../components/ambulance/AmbulanceReportModal';
+import { AmbulanceApkDownloadModal } from '../components/ambulance/AmbulanceApkDownloadModal';
 import { getTodayDateString } from '../utils/ambulanceUtils';
 import { DEFAULT_DRIVERS, DEFAULT_AMBULANCE_FLEETS } from '../utils/ambulanceConstants';
 
@@ -82,6 +84,7 @@ const AmbulanceFrontPage = () => {
   const [editingItem, setEditingItem] = useState<IAmbulanceExpedition | null>(null);
   const [detailItem, setDetailItem] = useState<IAmbulanceExpedition | null>(null);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [isApkModalOpen, setIsApkModalOpen] = useState(false);
 
   // Delete confirmation state
   const [deleteConfirmItem, setDeleteConfirmItem] = useState<IAmbulanceExpedition | null>(null);
@@ -383,6 +386,16 @@ const AmbulanceFrontPage = () => {
           <div className="flex items-center gap-2.5 w-full sm:w-auto shrink-0 flex-wrap sm:flex-nowrap">
             <button
               type="button"
+              onClick={() => setIsApkModalOpen(true)}
+              className="w-full sm:w-auto px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 border border-emerald-500/30"
+              title="Unduh Aplikasi Android (.APK) Khusus HP Driver & Kru IGD"
+            >
+              <FaAndroid size={15} className="text-emerald-200" />
+              <span>Aplikasi Android (.APK)</span>
+            </button>
+
+            <button
+              type="button"
               onClick={() => setIsReportModalOpen(true)}
               className="w-full sm:w-auto px-4 py-3 bg-white/15 hover:bg-white/25 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 border border-white/20"
               title="Unduh Laporan Bulanan (Excel & PDF)"
@@ -540,6 +553,12 @@ const AmbulanceFrontPage = () => {
         isOpen={isReportModalOpen}
         onClose={() => setIsReportModalOpen(false)}
         expeditions={expeditions}
+      />
+
+      {/* Android APK Download Modal */}
+      <AmbulanceApkDownloadModal
+        isOpen={isApkModalOpen}
+        onClose={() => setIsApkModalOpen(false)}
       />
 
       {/* Delete Confirmation Modal */}

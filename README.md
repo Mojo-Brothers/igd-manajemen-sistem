@@ -210,6 +210,29 @@ Hasil build berada di dalam folder `dist/` dan siap diunggah ke layanan hosting 
 
 ---
 
+## 📲 Aplikasi Android Native (.APK) Ekspedisi Ambulans
+
+Aplikasi web telah terintegrasi dengan runtime **Capacitor Native Android**, memungkinkan kru ambulans, pengemudi, dan perawat IGD mengoperasikan sistem langsung dari ponsel pintar Android secara mandiri (layar penuh / *immersive mode* tanpa address bar browser):
+
+- **Unduh Langsung dari Frontend:** Tombol **"Aplikasi Android (.APK)"** tersedia di halaman [Workstation Front Ambulance](/ambulance) dan [Dashboard Admin Ekspedisi](/admin/ambulance).
+- **Scan QR Code:** Petugas di ruang IGD dapat langsung mengarahkan kamera smartphone ke QR Code yang muncul di layar komputer untuk mengunduh berkas APK langsung ke ponsel.
+- **Tautan Berkas APK Publik:** `https://[domain-rs]/downloads/primaya-ambulans.apk` (Ukuran: ~5.09 MB, Standalone Universal APK, Android 8.0 - 15+).
+- **Alur Kompilasi Ulang APK Lokal:**
+  ```bash
+  # 1. Build aset web terbaru
+  npm run build
+
+  # 2. Sinkronisasikan ke proyek native Android Capacitor
+  npx cap sync android
+
+  # 3. Kompilasi APK menggunakan Gradle Wrapper
+  cd android
+  .\gradlew.bat assembleDebug
+  ```
+  File APK yang dihasilkan tersimpan di `android/app/build/outputs/apk/debug/app-debug.apk` dan otomatis dipublikasikan ke `public/downloads/primaya-ambulans.apk`.
+
+---
+
 ## 📱 Desain Responsif & Kompatibilitas Perangkat
 
 Aplikasi telah diuji dan dioptimalkan secara menyeluruh di berbagai resolusi layar:

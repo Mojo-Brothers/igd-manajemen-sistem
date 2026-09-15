@@ -10,6 +10,7 @@ import {
   FaIdCard,
   FaThLarge,
   FaDownload,
+  FaAndroid,
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
@@ -35,6 +36,7 @@ import { AmbulanceFormModal } from '../components/ambulance/AmbulanceFormModal';
 import { AmbulanceDetailModal } from '../components/ambulance/AmbulanceDetailModal';
 import { AmbulanceReportModal } from '../components/ambulance/AmbulanceReportModal';
 import { AmbulanceFleetModal } from '../components/ambulance/AmbulanceFleetModal';
+import { AmbulanceApkDownloadModal } from '../components/ambulance/AmbulanceApkDownloadModal';
 import { getTodayDateString } from '../utils/ambulanceUtils';
 import { DEFAULT_DRIVERS, DEFAULT_AMBULANCE_FLEETS } from '../utils/ambulanceConstants';
 
@@ -72,6 +74,7 @@ const AmbulanceExpedition = () => {
   const [detailItem, setDetailItem] = useState<IAmbulanceExpedition | null>(null);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [isFleetModalOpen, setIsFleetModalOpen] = useState(false);
+  const [isApkModalOpen, setIsApkModalOpen] = useState(false);
 
   // Delete confirmation state
   const [deleteConfirmItem, setDeleteConfirmItem] = useState<IAmbulanceExpedition | null>(null);
@@ -299,6 +302,16 @@ const AmbulanceExpedition = () => {
         <div className="flex items-center gap-2.5 w-full sm:w-auto shrink-0 flex-wrap sm:flex-nowrap">
           <button
             type="button"
+            onClick={() => setIsApkModalOpen(true)}
+            className="w-full sm:w-auto px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+            title="Unduh Aplikasi Android (.APK) Khusus HP Petugas & Sopir"
+          >
+            <FaAndroid size={14} className="text-emerald-200" />
+            <span>Aplikasi Android (.APK)</span>
+          </button>
+
+          <button
+            type="button"
             onClick={() => setIsFleetModalOpen(true)}
             className="w-full sm:w-auto px-4 py-2.5 bg-blue-50 hover:bg-blue-100 text-primary border border-blue-200 font-bold text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
             title="Kelola Armada Ambulance (Tambah, Edit, Hapus Unit)"
@@ -470,6 +483,12 @@ const AmbulanceExpedition = () => {
         isOpen={isFleetModalOpen}
         onClose={() => setIsFleetModalOpen(false)}
         expeditions={expeditions}
+      />
+
+      {/* Android APK Download Modal */}
+      <AmbulanceApkDownloadModal
+        isOpen={isApkModalOpen}
+        onClose={() => setIsApkModalOpen(false)}
       />
 
       {/* Delete Confirmation Modal */}
