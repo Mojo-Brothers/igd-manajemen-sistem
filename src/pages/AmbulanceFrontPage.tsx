@@ -15,6 +15,7 @@ import {
   FaAndroid,
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
+import { Capacitor } from '@capacitor/core';
 import { useAmbulanceMobileFriendly } from '../hooks/useAmbulanceMobileFriendly';
 import {
   AmbulanceExpedition as IAmbulanceExpedition,
@@ -43,6 +44,8 @@ import { getTodayDateString } from '../utils/ambulanceUtils';
 import { DEFAULT_DRIVERS, DEFAULT_AMBULANCE_FLEETS } from '../utils/ambulanceConstants';
 
 const AmbulanceFrontPage = () => {
+  const isNative = Capacitor.isNativePlatform();
+
   // Check session authorization for PIN gate
   const [isUnlocked, setIsUnlocked] = useState<boolean>(() => {
     try {
@@ -384,15 +387,17 @@ const AmbulanceFrontPage = () => {
           </div>
 
           <div className="flex items-center gap-2.5 w-full sm:w-auto shrink-0 flex-wrap sm:flex-nowrap">
-            <button
-              type="button"
-              onClick={() => setIsApkModalOpen(true)}
-              className="w-full sm:w-auto px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 border border-emerald-500/30"
-              title="Unduh Aplikasi Android (.APK) Khusus HP Driver & Kru IGD"
-            >
-              <FaAndroid size={15} className="text-emerald-200" />
-              <span>Aplikasi Android (.APK)</span>
-            </button>
+            {!isNative && (
+              <button
+                type="button"
+                onClick={() => setIsApkModalOpen(true)}
+                className="w-full sm:w-auto px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 border border-emerald-500/30"
+                title="Unduh Aplikasi Android (.APK) Khusus HP Driver & Kru IGD"
+              >
+                <FaAndroid size={15} className="text-emerald-200" />
+                <span>Aplikasi Android (.APK)</span>
+              </button>
+            )}
 
             <button
               type="button"
