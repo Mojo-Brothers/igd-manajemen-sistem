@@ -12,7 +12,7 @@ import {
   FaRoute,
 } from 'react-icons/fa';
 import { AmbulanceExpedition } from '../../types/ambulance';
-import { formatDateIndo } from '../../utils/ambulanceUtils';
+import { formatDateIndo, getActivityBadge } from '../../utils/ambulanceUtils';
 
 export type AmbulanceViewMode = 'list' | 'card' | 'grid';
 
@@ -72,19 +72,6 @@ export const AmbulanceTable: React.FC<AmbulanceTableProps> = ({
     );
   }
 
-  // Helper for activity badge colors
-  const getActivityBadge = (type: string) => {
-    switch (type) {
-      case 'Jemput Pasien':
-        return 'bg-emerald-50 text-emerald-700 border-emerald-200';
-      case 'Merujuk Pasien':
-        return 'bg-amber-50 text-amber-700 border-amber-200';
-      case 'Antar Pasien Pulang':
-        return 'bg-blue-50 text-blue-700 border-blue-200';
-      default:
-        return 'bg-slate-100 text-slate-700 border-slate-200';
-    }
-  };
 
   // 1. CARD VIEW
   if (viewMode === 'card') {

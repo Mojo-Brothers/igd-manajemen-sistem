@@ -12,7 +12,7 @@ import {
   FaExternalLinkAlt,
 } from 'react-icons/fa';
 import { AmbulanceExpedition } from '../../types/ambulance';
-import { formatDateIndo } from '../../utils/ambulanceUtils';
+import { formatDateIndo, getActivityBadge } from '../../utils/ambulanceUtils';
 
 interface AmbulanceDetailModalProps {
   isOpen: boolean;
@@ -61,14 +61,14 @@ export const AmbulanceDetailModal: React.FC<AmbulanceDetailModalProps> = ({
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6 space-y-5">
           {/* Badge Kegiatan Utama */}
-          <div className="flex flex-wrap items-center justify-between gap-3 p-4 bg-blue-50/70 border border-blue-100 rounded-2xl">
+          <div className="flex flex-wrap items-center justify-between gap-3 p-4 bg-slate-50 border border-slate-200/80 rounded-2xl">
             <div>
-              <p className="text-[11px] font-bold text-blue-700 uppercase tracking-wider">
+              <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">
                 Jenis Kegiatan
               </p>
-              <h4 className="text-base font-extrabold text-blue-950 mt-0.5">
+              <span className={`inline-block px-3 py-1 text-sm font-extrabold rounded-xl border ${getActivityBadge(data.activityType)}`}>
                 {data.activityType}
-              </h4>
+              </span>
             </div>
             <div className="flex items-center gap-2">
               <span className="px-3 py-1 bg-white text-primary text-xs font-extrabold rounded-xl border border-blue-200 shadow-2xs">

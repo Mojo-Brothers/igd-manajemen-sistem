@@ -161,3 +161,39 @@ export const formatMonthIndo = (yearMonthStr: string, formatStyle: 'short' | 'lo
   }
 };
 
+/**
+ * Menghasilkan kelas warna badge Tailwind yang berbeda dan kontras untuk setiap jenis kegiatan ambulance
+ */
+export const getActivityBadge = (type: string): string => {
+  switch (type) {
+    case 'Jemput Pasien':
+      return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+    case 'Merujuk Pasien':
+      return 'bg-amber-50 text-amber-800 border-amber-200';
+    case 'Antar Pasien Pulang':
+      return 'bg-blue-50 text-blue-700 border-blue-200';
+    case 'Ambil Darah':
+      return 'bg-rose-50 text-rose-700 border-rose-200';
+    case 'Kegiatan Marketing':
+      return 'bg-purple-50 text-purple-700 border-purple-200';
+    case 'Jual / Beli Obat':
+      return 'bg-teal-50 text-teal-700 border-teal-200';
+    case 'Kirim / Ambil Sampel':
+      return 'bg-indigo-50 text-indigo-700 border-indigo-200';
+    case 'Home Visit':
+      return 'bg-cyan-50 text-cyan-700 border-cyan-200';
+    case 'Lainnya':
+      return 'bg-slate-100 text-slate-700 border-slate-300';
+    default:
+      if (/darah/i.test(type)) return 'bg-rose-50 text-rose-700 border-rose-200';
+      if (/obat/i.test(type)) return 'bg-teal-50 text-teal-700 border-teal-200';
+      if (/sampel/i.test(type)) return 'bg-indigo-50 text-indigo-700 border-indigo-200';
+      if (/marketing/i.test(type)) return 'bg-purple-50 text-purple-700 border-purple-200';
+      if (/home/i.test(type)) return 'bg-cyan-50 text-cyan-700 border-cyan-200';
+      if (/rujuk/i.test(type)) return 'bg-amber-50 text-amber-800 border-amber-200';
+      if (/jemput/i.test(type)) return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+      if (/pulang/i.test(type)) return 'bg-blue-50 text-blue-700 border-blue-200';
+      return 'bg-slate-100 text-slate-700 border-slate-300';
+  }
+};
+
