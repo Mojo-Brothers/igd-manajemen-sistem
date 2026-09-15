@@ -10,6 +10,8 @@ import {
   FaQrcode,
   FaCopy,
   FaExternalLinkAlt,
+  FaCloudDownloadAlt,
+  FaGlobe,
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 
@@ -23,27 +25,69 @@ export const AmbulanceApkDownloadModal: React.FC<AmbulanceApkDownloadModalProps>
   onClose,
 }) => {
   const [copied, setCopied] = useState(false);
+  const [useLocalForQr, setUseLocalForQr] = useState(false);
 
   if (!isOpen) return null;
 
-  // Link absolut file APK di public folder
-  const apkDownloadPath = '/downloads/primaya-ambulans.apk';
-  const fullDownloadUrl = typeof window !== 'undefined'
-    ? `${window.location.origin}${apkDownloadPath}`
-    : apkDownloadPath;
+  // Base URL aware path
+  const baseUrl = import.meta.env.BASE_URL || '/';
+  const cleanBase = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
+  const localApkPath = `${cleanBase}downloads/primaya-ambulans.apk`;
+
+  // Absolute local URL
+  const localDownloadUrl = typeof window !== 'undefined'
+    ? `${window.location.origin}${localApkPath.startsWith('/') ? '' : '/'}${localApkPath}`
+    : localApkPath;
+
+  // Mirror GitHub CDN resmi yang dapat diakses langsung dari HP mana pun (tanpa kendala localhost)
+  const githubMirrorUrl = 'https://github.com/Mojo-Brothers/igd-manajemen-sistem/raw/main/public/downloads/primaya-ambulans.apk';
+
+  // Deteksi apakah sedang dijalankan di localhost
+  const isLocalhost = typeof window !== 'undefined' && (
+    window.location.hostname === 'localhost' ||
+    window.location.hostname === '127.0.0.1' ||
+    window.location.hostname.startsWith('192.168.') ||
+    window.location.hostname.startsWith('10.')
+  );
+
+  // Target URL yang dijadikan QR Code (Gunakan Mirror GitHub jika di localhost agar HP luar bisa unduh)
+  const qrTargetUrl = (!useLocalForQr && isLocalhost) ? githubMirrorUrl : localDownloadUrl;
 
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=260x260&margin=10&data=${encodeURIComponent(
-    fullDownloadUrl
+    qrTargetUrl
   )}`;
 
-  const handleCopyLink = async () => {
+  const handleCopyLink = async (text: string) => {
     try {
-      await navigator.clipboard.writeText(fullDownloadUrl);
+      await navigator.clipboard.writeText(text);
       setCopied(true);
       toast.success('Tautan unduhan APK berhasil disalin ke clipboard!');
       setTimeout(() => setCopied(false), 2500);
     } catch {
       toast.error('Gagal menyalin tautan');
+    }
+  };
+
+  // Trigger browser download via Blob jika standard anchor terblokir
+  const handleDownloadBlob = async (url: string) => {
+    const toastId = toast.loading('Menyiapkan unduhan berkas APK...');
+    try {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error('Gagal memuat berkas');
+      const blob = await response.blob();
+      const objectUrl = window.URL.createObjectURL(new Blob([blob], { type: 'application/vnd.android.package-archive' }));
+      const a = document.createElement('a');
+      a.href = objectUrl;
+      a.download = 'primaya-ambulans.apk';
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(objectUrl);
+      document.body.removeChild(a);
+      toast.success('Unduhan APK berhasil dimulai!', { id: toastId });
+    } catch {
+      // Fallback direct window location
+      toast.dismiss(toastId);
+      window.open(url, '_blank');
     }
   };
 
@@ -101,15 +145,30 @@ export const AmbulanceApkDownloadModal: React.FC<AmbulanceApkDownloadModalProps>
                 </p>
               </div>
 
-              {/* Tombol Unduh Utama */}
-              <a
-                href={apkDownloadPath}
-                download="primaya-ambulans.apk"
-                className="w-full sm:w-auto px-6 py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-extrabold rounded-2xl shadow-lg shadow-emerald-600/25 flex items-center justify-center gap-2.5 transition-all hover:scale-102 active:scale-98 cursor-pointer shrink-0"
-              >
-                <FaDownload size={16} />
-                <span>Unduh File APK</span>
-              </a>
+              {/* Action Buttons */}
+              <div className="flex flex-col gap-2 w-full sm:w-auto shrink-0">
+                <button
+                  type="button"
+                  onClick={() => handleDownloadBlob(localApkPath)}
+                  className="w-full px-5 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-extrabold text-xs rounded-xl shadow-md shadow-emerald-600/25 flex items-center justify-center gap-2 transition-all hover:scale-102 active:scale-98 cursor-pointer"
+                  title="Unduh langsung dari server lokal / web hosting"
+                >
+                  <FaDownload size={14} />
+                  <span>Unduh File APK Langsung</span>
+                </button>
+
+                <a
+                  href={githubMirrorUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  download="primaya-ambulans.apk"
+                  className="w-full px-4 py-2.5 bg-white hover:bg-emerald-50 text-emerald-800 font-bold text-xs rounded-xl border border-emerald-300 flex items-center justify-center gap-1.5 transition-colors shadow-2xs cursor-pointer"
+                  title="Unduh cadangan via GitHub CDN Mirror"
+                >
+                  <FaCloudDownloadAlt size={14} className="text-emerald-600" />
+                  <span>Mirror GitHub CDN (Cadangan)</span>
+                </a>
+              </div>
             </div>
           </div>
 
@@ -135,26 +194,38 @@ export const AmbulanceApkDownloadModal: React.FC<AmbulanceApkDownloadModalProps>
                 <span>Pasang Cepat Langsung di Ponsel Sopir / Perawat</span>
               </div>
               <p className="text-xs text-gray-600 leading-relaxed">
-                Jika Anda sedang membuka workstation ini di komputer desktop atau laptop IGD, Anda cukup mengarahkan kamera smartphone ke QR code di samping untuk mengunduh APK langsung ke ponsel tanpa kabel data.
+                Arahkan kamera smartphone ke QR code di samping untuk mengunduh APK langsung ke ponsel tanpa kabel data.
+                {isLocalhost && (
+                  <span className="block mt-1 text-[11px] text-emerald-700 font-semibold bg-emerald-50 p-2 rounded-lg border border-emerald-200">
+                    <FaGlobe className="inline mr-1" /> QR Code saat ini diarahkan ke <strong>{useLocalForQr ? 'Server Web Lokal' : 'Mirror GitHub Cloud'}</strong>.{' '}
+                    <button
+                      type="button"
+                      onClick={() => setUseLocalForQr(!useLocalForQr)}
+                      className="underline text-blue-700 hover:text-blue-900 ml-1 font-bold cursor-pointer"
+                    >
+                      (Ganti ke {useLocalForQr ? 'Mirror Cloud' : 'Server Lokal'})
+                    </button>
+                  </span>
+                )}
               </p>
 
-              <div className="flex items-center gap-2 pt-1">
+              <div className="flex flex-wrap items-center gap-2 pt-1">
                 <button
                   type="button"
-                  onClick={handleCopyLink}
+                  onClick={() => handleCopyLink(qrTargetUrl)}
                   className="px-3.5 py-2 bg-white hover:bg-gray-100 text-gray-700 text-xs font-bold rounded-xl border border-gray-300 flex items-center gap-2 transition-colors cursor-pointer shadow-2xs"
                 >
                   <FaCopy size={12} className={copied ? 'text-emerald-600' : 'text-gray-500'} />
                   <span>{copied ? 'Tersalin!' : 'Salin Tautan Unduh'}</span>
                 </button>
                 <a
-                  href={apkDownloadPath}
+                  href={qrTargetUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="px-3.5 py-2 bg-white hover:bg-gray-100 text-primary text-xs font-bold rounded-xl border border-blue-200 flex items-center gap-1.5 transition-colors shadow-2xs"
                 >
                   <FaExternalLinkAlt size={10} />
-                  <span>Buka Tautan Langsung</span>
+                  <span>Buka Tautan di Tab Baru</span>
                 </a>
               </div>
             </div>
