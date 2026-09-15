@@ -334,9 +334,16 @@ export const AmbulanceFormModal: React.FC<AmbulanceFormModalProps> = ({
       setIsSubmitting(true);
       await onSubmit(formData);
       onClose();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Submit expedition error:', error);
-      toast.error('Gagal menyimpan data ekspedisi');
+      const errCode = error?.code || '';
+      let errMsg = error?.message || 'Gagal menyimpan data ekspedisi';
+      if (errCode === 'permission-denied' || errMsg.includes('permission')) {
+        errMsg = 'Izin ditolak oleh Firestore. Periksa aturan keamanan (Security Rules) database.';
+      } else if (errCode === 'unavailable' || errMsg.includes('offline')) {
+        errMsg = 'Koneksi database terputus atau offline pada browser. Silakan periksa jaringan / refresh halaman.';
+      }
+      toast.error(`Gagal menyimpan: ${errMsg}`, { duration: 6000 });
     } finally {
       setIsSubmitting(false);
     }
@@ -818,7 +825,7 @@ export const AmbulanceFormModal: React.FC<AmbulanceFormModalProps> = ({
               <div className="flex items-center gap-2">
                 <FaUser className="text-blue-700" size={15} />
                 <h4 className="text-sm font-bold text-blue-900 uppercase tracking-wide">
-                  2. Informasi Pasien
+                  2. Informasi Pasien & Status
                 </h4>
               </div>
               <span
@@ -828,7 +835,7 @@ export const AmbulanceFormModal: React.FC<AmbulanceFormModalProps> = ({
                     : 'bg-blue-100 text-blue-700'
                 }`}
               >
-                {isPatientRequired ? 'Wajib Diisi' : 'Opsional'}
+                {isPatientRequired ? 'Wajib Diisi (Pasien)' : 'Opsional'}
               </span>
             </div>
 
@@ -897,7 +904,7 @@ export const AmbulanceFormModal: React.FC<AmbulanceFormModalProps> = ({
                       }}
                       className="w-full h-10 appearance-none pl-3.5 pr-10 py-2 text-sm bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all cursor-pointer"
                     >
-                      <option value="">-- Pilih Status Awal --</option>
+                      <option value="">-- Pilih Status Awal (Opsional) --</option>
                       {INITIAL_STATUS_OPTIONS.map((status) => (
                         <option key={status} value={status}>
                           {status}
@@ -964,7 +971,7 @@ export const AmbulanceFormModal: React.FC<AmbulanceFormModalProps> = ({
                       }}
                       className="w-full h-10 appearance-none pl-3.5 pr-10 py-2 text-sm bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all cursor-pointer"
                     >
-                      <option value="">-- Pilih Status Akhir --</option>
+                      <option value="">-- Pilih Status Akhir (Opsional) --</option>
                       {FINAL_STATUS_OPTIONS.map((status) => (
                         <option key={status} value={status}>
                           {status}

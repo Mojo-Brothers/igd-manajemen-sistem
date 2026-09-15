@@ -12,6 +12,10 @@ export type AmbulanceActivityType =
 export type InitialStatus =
   | 'Rumah Pasien'
   | 'RS Lain'
+  | 'IGD'
+  | 'Rawat Inap'
+  | 'Laboratorium'
+  | 'PMI / Bank Darah'
   | 'Lainnya';
 
 export type FinalStatus =
@@ -19,6 +23,9 @@ export type FinalStatus =
   | 'Dirujuk'
   | 'Rawat Jalan'
   | 'Meninggal'
+  | 'Rumah Pasien'
+  | 'Laboratorium'
+  | 'PMI / Bank Darah'
   | 'Lainnya';
 
 export type AmbulanceFleetType = 'EVALIA' | 'BSI' | 'PHC' | string;

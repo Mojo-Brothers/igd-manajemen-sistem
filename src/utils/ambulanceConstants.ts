@@ -22,17 +22,28 @@ export const PATIENT_REQUIRED_ACTIVITIES: AmbulanceActivityType[] = [
 ];
 
 /**
- * Aktivitas yang relevan menggunakan status awal & status akhir
+ * Aktivitas yang relevan menggunakan status awal & status akhir.
+ * Mendukung seluruh jenis kegiatan agar petugas dapat mencatat status awal & akhir kapan saja.
  */
 export const STATUS_APPLICABLE_ACTIVITIES: AmbulanceActivityType[] = [
   'Jemput Pasien',
   'Merujuk Pasien',
-  'Antar Pasien Pulang'
+  'Antar Pasien Pulang',
+  'Ambil Darah',
+  'Kegiatan Marketing',
+  'Jual / Beli Obat',
+  'Kirim / Ambil Sampel',
+  'Home Visit',
+  'Lainnya'
 ];
 
 export const INITIAL_STATUS_OPTIONS: InitialStatus[] = [
   'Rumah Pasien',
   'RS Lain',
+  'IGD',
+  'Rawat Inap',
+  'Laboratorium',
+  'PMI / Bank Darah',
 ];
 
 export const FINAL_STATUS_OPTIONS: FinalStatus[] = [
@@ -40,6 +51,9 @@ export const FINAL_STATUS_OPTIONS: FinalStatus[] = [
   'Dirujuk',
   'Rawat Jalan',
   'Meninggal',
+  'Rumah Pasien',
+  'Laboratorium',
+  'PMI / Bank Darah',
 ];
 
 export const AMBULANCE_FLEET_OPTIONS: AmbulanceFleetType[] = [

@@ -7,6 +7,7 @@ import {
   updateDoc,
   deleteDoc,
   query,
+  where,
   onSnapshot,
   serverTimestamp,
 } from 'firebase/firestore';
@@ -122,15 +123,16 @@ export const getAmbulanceExpeditionById = async (id: string): Promise<AmbulanceE
  * Format: AMB-YYYYMMDD-XXX (contoh: AMB-20260912-001)
  */
 export const getNextExpeditionNumber = async (dateStr: string): Promise<string> => {
-  const colRef = collection(db, AMBULANCE_COLLECTION);
-  const snapshot = await getDocs(colRef);
-
-  let maxSeq = 0;
   const prefix = `AMB-${dateStr.replace(/-/g, '')}-`;
+  try {
+    const colRef = collection(db, AMBULANCE_COLLECTION);
+    // Query hanya dokumen pada tanggal tersebut agar cepat dan hemat kuota
+    const q = query(colRef, where('date', '==', dateStr));
+    const snapshot = await getDocs(q);
 
-  snapshot.docs.forEach((docSnap) => {
-    const data = docSnap.data();
-    if (data.date === dateStr) {
+    let maxSeq = 0;
+    snapshot.docs.forEach((docSnap) => {
+      const data = docSnap.data();
       const expNum = data.expeditionNumber as string;
       if (expNum && expNum.startsWith(prefix)) {
         const seqStr = expNum.replace(prefix, '');
@@ -139,10 +141,15 @@ export const getNextExpeditionNumber = async (dateStr: string): Promise<string> 
           maxSeq = seq;
         }
       }
-    }
-  });
+    });
 
-  return generateExpeditionNumber(dateStr, maxSeq + 1);
+    return generateExpeditionNumber(dateStr, maxSeq + 1);
+  } catch (err) {
+    console.warn('Fallback generating expedition number due to network/browser restriction:', err);
+    // Fallback: pastikan tidak pernah crash jika query jaringan terganggu di mobile
+    const seq = Math.floor((Date.now() / 1000) % 900) + 100;
+    return `${prefix}${seq}`;
+  }
 };
 
 /**
@@ -159,7 +166,7 @@ export const createAmbulanceExpedition = async (
 
   const docRef = doc(collection(db, AMBULANCE_COLLECTION));
   
-  const payload = {
+  const rawPayload = {
     ...data,
     expeditionNumber,
     durationMinutes: durationResult.minutes,
@@ -170,6 +177,14 @@ export const createAmbulanceExpedition = async (
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   };
+
+  // Bersihkan field undefined agar tidak pernah ditolak Firestore di browser apa pun
+  const payload: Record<string, any> = {};
+  for (const [key, value] of Object.entries(rawPayload)) {
+    if (value !== undefined) {
+      payload[key] = value;
+    }
+  }
 
   await setDoc(docRef, payload);
   return docRef.id;
@@ -195,18 +210,26 @@ export const updateAmbulanceExpedition = async (
     durationFormatted = duration.formatted;
   }
 
-  const payload: Record<string, any> = {
+  const rawPayload: Record<string, any> = {
     ...data,
     updatedAt: serverTimestamp(),
     updatedBy: userMetadata?.nameOrEmail || userMetadata?.uid || 'Admin',
   };
 
-  if (durationMinutes !== undefined) payload.durationMinutes = durationMinutes;
-  if (durationFormatted !== undefined) payload.durationFormatted = durationFormatted;
-  if (data.distanceKm !== undefined) payload.distanceKm = Number(data.distanceKm) || 0;
+  if (durationMinutes !== undefined) rawPayload.durationMinutes = durationMinutes;
+  if (durationFormatted !== undefined) rawPayload.durationFormatted = durationFormatted;
+  if (data.distanceKm !== undefined) rawPayload.distanceKm = Number(data.distanceKm) || 0;
 
   // Hapus field id jika ada dalam payload
-  delete payload.id;
+  delete rawPayload.id;
+
+  // Bersihkan field undefined
+  const payload: Record<string, any> = {};
+  for (const [key, value] of Object.entries(rawPayload)) {
+    if (value !== undefined) {
+      payload[key] = value;
+    }
+  }
 
   await updateDoc(docRef, payload);
 };
