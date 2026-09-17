@@ -39,6 +39,7 @@ import { AmbulanceReportModal } from '../components/ambulance/AmbulanceReportMod
 import { AmbulanceFleetModal } from '../components/ambulance/AmbulanceFleetModal';
 import { AmbulanceDriverModal } from '../components/ambulance/AmbulanceDriverModal';
 import { AmbulanceApkDownloadModal } from '../components/ambulance/AmbulanceApkDownloadModal';
+import { AmbulanceAnalyticsDashboard } from '../components/ambulance/AmbulanceAnalyticsDashboard';
 import { getTodayDateString } from '../utils/ambulanceUtils';
 import { DEFAULT_DRIVERS, DEFAULT_AMBULANCE_FLEETS } from '../utils/ambulanceConstants';
 
@@ -380,6 +381,9 @@ const AmbulanceExpedition = () => {
         showMonthlyFilter={true}
         onFilterTableByMonth={handleFilterTableByMonth}
       />
+
+      {/* Modern Visual Analytics Charts */}
+      <AmbulanceAnalyticsDashboard expeditions={expeditions} />
 
       {/* Filters & Search Component */}
       <AmbulanceFilters
