@@ -29,6 +29,9 @@ Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/
   - **Tahap Konfirmasi & Preview Data**: Alur konfirmasi visual 2 tahap sebelum data disimpan final dengan nomor ekspedisi resmi berformat `AMB-YYYYMMDD-XXX`.
 - **Integrasi Penuh Backend**:
   - Sinkronisasi dua arah real-time antara mobile dan web melalui Firebase Cloud Firestore (`ambulance_expeditions`, `ambulance_drivers`, `ambulance_fleets`, `ambulance_live_locations`, dan `settings/ambulance_config`).
+- **Blueprint Arsitektur & Roadmap Zero-Touch GPS Telemetry**:
+  - Penambahan analisis komprehensif 3 tingkatan solusi pelacakan posisi ambulans tanpa intervensi pengemudi (*Zero-Touch / Autonomous Telemetry*) pada [docs/AMBULANCE_EXPEDITION_ROADMAP.md](file:///c:/Users/FOMEMA/primaya-igd-doctor-schedule-display/docs/AMBULANCE_EXPEDITION_ROADMAP.md): Dedicated Dashboard Device, Persistent Background Foreground Service (Auto-Start on Boot), dan Standalone Hardware GPS Tracker (OBD-II/Aki Mobil).
+  - Matriks perbandingan biaya vs keandalan, panduan integrasi Firebase Cloud Functions, dan penambahan Fase 4 (*Zero-Touch GPS Fleet Telemetry*) pada tabel tahapan roadmap implementasi.
 
 ### 🗑️ Dihapus (Removed)
 - **Field Non-Webview pada Formulir Mobile**:

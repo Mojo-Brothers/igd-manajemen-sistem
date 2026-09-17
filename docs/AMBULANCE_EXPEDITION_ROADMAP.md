@@ -143,14 +143,117 @@ interface EnterpriseAmbulanceExpedition {
 
 ---
 
-## 5. Roadmap Implementasi Bertahap
+## 5. Strategi & Arsitektur Pelacakan Armada Tanpa Intervensi Pengemudi (*Zero-Touch / Autonomous Telemetry*)
+
+### A. Latar Belakang & Tantangan Lapangan (*Operational Challenge*)
+Dalam operasional harian IGD rumah sakit:
+1. **Pola Input Pasca-Perjalanan (*Post-Trip Logbook*):** Pengemudi/kru ambulans umumnya baru mengisi rincian formulir ekspedisi di aplikasi mobile *setelah* seluruh penugasan selesai dan mobil telah kembali terparkir di posko IGD.
+2. **Fokus Keselamatan Mengemudi (*Zero Driver Distraction*):** Selama perjalanan berlangsung (terutama penjemputan darurat pasien kritis atau rujukan antar-rumah sakit), pengemudi wajib berkonsentrasi penuh pada keselamatan kemudi dan sirene jalan raya. Menuntut pengemudi membuka aplikasi ponsel sambil menyetir melanggar asas keselamatan kerja (*Occupational Safety*).
+3. **Kebutuhan Visibilitas Posisi Real-Time di IGD (*Live Dispatch Visibility*):** Dokter jaga, kepala perawat triage IGD, dan koordinator armada sangat membutuhkan informasi lokasi langsung (*live GPS position*) armada secara akurat di layar web admin backend untuk memperkirakan waktu kedatangan (*Estimated Time of Arrival / ETA*), menyiapkan ruang resusitasi, serta memberikan kepastian informasi kepada keluarga pasien.
+
+Oleh karena itu, sistem dirancang untuk mendukung pelacakan posisi secara mandiri dan hening tanpa memerlukan intervensi membuka aplikasi dari pengemudi di jalan.
+
+---
+
+### B. Tiga Tingkatan Solusi Pelacakan (*3-Tier Implementation Strategy*)
+
+Berikut adalah 3 opsi arsitektur teknis yang dapat diadopsi, mulai dari solusi cepat sementara (*quick-win*) hingga solusi permanen standar industri rumah sakit enterprise:
+
+#### 1. Opsi 1: Dedicated Dashboard Device (Ponsel/Tablet Khusus Standby di Kabin Armada)
+* **Konsep:** Setiap unit ambulans (`EVALIA`, `BSI`, `PHC`) dipasangi 1 unit smartphone atau tablet Android terjangkau (entry-level, Rp 1.000.000 - Rp 1.500.000) yang terpasang permanen pada *heavy-duty car holder* di dashboard kendaraan.
+* **Mekanisme Catu Daya & Otomasi:**
+  * Ponsel terhubung kabel pengisi daya (USB charger) ke soket pemantik api (*lighter socket*) atau port ACC mobil.
+  * Begitu kunci kontak ambulans diputar ke posisi **ACC ON** atau mesin dinyalakan, daya listrik mengalir ke ponsel.
+  * Aplikasi pelacak mendeteksi status *Power Connected* (atau menggunakan automasi seperti *Tasker / Android Broadcast Intent*) untuk otomatis menghidupkan layar dan menjalankan layanan pemancar GPS di latar belakang.
+  * Telemetri lokasi dikirimkan hening ke koleksi Firestore `ambulance_live_locations/{ambulanceId}` setiap 10–15 detik.
+  * Begitu mesin mati (kontak OFF), aplikasi mendeteksi hilangnya catu daya dan memperbarui status armada menjadi `Standby / Parkir di Posko`.
+* **Kelebihan:**
+  * Pengemudi sama sekali tidak perlu menyentuh ponsel pribadi atau membuka aplikasi saat bertugas.
+  * Identitas armada (`ambulanceId`) selalu 100% konsisten sesuai fisik mobil tempat gawai terpasang.
+  * Gawai dapat difungsikan ganda di masa depan sebagai layar navigasi rute rujukan Google Maps/OSM atau monitor pemanggilan darurat (*dispatch paging*).
+* **Pertimbangan & Mitigasi:**
+  * Membutuhkan 3 unit gawai Android cadangan dan kartu perdana kuota internet bulanan khusus armada (~Rp 25.000/bln/unit).
+  * Diperlukan holder berkualitas kokoh tahan getaran dan penempatan yang terlindung dari paparan terik matahari langsung saat parkir.
+
+---
+
+#### 2. Opsi 2: Persistent Background Foreground Service dengan Auto-Start on Boot (Ponsel Pengemudi)
+* **Konsep:** Peningkatan kapabilitas aplikasi Flutter supir agar layanan telemetri lokasi (`LocationTrackingService`) dapat hidup mandiri di sistem operasi Android pengemudi tanpa pengemudi harus membuka antarmuka aplikasi.
+* **Mekanisme Arsitektur:**
+  * Mengadopsi library native service persisten seperti `flutter_foreground_task` atau `workmanager` yang dipadukan dengan izin manifest:
+    * `RECEIVE_BOOT_COMPLETED` (otomatis aktif saat ponsel dihidupkan ulang).
+    * `FOREGROUND_SERVICE_LOCATION` & `ACCESS_BACKGROUND_LOCATION` (pelacakan latar belakang presisi tinggi).
+    * `WAKE_LOCK` (mencegah proses ditidurkan oleh CPU saat layar ponsel padam).
+  * Service berjalan di latar belakang dengan menampilkan notifikasi hening persisten (*ongoing silent notification*) di tray notifikasi Android: *"Sistem Pemantauan Armada Primaya IGD Aktif"*.
+  * Konfigurasi Pengaturan Perangkat (One-Time Setup):
+    * Mengaktifkan *Auto-Start Permission* pada pengaturan OS Android (terutama ponsel Xiaomi MIUI/HyperOS, Oppo ColorOS, Vivo FuntouchOS).
+    * Menonaktifkan pembatasan baterai (*Battery Saver: Unrestricted / Tanpa Batasan*).
+* **Kelebihan:**
+  * **Biaya Perangkat Nol (Rp 0):** Tidak memerlukan pengadaan perangkat keras baru karena memanfaatkan ponsel Android yang telah dimiliki supir/petugas ambulans.
+  * Sepenuhnya diimplementasikan melalui pembaruan kode aplikasi Flutter.
+* **Pertimbangan & Mitigasi:**
+  * Masih memiliki ketergantungan pada disiplin pengemudi (ponsel harus dalam kondisi menyala, baterai terisi, dan GPS aktif).
+  * Sistem operasi Android modern memiliki algoritma manajemen memori (*Doze Mode*) yang agresif; jika tidak diatur dengan benar, service pelacakan dapat dihentikan sepihak oleh OS.
+
+---
+
+#### 3. Opsi 3: Standalone Hardware GPS Tracker Mandiri (OBD-II / Aki Mobil - Standar Industri HIS Enterprise)
+* **Konsep:** Menggunakan perangkat keras GPS Tracker mandiri (*automotive-grade IoT device*) yang terpasang langsung pada sistem kelistrikan kendaraan ambulans.
+* **Tipe Perangkat yang Direkomendasikan:**
+  * **Tipe A (Plug & Play OBD-II):** Contoh: *SinoTrack ST-902 OBD*, *Concox OB22*, atau *Teltonika FMB003*. Dicolokkan langsung ke soket port OBD-II (terletak di bawah dashboard dekat setir pengemudi). Pemasangan membutuhkan waktu kurang dari 1 menit tanpa memotong kabel kendaraan.
+  * **Tipe B (Hardwired ke Aki & Kontak ACC):** Contoh: *SinoTrack ST-901 / ST-906* atau *Concox WeTrack2*. Dipasang tersembunyi di ruang mesin/dasbor dengan sensor deteksi status kunci kontak (*Ignition Sense*).
+* **Mekanisme Kerja & Integrasi Backend:**
+  * Perangkat GPS tracker dilengkapi kartu SIM IoT/M2M (misal: *Telkomsel IoT / Indosat M2M*, paket data hemat ~Rp 15.000 – Rp 25.000/bulan).
+  * Perangkat memancarkan paket data telemetri (koordinat latitude/longitude, arah derajat *heading*, kecepatan km/jam, status kontak mesin ON/OFF, voltase aki) melalui protokol TCP/UDP/HTTP.
+  * **Integrasi ke Firestore:**
+    * Menggunakan server forwarder (seperti *Traccar Open Source GPS Server* pada VPS kecil, atau langsung webhook HTTP ke Firebase Cloud Function).
+    * Cloud Function memetakan payload GPS perangkat secara otomatis dan langsung memperbarui dokumen Firestore:
+      `ambulance_live_locations/{ambulanceId}`.
+    * Modal pemantauan peta di web admin dashboard (`AmbulanceLiveTrackingModal.tsx`) langsung menampilkan posisi bergerak ambulans secara real-time tanpa perbedaan teknis.
+* **Kelebihan (Standar Terbaik Rumah Sakit):**
+  * **100% Otonom & Zero Human Dependency:** Pelacakan aktif 24 jam sehari, 7 hari seminggu tanpa bergantung pada ada/tidaknya pengemudi, aplikasi supir dibuka atau tidak, atau baterai ponsel habis.
+  * **Akurasi & Keandalan Sangat Tinggi:** Menggunakan modul antena GPS fisik khusus otomotif dengan penerimaan satelit multi-GNSS (GPS, GLONASS, Galileo) yang jauh lebih kuat dibanding antena ponsel.
+  * **Fitur Tambahan Canggih:** Mampu memantau kesehatan baterai aki mobil (peringatan voltase aki lemah sebelum mogok), sensor benturan/kecelakaan (*crash detection*), dan batas area operasional (*geofencing alarm*).
+* **Pertimbangan & Biaya:**
+  * Biaya pengadaan alat sangat terjangkau: Rp 200.000 – Rp 450.000 per unit mobil.
+  * Biaya langganan kartu SIM IoT: ~Rp 20.000/bulan per armada.
+
+---
+
+### C. Matriks Komparasi Ketiga Strategi
+
+| Parameter Evaluasi | Opsi 1: Dedicated Dashboard Device | Opsi 2: Persistent App Service | Opsi 3: Hardware GPS Tracker (OBD-II/Aki) |
+| :--- | :--- | :--- | :--- |
+| **Ketergantungan Kru Lapangan** | **Sangat Rendah** (Otomatis saat kontak mobil ON) | **Sedang** (Tergantung HP supir menyala & GPS ON) | **NOL / 100% Otonom** (Bekerja mandiri tanpa manusia) |
+| **Biaya Investasi Awal** | Rendah (~Rp 1 - 1,5 Jt / unit HP) | **Nol Rupiah (Rp 0)** | Sangat Terjangkau (~Rp 200 - 450 Rb / unit) |
+| **Biaya Operasional Bulanan** | ~Rp 25.000 / bln / armada (Paket Data) | Rp 0 (Menggunakan kuota supir) | ~Rp 15.000 - 25.000 / bln / armada (SIM IoT) |
+| **Stabilitas & Reliabilitas** | Baik (Risiko kepanasan jika parkir terik) | Cukup (Bisa dibunuh oleh OS Android *Doze*) | **Sangat Tinggi (Automotive Grade)** |
+| **Kecepatan Implementasi** | Cepat (Pasang holder & jalankan app) | Memerlukan update kode native service | Sangat Cepat (Tinggal colok OBD-II + Cloud Function) |
+| **Kepatuhan Audit JCI FMS** | Menengah | Menengah | **Tinggi (Standar Manajemen Fasilitas Armada)** |
+
+---
+
+### D. Rekomendasi Rencana Aksi Bertahap (*Actionable Recommendation*)
+
+1. **Tahap Sementara (Quick Win):**
+   * Terapkan kombinasi **Opsi 1** (menyediakan 1 ponsel standby di ambulans utama) atau penyempurnaan **Opsi 2** (menjadikan `LocationTrackingService` di ponsel Flutter supir tetap berjalan di background melalui notifikasi hening).
+   * Kru tetap menggunakan aplikasi untuk mengisi log ekspedisi setelah selesai perjalanan, namun telemetri lokasi armada telah terkirim secara otomatis saat mobil bergerak.
+2. **Tahap Permanen & Skala Enterprise (Rekomendasi Utama Masa Depan):**
+   * Mengadopsi **Opsi 3 (Hardware GPS Tracker OBD-II / Aki)** untuk seluruh unit ambulans Primaya Hospital (`EVALIA`, `BSI`, `PHC`).
+   * Mengintegrasikan server GPS dengan endpoint Firebase Cloud Function untuk menyuplai koleksi `ambulance_live_locations` secara terpusat.
+   * Aplikasi mobile supir murni difokuskan untuk tugas klinis dan pelaporan administratif: pencatatan pasien, tanda tangan SBAR, dan checklist kesiapan medis.
+
+---
+
+## 6. Roadmap Implementasi Bertahap
 
 | Fase | Fokus Pengembangan | Manfaat Utama |
 | :---: | :--- | :--- |
 | **Fase 1** | Form Input Tim Pendamping Medis (Dokter & Perawat), Kategori Kegawatan, dan KM Odometer (Awal - Akhir). | Langsung memenuhi poin utama audit rekam medis transfer pasien JCI. |
 | **Fase 2** | Fitur *Daily Checklist Kesiapan Ambulans* (Tabung Oksigen & Baterai AED/Suction). | Kepatuhan mutlak bab FMS (Keselamatan Fasilitas & Alat Medik). |
 | **Fase 3** | Siklus Status Misi Real-Time (*State Machine*) dengan Tombol *One-Tap Timestamp* pada tampilan mobile supir/perawat. | Efisiensi input lapangan, koordinator IGD memantau posisi armada secara live. |
-| **Fase 4** | Integrasi Billing Kasir, Master Pasien Terpusat (HIS), dan Pelacakan Rute Otomatis (Maps Routing API). | Integrasi menyeluruh tanpa re-entry data pasien dan transparansi pendapatan operasional. |
+| **Fase 4** | **Zero-Touch GPS Fleet Telemetry**: Integrasi Hardware GPS Tracker OBD-II / Dedicated Kabin Device langsung ke Firebase Cloud Functions & Firestore. | Pelacakan posisi armada 100% otonom tanpa membebani konsentrasi kemudi supir di jalan. |
+| **Fase 5** | Integrasi Billing Kasir, Master Pasien Terpusat (HIS), dan Pelacakan Rute Otomatis (Maps Routing API). | Integrasi menyeluruh tanpa re-entry data pasien dan transparansi pendapatan operasional. |
 
 ---
 
@@ -160,3 +263,4 @@ Rancangan arsitektur dan rekomendasi di atas didokumentasikan sebagai pedoman te
 
 Tertanda,  
 **Roby Viori Fansya**
+
