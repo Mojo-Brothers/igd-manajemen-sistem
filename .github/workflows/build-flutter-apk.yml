@@ -43,7 +43,7 @@ jobs:
 
       - name: Build Android Release APK
         working-directory: ./mobile
-        run: flutter build apk --release
+        run: flutter build apk --release --stacktrace
 
       - name: Upload Release APK
         uses: actions/upload-artifact@v4
