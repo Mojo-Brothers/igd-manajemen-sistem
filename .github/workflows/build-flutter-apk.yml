@@ -38,18 +38,13 @@ jobs:
       - name: Recreate Official Flutter Android Project
         working-directory: ./mobile
         run: |
-          # Backup custom files
-          mkdir -p /tmp/backup_res /tmp/backup_manifest
-          cp -r android/app/src/main/res/* /tmp/backup_res/ || true
-          cp android/app/src/main/AndroidManifest.xml /tmp/backup_manifest/AndroidManifest.xml || true
-          
           # Regenerate clean official Android configuration
           rm -rf android
           flutter create --platforms=android --org com.primayahospital .
 
-          # Restore custom permissions and launcher styles
-          cp /tmp/backup_manifest/AndroidManifest.xml android/app/src/main/AndroidManifest.xml
-          cp -r /tmp/backup_res/* android/app/src/main/res/ || true
+          # Inject GPS and Network permissions into the generated AndroidManifest.xml
+          sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET"/>\n    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>\n    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>\n    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>' android/app/src/main/AndroidManifest.xml
+          sed -i 's/android:label="primaya_ambulance"/android:label="Ambulans Primaya"/' android/app/src/main/AndroidManifest.xml
 
           # Configure AndroidX and memory in gradle.properties
           cat << 'EOF' > android/gradle.properties
@@ -72,13 +67,16 @@ jobs:
           EXIT_CODE=$?
           if [ $EXIT_CODE -ne 0 ]; then
             echo "::error::Flutter build failed with exit code $EXIT_CODE"
-            echo "## ❌ Flutter Build Error" >> $GITHUB_STEP_SUMMARY
-            echo '```text' >> $GITHUB_STEP_SUMMARY
-            tail -n 120 build_output.txt >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
             tail -n 250 build_output.txt
+            git config user.name "github-actions"
+            git config user.email "github-actions@github.com"
+            git checkout -B build-diagnostics
+            git add build_output.txt
+            git commit -m "chore: record build_output.txt for diagnostics"
+            git push origin build-diagnostics --force || true
             exit $EXIT_CODE
           fi
+
 
       - name: Verify and Copy Native APK to Public Downloads
         run: |
