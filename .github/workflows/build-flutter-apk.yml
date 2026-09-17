@@ -44,7 +44,16 @@ jobs:
       - name: Build Android Release APK
         working-directory: ./mobile
         run: |
-          flutter build apk --release
+          set +e
+          flutter build apk --release -v > build_output.txt 2>&1
+          EXIT_CODE=$?
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "::error::Flutter build failed with exit code $EXIT_CODE"
+            echo "===================== LAST 250 LINES OF BUILD LOG ====================="
+            tail -n 250 build_output.txt
+            echo "======================================================================="
+            exit $EXIT_CODE
+          fi
 
       - name: Verify and Copy Native APK to Public Downloads
         run: |
@@ -60,5 +69,14 @@ jobs:
           path: mobile/build/app/outputs/flutter-apk/app-release.apk
           if-no-files-found: error
           retention-days: 30
+
+      - name: Upload Build Log Artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: flutter-build-verbose-log
+          path: mobile/build_output.txt
+          retention-days: 7
+
 
 
