@@ -1,0 +1,38 @@
+name: primaya_ambulance
+description: "Aplikasi Operasional Driver Ambulans Primaya Hospital IGD (Native Flutter)"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Firebase Real-time Cloud Firestore
+  firebase_core: ^3.6.0
+  cloud_firestore: ^5.4.4
+
+  # Peta GPS & Lokasi (Bebas WebView, 100% Native Render)
+  flutter_map: ^7.0.2
+  latlong2: ^0.9.1
+  geolocator: ^13.0.1
+  http: ^1.2.2
+
+  # UI Modern & Desain Material 3
+  google_fonts: ^6.2.1
+  font_awesome_flutter: ^10.7.0
+  flutter_animate: ^4.5.0
+  intl: ^0.19.0
+
+  # Cache Lokal & Sesi PIN Driver
+  shared_preferences: ^2.3.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
