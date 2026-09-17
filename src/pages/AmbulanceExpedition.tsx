@@ -11,6 +11,7 @@ import {
   FaThLarge,
   FaDownload,
   FaAndroid,
+  FaUserTie,
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
@@ -36,6 +37,7 @@ import { AmbulanceFormModal } from '../components/ambulance/AmbulanceFormModal';
 import { AmbulanceDetailModal } from '../components/ambulance/AmbulanceDetailModal';
 import { AmbulanceReportModal } from '../components/ambulance/AmbulanceReportModal';
 import { AmbulanceFleetModal } from '../components/ambulance/AmbulanceFleetModal';
+import { AmbulanceDriverModal } from '../components/ambulance/AmbulanceDriverModal';
 import { AmbulanceApkDownloadModal } from '../components/ambulance/AmbulanceApkDownloadModal';
 import { getTodayDateString } from '../utils/ambulanceUtils';
 import { DEFAULT_DRIVERS, DEFAULT_AMBULANCE_FLEETS } from '../utils/ambulanceConstants';
@@ -74,6 +76,7 @@ const AmbulanceExpedition = () => {
   const [detailItem, setDetailItem] = useState<IAmbulanceExpedition | null>(null);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [isFleetModalOpen, setIsFleetModalOpen] = useState(false);
+  const [isDriverModalOpen, setIsDriverModalOpen] = useState(false);
   const [isApkModalOpen, setIsApkModalOpen] = useState(false);
 
   // Delete confirmation state
@@ -322,6 +325,16 @@ const AmbulanceExpedition = () => {
 
           <button
             type="button"
+            onClick={() => setIsDriverModalOpen(true)}
+            className="w-full sm:w-auto px-4 py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-bold text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+            title="Kelola Driver Ambulance (Tambah, Edit, Hapus Supir)"
+          >
+            <FaUserTie size={13} />
+            <span>Kelola Driver</span>
+          </button>
+
+          <button
+            type="button"
             onClick={() => setIsReportModalOpen(true)}
             className="w-full sm:w-auto px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 font-bold text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
             title="Unduh Laporan Bulanan (Excel & PDF)"
@@ -482,6 +495,13 @@ const AmbulanceExpedition = () => {
       <AmbulanceFleetModal
         isOpen={isFleetModalOpen}
         onClose={() => setIsFleetModalOpen(false)}
+        expeditions={expeditions}
+      />
+
+      {/* Ambulance Driver Management Modal */}
+      <AmbulanceDriverModal
+        isOpen={isDriverModalOpen}
+        onClose={() => setIsDriverModalOpen(false)}
         expeditions={expeditions}
       />
 

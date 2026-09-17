@@ -12,7 +12,7 @@ import {
   serverTimestamp,
 } from 'firebase/firestore';
 import { db } from '../firebase/config';
-import { AmbulanceExpedition, AmbulanceFleet } from '../types/ambulance';
+import { AmbulanceExpedition, AmbulanceFleet, AmbulanceDriver } from '../types/ambulance';
 import {
   AMBULANCE_COLLECTION,
   DRIVERS_COLLECTION,
@@ -291,6 +291,147 @@ export const addAmbulanceDriver = async (name: string): Promise<string> => {
     createdAt: serverTimestamp(),
   });
   return docRef.id;
+};
+
+/**
+ * Real-time listener lengkap untuk manajemen data driver ambulance (dengan ID, No. Telp, Status, & Catatan).
+ * Jika Firestore belum memiliki data driver, secara otomatis melakukan seeding driver default (Acun, Aldy, Azis, Johari, Edy).
+ */
+export const subscribeAmbulanceDriverDetails = (
+  callback: (drivers: AmbulanceDriver[]) => void,
+  onError?: (error: Error) => void
+): (() => void) => {
+  const colRef = collection(db, DRIVERS_COLLECTION);
+  const q = query(colRef);
+
+  return onSnapshot(
+    q,
+    async (snapshot) => {
+      if (snapshot.empty) {
+        // Otomatis seeding driver default jika koleksi belum ada data
+        try {
+          for (const defaultName of DEFAULT_DRIVERS) {
+            const docRef = doc(db, DRIVERS_COLLECTION, `default_${defaultName.toLowerCase()}`);
+            await setDoc(docRef, {
+              name: defaultName,
+              phone: '',
+              status: 'Aktif',
+              notes: 'Driver Standby IGD',
+              createdAt: serverTimestamp(),
+              updatedAt: serverTimestamp(),
+            });
+          }
+        } catch (e) {
+          console.warn('Seeding default drivers skipped:', e);
+        }
+        callback(
+          DEFAULT_DRIVERS.map((name) => ({
+            id: `default_${name.toLowerCase()}`,
+            name,
+            phone: '',
+            status: 'Aktif',
+            notes: 'Driver Standby IGD',
+          }))
+        );
+        return;
+      }
+
+      const items: AmbulanceDriver[] = snapshot.docs.map((docSnap) => {
+        const data = docSnap.data();
+        return {
+          id: docSnap.id,
+          name: data.name || '',
+          phone: data.phone || '',
+          status: data.status || 'Aktif',
+          notes: data.notes || '',
+          createdAt: data.createdAt,
+          updatedAt: data.updatedAt,
+        };
+      });
+
+      items.sort((a, b) => a.name.localeCompare(b.name, 'id'));
+      callback(items);
+    },
+    (err) => {
+      console.error('Error subscribing to ambulance driver details:', err);
+      callback(
+        DEFAULT_DRIVERS.map((name) => ({
+          id: name,
+          name,
+          phone: '',
+          status: 'Aktif',
+        }))
+      );
+      if (onError) onError(err);
+    }
+  );
+};
+
+/**
+ * Menambahkan driver ambulance lengkap (nama, telp, status, catatan)
+ */
+export const addAmbulanceDriverDetail = async (
+  driver: Omit<AmbulanceDriver, 'id' | 'createdAt' | 'updatedAt'>
+): Promise<string> => {
+  const cleanName = driver.name.trim();
+  if (!cleanName) {
+    throw new Error('Nama driver tidak boleh kosong');
+  }
+
+  const colRef = collection(db, DRIVERS_COLLECTION);
+  const existingSnap = await getDocs(query(colRef, where('name', '==', cleanName)));
+  if (!existingSnap.empty) {
+    throw new Error(`Driver "${cleanName}" sudah terdaftar`);
+  }
+
+  const docRef = doc(colRef);
+  await setDoc(docRef, {
+    name: cleanName,
+    phone: driver.phone?.trim() || '',
+    status: driver.status || 'Aktif',
+    notes: driver.notes?.trim() || '',
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+  return docRef.id;
+};
+
+/**
+ * Mengupdate data driver ambulance yang sudah ada di Firestore
+ */
+export const updateAmbulanceDriver = async (
+  id: string,
+  data: Partial<Omit<AmbulanceDriver, 'id' | 'createdAt' | 'updatedAt'>>
+): Promise<void> => {
+  const docRef = doc(db, DRIVERS_COLLECTION, id);
+  const updateData: Record<string, any> = {
+    updatedAt: serverTimestamp(),
+  };
+
+  if (data.name !== undefined) {
+    const trimmed = data.name.trim();
+    if (!trimmed) throw new Error('Nama driver tidak boleh kosong');
+    updateData.name = trimmed;
+  }
+  if (data.phone !== undefined) {
+    updateData.phone = data.phone.trim();
+  }
+  if (data.status !== undefined) {
+    updateData.status = data.status;
+  }
+  if (data.notes !== undefined) {
+    updateData.notes = data.notes.trim();
+  }
+
+  await updateDoc(docRef, updateData);
+};
+
+/**
+ * Menghapus driver ambulance dari Firestore
+ */
+export const deleteAmbulanceDriver = async (id: string): Promise<void> => {
+  const docRef = doc(db, DRIVERS_COLLECTION, id);
+  await deleteDoc(docRef);
 };
 
 /**

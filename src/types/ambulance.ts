@@ -41,6 +41,18 @@ export interface AmbulanceFleet {
   updatedAt?: unknown;
 }
 
+export type AmbulanceDriverStatus = 'Aktif' | 'Cuti' | 'Nonaktif';
+
+export interface AmbulanceDriver {
+  id: string;
+  name: string;
+  phone?: string;
+  status?: AmbulanceDriverStatus;
+  notes?: string;
+  createdAt?: unknown;
+  updatedAt?: unknown;
+}
+
 export interface AmbulanceExpedition {
   id: string;
   expeditionNumber: string;
