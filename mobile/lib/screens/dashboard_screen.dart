@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../models/ambulance_models.dart';
 import '../services/firestore_service.dart';
+import '../services/location_tracking_service.dart';
 import '../theme/app_theme.dart';
 import '../utils/ambulance_utils.dart';
 import '../widgets/metric_card.dart';
@@ -19,6 +20,13 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   HospitalBaseLocation _baseLocation = HospitalBaseLocation.defaultLocation();
+
+  @override
+  void initState() {
+    super.initState();
+    // Memulai pelacakan lokasi GPS di latar belakang (tanpa tampilan di frontend)
+    LocationTrackingService.startTracking();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -58,6 +66,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             icon: const Icon(Icons.lock_outline_rounded),
             tooltip: 'Kunci Aplikasi',
             onPressed: () {
+              LocationTrackingService.stopTracking();
               Navigator.of(context).pushReplacement(
                 MaterialPageRoute(builder: (_) => const PinScreen()),
               );
@@ -65,6 +74,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ],
       ),
+
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: AppTheme.accent,
         foregroundColor: Colors.white,

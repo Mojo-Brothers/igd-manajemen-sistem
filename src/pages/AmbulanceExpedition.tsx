@@ -13,6 +13,7 @@ import {
   FaAndroid,
   FaUserTie,
   FaHospital,
+  FaBroadcastTower,
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
@@ -41,7 +42,9 @@ import { AmbulanceFleetModal } from '../components/ambulance/AmbulanceFleetModal
 import { AmbulanceDriverModal } from '../components/ambulance/AmbulanceDriverModal';
 import { AmbulanceApkDownloadModal } from '../components/ambulance/AmbulanceApkDownloadModal';
 import { AmbulanceBaseLocationModal } from '../components/ambulance/AmbulanceBaseLocationModal';
+import { AmbulanceLiveTrackingModal } from '../components/ambulance/AmbulanceLiveTrackingModal';
 import { AmbulanceAnalyticsDashboard } from '../components/ambulance/AmbulanceAnalyticsDashboard';
+
 import { getTodayDateString } from '../utils/ambulanceUtils';
 import { DEFAULT_DRIVERS, DEFAULT_AMBULANCE_FLEETS } from '../utils/ambulanceConstants';
 
@@ -82,6 +85,8 @@ const AmbulanceExpedition = () => {
   const [isDriverModalOpen, setIsDriverModalOpen] = useState(false);
   const [isBaseModalOpen, setIsBaseModalOpen] = useState(false);
   const [isApkModalOpen, setIsApkModalOpen] = useState(false);
+  const [isLiveTrackingModalOpen, setIsLiveTrackingModalOpen] = useState(false);
+
 
   // Delete confirmation state
   const [deleteConfirmItem, setDeleteConfirmItem] = useState<IAmbulanceExpedition | null>(null);
@@ -309,7 +314,18 @@ const AmbulanceExpedition = () => {
         <div className="flex items-center gap-2.5 w-full sm:w-auto shrink-0 flex-wrap sm:flex-nowrap">
           <button
             type="button"
+            onClick={() => setIsLiveTrackingModalOpen(true)}
+            className="w-full sm:w-auto px-4 py-2.5 bg-gradient-to-r from-blue-700 to-indigo-700 hover:from-blue-800 hover:to-indigo-800 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+            title="Pantau Lokasi GPS Seluruh Ambulans Real-Time di Peta"
+          >
+            <FaBroadcastTower size={14} className="text-blue-200 animate-pulse" />
+            <span>Live Tracking GPS</span>
+          </button>
+
+          <button
+            type="button"
             onClick={() => setIsApkModalOpen(true)}
+
             className="w-full sm:w-auto px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
             title="Unduh Aplikasi Android (.APK) Khusus HP Petugas & Sopir"
           >
@@ -534,7 +550,16 @@ const AmbulanceExpedition = () => {
         onClose={() => setIsBaseModalOpen(false)}
       />
 
+      {/* Live GPS Tracking Modal */}
+      {isLiveTrackingModalOpen && (
+        <AmbulanceLiveTrackingModal
+          isOpen={isLiveTrackingModalOpen}
+          onClose={() => setIsLiveTrackingModalOpen(false)}
+        />
+      )}
+
       {/* Delete Confirmation Modal */}
+
       {deleteConfirmItem && (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-gray-100 p-6 space-y-4">

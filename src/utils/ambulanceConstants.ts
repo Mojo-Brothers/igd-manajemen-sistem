@@ -71,6 +71,8 @@ export const DEFAULT_AMBULANCE_FLEETS: string[] = [
 export const AMBULANCE_COLLECTION = 'ambulance_expeditions';
 export const DRIVERS_COLLECTION = 'ambulance_drivers';
 export const FLEETS_COLLECTION = 'ambulance_fleets';
+export const LIVE_LOCATIONS_COLLECTION = 'ambulance_live_locations';
+
 
 export const DEFAULT_DRIVERS: string[] = [
   'Acun',

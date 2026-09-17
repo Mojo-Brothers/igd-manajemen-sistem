@@ -17,6 +17,7 @@ import {
   AmbulanceFleet,
   AmbulanceDriver,
   HospitalBaseLocation,
+  AmbulanceLiveLocation,
 } from '../types/ambulance';
 import {
   AMBULANCE_COLLECTION,
@@ -24,11 +25,13 @@ import {
   DEFAULT_DRIVERS,
   FLEETS_COLLECTION,
   DEFAULT_AMBULANCE_FLEETS,
+  LIVE_LOCATIONS_COLLECTION,
   SETTINGS_COLLECTION,
   AMBULANCE_CONFIG_DOC,
   DEFAULT_AMBULANCE_PIN,
   HOSPITAL_BASE_COORDS,
 } from '../utils/ambulanceConstants';
+
 import { generateExpeditionNumber, calculateDuration } from '../utils/ambulanceUtils';
 
 /**
@@ -829,5 +832,47 @@ export const setHospitalBaseLocation = async (
     { merge: true }
   );
 };
+
+/**
+ * Real-time listener untuk data pelacakan lokasi GPS seluruh unit ambulance
+ */
+export const subscribeAmbulanceLiveLocations = (
+  callback: (locations: AmbulanceLiveLocation[]) => void,
+  onError?: (error: Error) => void
+): (() => void) => {
+  const colRef = collection(db, LIVE_LOCATIONS_COLLECTION);
+  const q = query(colRef);
+
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const items: AmbulanceLiveLocation[] = snapshot.docs.map((docSnap) => {
+        const data = docSnap.data();
+        return {
+          id: docSnap.id,
+          ambulance: data.ambulance || docSnap.id,
+          driver: data.driver || '',
+          lat: typeof data.lat === 'number' ? data.lat : 0,
+          lng: typeof data.lng === 'number' ? data.lng : 0,
+          speed: typeof data.speed === 'number' ? data.speed : 0,
+          heading: typeof data.heading === 'number' ? data.heading : 0,
+          accuracy: typeof data.accuracy === 'number' ? data.accuracy : 0,
+          isMoving: Boolean(data.isMoving),
+          status: data.status || 'Online',
+          updatedAt: data.updatedAt,
+          batteryLevel: data.batteryLevel,
+          deviceInfo: data.deviceInfo,
+        };
+      });
+
+      callback(items);
+    },
+    (err) => {
+      console.error('Error subscribing to ambulance live locations:', err);
+      if (onError) onError(err);
+    }
+  );
+};
+
 
 

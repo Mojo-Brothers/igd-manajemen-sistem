@@ -103,3 +103,20 @@ export interface AmbulanceFilterState {
   ambulance: string;
   driver: string;
 }
+
+export interface AmbulanceLiveLocation {
+  id: string; // unit nama armada, misal: EVALIA, BSI, PHC
+  ambulance: string;
+  driver?: string;
+  lat: number;
+  lng: number;
+  speed?: number; // km/h
+  heading?: number; // degrees
+  accuracy?: number; // meters
+  isMoving?: boolean;
+  status?: 'Online' | 'Offline' | 'Bergerak' | 'Standby';
+  updatedAt?: any;
+  batteryLevel?: number;
+  deviceInfo?: string;
+}
+

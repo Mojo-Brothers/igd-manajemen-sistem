@@ -3,7 +3,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../models/ambulance_models.dart';
 import '../services/firestore_service.dart';
+import '../services/location_tracking_service.dart';
 import '../theme/app_theme.dart';
+
 import '../utils/ambulance_utils.dart';
 import 'map_picker_screen.dart';
 
@@ -375,6 +377,11 @@ class _ExpeditionFormScreenState extends State<ExpeditionFormScreen> {
       };
 
       await FirestoreService.createExpedition(payload);
+      LocationTrackingService.updateSessionInfo(
+        fleet: _selectedFleet ?? 'EVALIA',
+        driver: _selectedDriver ?? 'Driver Mobile',
+      );
+
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
