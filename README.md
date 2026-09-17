@@ -19,12 +19,19 @@ Modul pencatatan, pelacakan, dan pelaporan operasional ambulans IGD secara real-
 
 - **Dashboard Admin Ekspedisi Ambulance (`/admin/ambulance`)**:
   - **Pusat Monitoring & Rekapitulasi**: Khusus admin IGD untuk memonitor seluruh aktivitas armada rumah sakit.
+  - **Pelacakan Lokasi GPS Real-Time (Live Tracking)**: Peta interaktif Leaflet (`AmbulanceLiveTrackingModal.tsx`) dengan marker bergerak ambulans 🚑, arah hadap (*heading*), kecepatan langsung (km/jam), status operasional (🟢 Bergerak / 🟡 Standby / ⚪ Offline), dan tombol *Fokus* ke posisi kendaraan di lapangan.
   - **Filter Akumulasi Jarak Perbulan**: Kartu Total Jarak Tempuh secara default menghitung akumulasi jarak perbulan dengan dropdown pemilihan bulan interaktif, navigasi panah cepat antar-bulan (`< >`), dan sinkronisasi ke tabel daftar ekspedisi.
   - **Filter Multi-Kriteria**: Pencarian teks instan (pasien, no. RM, driver, armada), preset periode (Hari Ini, Minggu Ini, Bulan Ini, Custom), jenis kegiatan, armada, dan driver.
   - **Manajemen Data**: Hak akses penuh untuk melihat rincian kegiatan, mengedit data, serta menghapus data kegiatan.
   - **Ekspor Laporan Bulanan Resmi (Excel & PDF)**:
     - **Format Excel (.xlsx)**: File spreadsheet rapi dengan 13 kolom panduan pengisian resmi dan lembar panduan petunjuk teknis.
     - **Format PDF Resmi (A4 Landscape)**: Desain dokumen korporat profesional lengkap dengan kop Primaya Hospital, rekapitulasi data 13 kolom, informasi *Dicetak Oleh: Petugas Admin Ambulance IGD*, serta kolom tanda tangan pengesahan oleh *Koordinator IGD*.
+
+- **Aplikasi Mobile Driver Native (Flutter - Android)**:
+  - **Silent Background Telemetry**: Mengirimkan koordinat GPS, kecepatan, dan status armada setiap 12 detik secara hening di latar belakang ke Cloud Firestore tanpa menampilkan UI pelacakan di layar HP supir (*zero UI distraction*).
+  - **Formulir 100% Selaras Webview**: 4 seksi terstruktur (Informasi Kegiatan, Pasien & Status, Perjalanan & Waktu, Catatan Tambahan) dengan alur konfirmasi preview dan nomor ekspedisi otomatis `AMB-YYYYMMDD-XXX`.
+  - **Peta Penjemputan GPS Offline-Free**: Fitur Leaflet Map Picker native untuk penentuan koordinat rujukan.
+  - **Akses PIN 6-Digit Cepat**: Sesi login praktis tanpa email/password khusus operasional kru lapangan.
 
 ---
 
@@ -70,24 +77,43 @@ Tampilan publik layar monitor TV di ruang tunggu atau nurse station IGD:
 
 ```text
 primaya-igd-doctor-schedule-display/
+├── .github/
+│   └── workflows/
+│       ├── build-flutter-apk.yml    # CI/CD otomatis kompilasi APK rilis Flutter
+│       └── deploy.yml               # CI/CD otomatis deploy web ke GitHub Pages
+├── mobile/                          # Aplikasi Mobile Android Native (Flutter 3.24+)
+│   ├── lib/
+│   │   ├── models/                  # Model data Dart (AmbulanceExpedition, HospitalBaseLocation)
+│   │   ├── screens/                 # Layar aplikasi (PinScreen, DashboardScreen, ExpeditionFormScreen, MapPickerScreen)
+│   │   ├── services/                # FirestoreService & LocationTrackingService (Silent GPS)
+│   │   ├── theme/                   # Desain tema Material 3 Primaya Hospital
+│   │   ├── utils/                   # Utilitas durasi perjalanan, format tanggal, konstanta
+│   │   ├── widgets/                 # Komponen UI (MetricCard, StatusBadge)
+│   │   ├── firebase_options.dart    # Konfigurasi koneksi Cloud Firestore
+│   │   └── main.dart                # Entry point Flutter
+│   └── pubspec.yaml                 # Dependensi Flutter (geolocator, flutter_map, cloud_firestore)
 ├── public/
-│   ├── favicon.svg             # Favicon resmi tema IGD (SVG Vektor)
-│   ├── vite.svg                # Fallback icon
-│   └── logo.png                # Logo Primaya Hospital
+│   ├── favicon.svg                  # Favicon resmi tema IGD (SVG Vektor)
+│   ├── vite.svg                     # Fallback icon
+│   └── logo.png                     # Logo Primaya Hospital
 ├── src/
 │   ├── components/
-│   │   ├── ambulance/          # Komponen modul ekspedisi ambulance
-│   │   │   ├── AmbulanceStats.tsx         # Kartu metrik & filter jarak perbulan
-│   │   │   ├── AmbulanceFilters.tsx       # Filter pencarian & periode
-│   │   │   ├── AmbulanceTable.tsx         # Tampilan List, Card, & Grid
-│   │   │   ├── AmbulanceFormModal.tsx     # Modal catat & edit perjalanan
-│   │   │   ├── AmbulanceDetailModal.tsx   # Modal rincian lengkap ekspedisi
-│   │   │   └── AmbulanceReportModal.tsx   # Modal unduh laporan Excel & PDF
-│   │   ├── DigitalClock.tsx    # Jam digital real-time
-│   │   ├── DoctorCard.tsx      # Kartu dokter jaga TV Display
-│   │   └── ProtectedRoute.tsx  # Proteksi otentikasi rute admin
+│   │   ├── ambulance/               # Komponen modul ekspedisi ambulance
+│   │   │   ├── AmbulanceStats.tsx              # Kartu metrik & filter jarak perbulan
+│   │   │   ├── AmbulanceFilters.tsx            # Filter pencarian & periode
+│   │   │   ├── AmbulanceTable.tsx              # Tampilan List, Card, & Grid
+│   │   │   ├── AmbulanceFormModal.tsx          # Modal catat & edit perjalanan
+│   │   │   ├── AmbulanceDetailModal.tsx        # Modal rincian lengkap ekspedisi
+│   │   │   ├── AmbulanceReportModal.tsx        # Modal unduh laporan Excel & PDF
+│   │   │   ├── AmbulanceLiveTrackingModal.tsx  # Peta interaktif Live GPS Tracking (Leaflet)
+│   │   │   ├── AmbulanceFleetModal.tsx         # Manajemen data armada
+│   │   │   ├── AmbulanceDriverModal.tsx        # Manajemen data driver
+│   │   │   └── AmbulanceBaseLocationModal.tsx  # Konfigurasi koordinat pangkalan RS
+│   │   ├── DigitalClock.tsx         # Jam digital real-time
+│   │   ├── DoctorCard.tsx           # Kartu dokter jaga TV Display
+│   │   └── ProtectedRoute.tsx       # Proteksi otentikasi rute admin
 │   ├── layouts/
-│   │   └── AdminLayout.tsx     # Layout sidebar & navbar admin responsif
+│   │   └── AdminLayout.tsx          # Layout sidebar & navbar admin responsif
 │   ├── pages/
 │   │   ├── AmbulanceFrontPage.tsx   # Halaman front workstation ambulance (/ambulance)
 │   │   ├── AmbulanceExpedition.tsx  # Dashboard admin ekspedisi (/admin/ambulance)
@@ -98,22 +124,23 @@ primaya-igd-doctor-schedule-display/
 │   │   ├── Login.tsx                # Halaman login admin (/login)
 │   │   └── linen/                   # Halaman & komponen LinenFlow IGD
 │   ├── services/
-│   │   ├── ambulanceService.ts         # Service Firestore CRUD ekspedisi ambulance
+│   │   ├── ambulanceService.ts         # Service Firestore CRUD & Live Tracking
 │   │   ├── ambulanceReportGenerator.ts # Generator PDF (jsPDF) & Excel (XLSX) 13 kolom
 │   │   ├── db.ts                       # Service database dokter & jadwal
 │   │   └── linenService.ts             # Service data linen
 │   ├── types/
-│   │   ├── ambulance.ts        # Definisi interface TypeScript ekspedisi ambulance
-│   │   └── linen.ts            # Definisi interface TypeScript linen
+│   │   ├── ambulance.ts             # Definisi interface TypeScript ekspedisi ambulance & live location
+│   │   └── linen.ts                 # Definisi interface TypeScript linen
 │   ├── utils/
-│   │   ├── ambulanceUtils.ts   # Helper durasi, format tanggal, & nama bulan Indo
-│   │   └── ambulanceConstants.ts # Data armada default, driver, & jenis kegiatan
-│   ├── index.css               # Styling utama Tailwind CSS
-│   ├── App.tsx                 # Konfigurasi routing aplikasi
-│   └── main.tsx                # Entry point React
-├── index.html                  # HTML template & meta viewport
-└── package.json                # Dependensi & skrip proyek
-```
+│   │   ├── ambulanceUtils.ts        # Helper durasi, format tanggal, & nama bulan Indo
+│   │   └── ambulanceConstants.ts    # Data armada default, driver, & jenis kegiatan
+│   ├── index.css                    # Styling utama Tailwind CSS
+│   ├── App.tsx                      # Konfigurasi routing aplikasi
+│   └── main.tsx                     # Entry point React
+├── CHANGELOG.md                     # Catatan riwayat versi dan perubahan rilis
+├── index.html                       # HTML template & meta viewport
+└── package.json                     # Dependensi & skrip proyek
+
 
 ---
 
@@ -212,25 +239,22 @@ Hasil build berada di dalam folder `dist/` dan siap diunggah ke layanan hosting 
 
 ## 📲 Aplikasi Android Native (.APK) Ekspedisi Ambulans
 
-Aplikasi web telah terintegrasi dengan runtime **Capacitor Native Android**, memungkinkan kru ambulans, pengemudi, dan perawat IGD mengoperasikan sistem langsung dari ponsel pintar Android secara mandiri (layar penuh / *immersive mode* tanpa address bar browser):
+Aplikasi mobile driver ambulans dibangun menggunakan **Native Flutter SDK (Flutter 3.24+ & Material 3)** di folder `mobile/`, memberikan performa tinggi, animasi mulus 60 FPS, serta integrasi telemetri GPS langsung ke Cloud Firestore:
 
 - **Unduh Langsung dari Frontend:** Tombol **"Aplikasi Android (.APK)"** tersedia di halaman [Workstation Front Ambulance](/ambulance) dan [Dashboard Admin Ekspedisi](/admin/ambulance).
-- **Scan QR Code:** Petugas di ruang IGD dapat langsung mengarahkan kamera smartphone ke QR Code yang muncul di layar komputer untuk mengunduh berkas APK langsung ke ponsel.
-- **Tautan Berkas APK Publik:** `https://[domain-rs]/downloads/primaya-ambulans.apk` (Ukuran: ~5.09 MB, Standalone Universal APK, Android 8.0 - 15+).
-- **Buku Panduan Penggunaan Driver:** Panduan lengkap langkah demi langkah pengoperasian logbook untuk driver dan kru ambulans dapat dilihat di [docs/PANDUAN_PENGGUNAAN_DRIVER_AMBULANS.md](docs/PANDUAN_PENGGUNAAN_DRIVER_AMBULANS.md).
-- **Alur Kompilasi Ulang APK Lokal:**
+- **Tautan Berkas APK Rilis Publik:** [Download primaya-ambulans.apk](https://raw.githubusercontent.com/Mojo-Brothers/igd-manajemen-sistem/apk-release/public/downloads/primaya-ambulans.apk) (Standar Universal APK, Android 8.0 - 15+).
+- **Silent Background GPS Telemetry:** Mengirimkan koordinat lokasi armada secara hening setiap 12 detik tanpa membebani layar driver.
+- **Formulir 100% Identik Webview:** 4 seksi terstruktur, integrasi GPS Map Picker, kalkulasi durasi otomatis, dan konfirmasi preview sebelum simpan.
+- **Pipa CI/CD GitHub Actions Otomatis:** Setiap kali ada pembaruan kode di folder `mobile/`, workflow `.github/workflows/build-flutter-apk.yml` akan otomatis mengompilasi APK rilis dan memperbarui branch `apk-release`.
+- **Kompilasi Lokal (Opsional):**
   ```bash
-  # 1. Build aset web terbaru
-  npm run build
-
-  # 2. Sinkronisasikan ke proyek native Android Capacitor
-  npx cap sync android
-
-  # 3. Kompilasi APK menggunakan Gradle Wrapper
-  cd android
-  .\gradlew.bat assembleDebug
+  cd mobile
+  flutter clean
+  flutter pub get
+  flutter build apk --release
   ```
-  File APK yang dihasilkan tersimpan di `android/app/build/outputs/apk/debug/app-debug.apk` dan otomatis dipublikasikan ke `public/downloads/primaya-ambulans.apk`.
+  File APK rilis tersimpan di `mobile/build/app/outputs/flutter-apk/app-release.apk`.
+
 
 ---
 
