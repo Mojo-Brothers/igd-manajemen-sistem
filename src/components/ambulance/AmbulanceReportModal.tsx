@@ -8,6 +8,7 @@ import {
   FaCheckCircle,
   FaInfoCircle,
   FaRoute,
+  FaChevronDown,
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import { AmbulanceExpedition } from '../../types/ambulance';
@@ -120,32 +121,42 @@ export const AmbulanceReportModal: React.FC<AmbulanceReportModalProps> = ({
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <span className="text-[11px] text-gray-500 font-semibold mb-1 block">Bulan</span>
-                <select
-                  value={selectedMonth}
-                  onChange={(e) => setSelectedMonth(Number(e.target.value))}
-                  className="w-full h-10 px-3 py-2 text-sm bg-gray-50 border border-gray-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all cursor-pointer font-semibold text-gray-800"
-                >
-                  {INDONESIAN_MONTHS.map((m) => (
-                    <option key={m.value} value={m.value}>
-                      {m.label}
-                    </option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <select
+                    value={selectedMonth}
+                    onChange={(e) => setSelectedMonth(Number(e.target.value))}
+                    className="w-full h-10 appearance-none pl-3 pr-8 py-2 text-sm bg-gray-50 border border-gray-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all cursor-pointer font-semibold text-gray-800"
+                  >
+                    {INDONESIAN_MONTHS.map((m) => (
+                      <option key={m.value} value={m.value}>
+                        {m.label}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400">
+                    <FaChevronDown size={11} />
+                  </div>
+                </div>
               </div>
 
               <div>
                 <span className="text-[11px] text-gray-500 font-semibold mb-1 block">Tahun</span>
-                <select
-                  value={selectedYear}
-                  onChange={(e) => setSelectedYear(Number(e.target.value))}
-                  className="w-full h-10 px-3 py-2 text-sm bg-gray-50 border border-gray-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all cursor-pointer font-semibold text-gray-800"
-                >
-                  {yearOptions.map((y) => (
-                    <option key={y} value={y}>
-                      {y}
-                    </option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <select
+                    value={selectedYear}
+                    onChange={(e) => setSelectedYear(Number(e.target.value))}
+                    className="w-full h-10 appearance-none pl-3 pr-8 py-2 text-sm bg-gray-50 border border-gray-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all cursor-pointer font-semibold text-gray-800"
+                  >
+                    {yearOptions.map((y) => (
+                      <option key={y} value={y}>
+                        {y}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400">
+                    <FaChevronDown size={11} />
+                  </div>
+                </div>
               </div>
             </div>
           </div>

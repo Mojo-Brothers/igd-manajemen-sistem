@@ -8,6 +8,7 @@ import {
   FaCheck,
   FaExclamationTriangle,
   FaRoute,
+  FaChevronDown,
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import {
@@ -264,15 +265,20 @@ export const AmbulanceFleetModal: React.FC<AmbulanceFleetModalProps> = ({
                   <label className="block text-xs font-bold text-gray-700 mb-1">
                     Status Operasional
                   </label>
-                  <select
-                    value={status}
-                    onChange={(e) => setStatus(e.target.value as AmbulanceFleetStatus)}
-                    className="w-full h-10 px-3 py-2 text-xs sm:text-sm bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all cursor-pointer font-semibold"
-                  >
-                    <option value="Aktif">🟢 Aktif / Siaga</option>
-                    <option value="Perbaikan">🟡 Perbaikan / Bengkel</option>
-                    <option value="Nonaktif">🔴 Nonaktif</option>
-                  </select>
+                  <div className="relative">
+                    <select
+                      value={status}
+                      onChange={(e) => setStatus(e.target.value as AmbulanceFleetStatus)}
+                      className="w-full h-10 appearance-none pl-3.5 pr-10 py-2 text-xs sm:text-sm bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all cursor-pointer font-semibold"
+                    >
+                      <option value="Aktif">🟢 Aktif / Siaga</option>
+                      <option value="Perbaikan">🟡 Perbaikan / Bengkel</option>
+                      <option value="Nonaktif">🔴 Nonaktif</option>
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3.5 text-gray-400">
+                      <FaChevronDown size={11} />
+                    </div>
+                  </div>
                 </div>
               </div>
 
