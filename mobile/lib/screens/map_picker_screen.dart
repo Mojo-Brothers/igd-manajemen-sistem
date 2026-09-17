@@ -320,7 +320,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                 // Hasil Pencarian Dropdown
                 if (_searchResults.isNotEmpty)
                   Container(
-                    margin: const EdgeInsets.top(6),
+                    margin: const EdgeInsets.only(top: 6),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(16),
