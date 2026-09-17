@@ -217,6 +217,7 @@ Aplikasi web telah terintegrasi dengan runtime **Capacitor Native Android**, mem
 - **Unduh Langsung dari Frontend:** Tombol **"Aplikasi Android (.APK)"** tersedia di halaman [Workstation Front Ambulance](/ambulance) dan [Dashboard Admin Ekspedisi](/admin/ambulance).
 - **Scan QR Code:** Petugas di ruang IGD dapat langsung mengarahkan kamera smartphone ke QR Code yang muncul di layar komputer untuk mengunduh berkas APK langsung ke ponsel.
 - **Tautan Berkas APK Publik:** `https://[domain-rs]/downloads/primaya-ambulans.apk` (Ukuran: ~5.09 MB, Standalone Universal APK, Android 8.0 - 15+).
+- **Buku Panduan Penggunaan Driver:** Panduan lengkap langkah demi langkah pengoperasian logbook untuk driver dan kru ambulans dapat dilihat di [docs/PANDUAN_PENGGUNAAN_DRIVER_AMBULANS.md](docs/PANDUAN_PENGGUNAAN_DRIVER_AMBULANS.md).
 - **Alur Kompilasi Ulang APK Lokal:**
   ```bash
   # 1. Build aset web terbaru
