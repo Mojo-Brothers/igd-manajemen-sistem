@@ -35,6 +35,29 @@ jobs:
       - name: Verify Flutter & Doctor
         run: flutter doctor -v
 
+      - name: Recreate Official Flutter Android Project
+        working-directory: ./mobile
+        run: |
+          # Backup custom files
+          mkdir -p /tmp/backup_res /tmp/backup_manifest
+          cp -r android/app/src/main/res/* /tmp/backup_res/ || true
+          cp android/app/src/main/AndroidManifest.xml /tmp/backup_manifest/AndroidManifest.xml || true
+          
+          # Regenerate clean official Android configuration
+          rm -rf android
+          flutter create --platforms=android --org com.primayahospital .
+
+          # Restore custom permissions and launcher styles
+          cp /tmp/backup_manifest/AndroidManifest.xml android/app/src/main/AndroidManifest.xml
+          cp -r /tmp/backup_res/* android/app/src/main/res/ || true
+
+          # Configure AndroidX and memory in gradle.properties
+          cat << 'EOF' > android/gradle.properties
+          org.gradle.jvmargs=-Xmx4G -XX:MaxMetaspaceSize=1G -XX:+HeapDumpOnOutOfMemoryError
+          android.useAndroidX=true
+          android.enableJetifier=true
+          EOF
+
       - name: Install Dependencies
         working-directory: ./mobile
         run: |
@@ -49,9 +72,11 @@ jobs:
           EXIT_CODE=$?
           if [ $EXIT_CODE -ne 0 ]; then
             echo "::error::Flutter build failed with exit code $EXIT_CODE"
-            echo "===================== LAST 250 LINES OF BUILD LOG ====================="
+            echo "## ❌ Flutter Build Error" >> $GITHUB_STEP_SUMMARY
+            echo '```text' >> $GITHUB_STEP_SUMMARY
+            tail -n 120 build_output.txt >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
             tail -n 250 build_output.txt
-            echo "======================================================================="
             exit $EXIT_CODE
           fi
 
@@ -77,6 +102,3 @@ jobs:
           name: flutter-build-verbose-log
           path: mobile/build_output.txt
           retention-days: 7
-
-
-
