@@ -53,11 +53,22 @@ jobs:
           android.enableJetifier=true
           EOF
 
-      - name: Install Dependencies
+          # Configure explicit SDK versions in app/build.gradle
+          sed -i 's/compileSdk = flutter.compileSdkVersion/compileSdk = 34/g' android/app/build.gradle || true
+          sed -i 's/targetSdk = flutter.targetSdkVersion/targetSdk = 34/g' android/app/build.gradle || true
+          sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 23/g' android/app/build.gradle || true
+
+      - name: Install Dependencies & Patch Plugins
         working-directory: ./mobile
         run: |
           flutter clean
           flutter pub get
+          echo "Patching any legacy plugins referencing dynamic flutter extension properties..."
+          find /home/runner/.pub-cache -name "build.gradle" -exec sed -i 's/compileSdkVersion flutter.compileSdkVersion/compileSdkVersion 34/g' {} + || true
+          find /home/runner/.pub-cache -name "build.gradle" -exec sed -i 's/compileSdk flutter.compileSdkVersion/compileSdk 34/g' {} + || true
+          find /home/runner/.pub-cache -name "build.gradle" -exec sed -i 's/targetSdkVersion flutter.targetSdkVersion/targetSdkVersion 34/g' {} + || true
+          find /home/runner/.pub-cache -name "build.gradle" -exec sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 23/g' {} + || true
+
 
       - name: Build Android Release APK
         working-directory: ./mobile
