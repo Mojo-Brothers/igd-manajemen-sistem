@@ -12,6 +12,7 @@ import {
   FaDownload,
   FaAndroid,
   FaUserTie,
+  FaHospital,
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
@@ -39,6 +40,7 @@ import { AmbulanceReportModal } from '../components/ambulance/AmbulanceReportMod
 import { AmbulanceFleetModal } from '../components/ambulance/AmbulanceFleetModal';
 import { AmbulanceDriverModal } from '../components/ambulance/AmbulanceDriverModal';
 import { AmbulanceApkDownloadModal } from '../components/ambulance/AmbulanceApkDownloadModal';
+import { AmbulanceBaseLocationModal } from '../components/ambulance/AmbulanceBaseLocationModal';
 import { AmbulanceAnalyticsDashboard } from '../components/ambulance/AmbulanceAnalyticsDashboard';
 import { getTodayDateString } from '../utils/ambulanceUtils';
 import { DEFAULT_DRIVERS, DEFAULT_AMBULANCE_FLEETS } from '../utils/ambulanceConstants';
@@ -78,6 +80,7 @@ const AmbulanceExpedition = () => {
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [isFleetModalOpen, setIsFleetModalOpen] = useState(false);
   const [isDriverModalOpen, setIsDriverModalOpen] = useState(false);
+  const [isBaseModalOpen, setIsBaseModalOpen] = useState(false);
   const [isApkModalOpen, setIsApkModalOpen] = useState(false);
 
   // Delete confirmation state
@@ -336,6 +339,16 @@ const AmbulanceExpedition = () => {
 
           <button
             type="button"
+            onClick={() => setIsBaseModalOpen(true)}
+            className="w-full sm:w-auto px-4 py-2.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 font-bold text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+            title="Atur Lokasi Pangkalan Ambulans dari Peta / GPS"
+          >
+            <FaHospital size={13} className="text-amber-600" />
+            <span>Lokasi Pangkalan</span>
+          </button>
+
+          <button
+            type="button"
             onClick={() => setIsReportModalOpen(true)}
             className="w-full sm:w-auto px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 font-bold text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
             title="Unduh Laporan Bulanan (Excel & PDF)"
@@ -513,6 +526,12 @@ const AmbulanceExpedition = () => {
       <AmbulanceApkDownloadModal
         isOpen={isApkModalOpen}
         onClose={() => setIsApkModalOpen(false)}
+      />
+
+      {/* Ambulance Base Hospital Location Modal */}
+      <AmbulanceBaseLocationModal
+        isOpen={isBaseModalOpen}
+        onClose={() => setIsBaseModalOpen(false)}
       />
 
       {/* Delete Confirmation Modal */}

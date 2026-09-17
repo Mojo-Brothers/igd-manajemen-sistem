@@ -53,6 +53,15 @@ export interface AmbulanceDriver {
   updatedAt?: unknown;
 }
 
+export interface HospitalBaseLocation {
+  name: string;
+  address?: string;
+  lat: number;
+  lng: number;
+  updatedAt?: unknown;
+  updatedBy?: string;
+}
+
 export interface AmbulanceExpedition {
   id: string;
   expeditionNumber: string;

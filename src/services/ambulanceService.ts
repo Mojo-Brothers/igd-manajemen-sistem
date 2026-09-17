@@ -12,7 +12,12 @@ import {
   serverTimestamp,
 } from 'firebase/firestore';
 import { db } from '../firebase/config';
-import { AmbulanceExpedition, AmbulanceFleet, AmbulanceDriver } from '../types/ambulance';
+import {
+  AmbulanceExpedition,
+  AmbulanceFleet,
+  AmbulanceDriver,
+  HospitalBaseLocation,
+} from '../types/ambulance';
 import {
   AMBULANCE_COLLECTION,
   DRIVERS_COLLECTION,
@@ -22,6 +27,7 @@ import {
   SETTINGS_COLLECTION,
   AMBULANCE_CONFIG_DOC,
   DEFAULT_AMBULANCE_PIN,
+  HOSPITAL_BASE_COORDS,
 } from '../utils/ambulanceConstants';
 import { generateExpeditionNumber, calculateDuration } from '../utils/ambulanceUtils';
 
@@ -662,6 +668,112 @@ export const setAmbulancePin = async (
 export const verifyAmbulancePin = async (inputPin: string): Promise<boolean> => {
   const currentPin = await getAmbulancePin();
   return inputPin.trim() === currentPin.trim();
+};
+
+/**
+ * Real-time listener untuk data lokasi pangkalan ambulance (Primaya Hospital Base)
+ * Default fallback: HOSPITAL_BASE_COORDS
+ */
+export const subscribeHospitalBaseLocation = (
+  callback: (base: HospitalBaseLocation) => void,
+  onError?: (error: Error) => void
+): (() => void) => {
+  const configRef = doc(db, SETTINGS_COLLECTION, AMBULANCE_CONFIG_DOC);
+
+  return onSnapshot(
+    configRef,
+    (snap) => {
+      if (snap.exists() && snap.data()?.baseLocation) {
+        const data = snap.data().baseLocation;
+        callback({
+          name: data.name || HOSPITAL_BASE_COORDS.name,
+          address: data.address || '',
+          lat: typeof data.lat === 'number' ? data.lat : HOSPITAL_BASE_COORDS.lat,
+          lng: typeof data.lng === 'number' ? data.lng : HOSPITAL_BASE_COORDS.lng,
+          updatedAt: data.updatedAt,
+          updatedBy: data.updatedBy,
+        });
+      } else {
+        callback({
+          name: HOSPITAL_BASE_COORDS.name,
+          address: 'Jl. H. Noer Ali No.Kav. 17-18, RT.001/RW.023, Kayuringin Jaya, Kec. Bekasi Sel., Kota Bks, Jawa Barat 17144',
+          lat: HOSPITAL_BASE_COORDS.lat,
+          lng: HOSPITAL_BASE_COORDS.lng,
+        });
+      }
+    },
+    (err) => {
+      console.warn('Error subscribing to base location, using default:', err);
+      callback({
+        name: HOSPITAL_BASE_COORDS.name,
+        address: 'Jl. H. Noer Ali No.Kav. 17-18, RT.001/RW.023, Kayuringin Jaya, Kec. Bekasi Sel., Kota Bks, Jawa Barat 17144',
+        lat: HOSPITAL_BASE_COORDS.lat,
+        lng: HOSPITAL_BASE_COORDS.lng,
+      });
+      if (onError) onError(err);
+    }
+  );
+};
+
+/**
+ * Mengambil data lokasi pangkalan ambulance secara one-shot
+ */
+export const getHospitalBaseLocation = async (): Promise<HospitalBaseLocation> => {
+  try {
+    const configRef = doc(db, SETTINGS_COLLECTION, AMBULANCE_CONFIG_DOC);
+    const snap = await getDoc(configRef);
+    if (snap.exists() && snap.data()?.baseLocation) {
+      const data = snap.data().baseLocation;
+      return {
+        name: data.name || HOSPITAL_BASE_COORDS.name,
+        address: data.address || '',
+        lat: typeof data.lat === 'number' ? data.lat : HOSPITAL_BASE_COORDS.lat,
+        lng: typeof data.lng === 'number' ? data.lng : HOSPITAL_BASE_COORDS.lng,
+        updatedAt: data.updatedAt,
+        updatedBy: data.updatedBy,
+      };
+    }
+  } catch (err) {
+    console.warn('Gagal memuat base location, menggunakan default:', err);
+  }
+  return {
+    name: HOSPITAL_BASE_COORDS.name,
+    address: 'Jl. H. Noer Ali No.Kav. 17-18, RT.001/RW.023, Kayuringin Jaya, Kec. Bekasi Sel., Kota Bks, Jawa Barat 17144',
+    lat: HOSPITAL_BASE_COORDS.lat,
+    lng: HOSPITAL_BASE_COORDS.lng,
+  };
+};
+
+/**
+ * Menyimpan / memperbarui data lokasi pangkalan ambulance di Firestore
+ */
+export const setHospitalBaseLocation = async (
+  base: { name: string; address?: string; lat: number; lng: number },
+  updatedBy: string = 'Administrator'
+): Promise<void> => {
+  if (!base.name.trim()) {
+    throw new Error('Nama pangkalan tidak boleh kosong');
+  }
+  if (isNaN(base.lat) || isNaN(base.lng)) {
+    throw new Error('Koordinat Latitude dan Longitude harus berupa angka valid');
+  }
+
+  const configRef = doc(db, SETTINGS_COLLECTION, AMBULANCE_CONFIG_DOC);
+  await setDoc(
+    configRef,
+    {
+      baseLocation: {
+        name: base.name.trim(),
+        address: (base.address || '').trim(),
+        lat: Number(base.lat),
+        lng: Number(base.lng),
+        updatedAt: serverTimestamp(),
+        updatedBy,
+      },
+      updatedAt: serverTimestamp(),
+    },
+    { merge: true }
+  );
 };
 
 

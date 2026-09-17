@@ -16,6 +16,8 @@ import {
   POPULAR_DESTINATIONS,
 } from '../../utils/ambulanceConstants';
 import { calculateEstimatedDistance } from '../../utils/ambulanceUtils';
+import { HospitalBaseLocation } from '../../types/ambulance';
+import { subscribeHospitalBaseLocation } from '../../services/ambulanceService';
 
 export interface MapSelectedLocation {
   address: string;
@@ -50,13 +52,13 @@ const createDestinationIcon = () =>
   });
 
 // Custom Leaflet DivIcon for Base Hospital Marker
-const createHospitalBaseIcon = () =>
+const createHospitalBaseIcon = (name: string) =>
   L.divIcon({
     className: 'custom-hospital-marker',
     html: `
       <div style="position: relative; display: flex; flex-direction: column; align-items: center; transform: translate(-50%, -100%);">
         <div style="background: #1d4ed8; color: white; padding: 5px 9px; border-radius: 9999px; font-weight: 800; font-size: 10px; box-shadow: 0 4px 12px rgba(29,78,216,0.45); display: flex; items-center; gap: 4px; border: 2px solid white; white-space: nowrap;">
-          <span>🏥 Primaya Hospital</span>
+          <span>🏥 ${name || 'Pangkalan IGD'}</span>
         </div>
         <div style="width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 8px solid #1d4ed8; margin-top: -1px;"></div>
       </div>
@@ -78,6 +80,16 @@ export const AmbulanceMapPickerModal: React.FC<AmbulanceMapPickerModalProps> = (
   const destinationMarkerRef = useRef<L.Marker | null>(null);
   const routeLineRef = useRef<L.Polyline | null>(null);
 
+  const [baseLocation, setBaseLocation] = useState<HospitalBaseLocation>(HOSPITAL_BASE_COORDS);
+
+  // Subscribe to configured base hospital location
+  useEffect(() => {
+    const unsub = subscribeHospitalBaseLocation((base) => {
+      setBaseLocation(base);
+    });
+    return () => unsub();
+  }, []);
+
   const [selectedLat, setSelectedLat] = useState<number>(
     initialLat || HOSPITAL_BASE_COORDS.lat + 0.015
   );
@@ -94,14 +106,14 @@ export const AmbulanceMapPickerModal: React.FC<AmbulanceMapPickerModalProps> = (
   // Initialize or update location state
   useEffect(() => {
     if (isOpen) {
-      const lat = initialLat || HOSPITAL_BASE_COORDS.lat + 0.015;
-      const lng = initialLng || HOSPITAL_BASE_COORDS.lng + 0.012;
+      const lat = initialLat || baseLocation.lat + 0.015;
+      const lng = initialLng || baseLocation.lng + 0.012;
       setSelectedLat(lat);
       setSelectedLng(lng);
       setAddressInput(initialLocationName || 'Lokasi Tujuan Ambulance');
       const km = calculateEstimatedDistance(
-        HOSPITAL_BASE_COORDS.lat,
-        HOSPITAL_BASE_COORDS.lng,
+        baseLocation.lat,
+        baseLocation.lng,
         lat,
         lng
       );
@@ -109,7 +121,7 @@ export const AmbulanceMapPickerModal: React.FC<AmbulanceMapPickerModalProps> = (
       setSearchQuery('');
       setSearchResults([]);
     }
-  }, [isOpen, initialLat, initialLng, initialLocationName]);
+  }, [isOpen, initialLat, initialLng, initialLocationName, baseLocation.lat, baseLocation.lng]);
 
   // Leaflet Map Initialization
   useEffect(() => {
@@ -132,13 +144,13 @@ export const AmbulanceMapPickerModal: React.FC<AmbulanceMapPickerModalProps> = (
     }).addTo(map);
 
     // Hospital Base Marker
-    L.marker([HOSPITAL_BASE_COORDS.lat, HOSPITAL_BASE_COORDS.lng], {
-      icon: createHospitalBaseIcon(),
+    L.marker([baseLocation.lat, baseLocation.lng], {
+      icon: createHospitalBaseIcon(baseLocation.name),
       interactive: true,
     })
       .addTo(map)
       .bindPopup(
-        `<div style="font-size: 12px; font-weight: bold; text-align: center;">🏥 ${HOSPITAL_BASE_COORDS.name}<br/><span style="font-weight: normal; color: #64748b; font-size: 10px;">Pangkalan Asal IGD</span></div>`
+        `<div style="font-size: 12px; font-weight: bold; text-align: center;">🏥 ${baseLocation.name}<br/><span style="font-weight: normal; color: #64748b; font-size: 10px;">${baseLocation.address || 'Pangkalan Asal IGD'}</span></div>`
       );
 
     // Destination Marker (Draggable)
@@ -152,7 +164,7 @@ export const AmbulanceMapPickerModal: React.FC<AmbulanceMapPickerModalProps> = (
     // Draw route line
     const routeLine = L.polyline(
       [
-        [HOSPITAL_BASE_COORDS.lat, HOSPITAL_BASE_COORDS.lng],
+        [baseLocation.lat, baseLocation.lng],
         [selectedLat, selectedLng],
       ],
       {
@@ -193,7 +205,7 @@ export const AmbulanceMapPickerModal: React.FC<AmbulanceMapPickerModalProps> = (
         mapInstanceRef.current = null;
       }
     };
-  }, [isOpen]);
+  }, [isOpen, baseLocation.lat, baseLocation.lng]);
 
   // Update selected position & trigger reverse geocoding
   const updateSelectedPosition = async (
@@ -207,15 +219,15 @@ export const AmbulanceMapPickerModal: React.FC<AmbulanceMapPickerModalProps> = (
     // Update route line
     if (routeLineRef.current) {
       routeLineRef.current.setLatLngs([
-        [HOSPITAL_BASE_COORDS.lat, HOSPITAL_BASE_COORDS.lng],
+        [baseLocation.lat, baseLocation.lng],
         [lat, lng],
       ]);
     }
 
     // Recalculate distance
     const km = calculateEstimatedDistance(
-      HOSPITAL_BASE_COORDS.lat,
-      HOSPITAL_BASE_COORDS.lng,
+      baseLocation.lat,
+      baseLocation.lng,
       lat,
       lng
     );
@@ -323,7 +335,7 @@ export const AmbulanceMapPickerModal: React.FC<AmbulanceMapPickerModalProps> = (
   const handleCenterToBase = () => {
     if (mapInstanceRef.current) {
       mapInstanceRef.current.setView(
-        [HOSPITAL_BASE_COORDS.lat, HOSPITAL_BASE_COORDS.lng],
+        [baseLocation.lat, baseLocation.lng],
         14
       );
     }
@@ -403,7 +415,7 @@ export const AmbulanceMapPickerModal: React.FC<AmbulanceMapPickerModalProps> = (
               type="button"
               onClick={handleCenterToBase}
               className="px-3 h-10 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs font-semibold rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs shrink-0"
-              title="Arahkan ke Pangkalan Primaya Hospital"
+              title={`Arahkan ke Pangkalan ${baseLocation.name}`}
             >
               <FaCrosshairs size={12} className="text-blue-600" />
               <span className="hidden sm:inline">Pangkalan</span>
