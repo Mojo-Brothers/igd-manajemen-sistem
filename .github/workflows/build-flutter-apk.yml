@@ -43,9 +43,7 @@ jobs:
 
       - name: Build Android Release APK
         working-directory: ./mobile
-        run: flutter build apk --release --verbose
-
-
+        run: flutter build apk --release --verbose 2>&1 | tee build.log
 
       - name: Upload Release APK
         uses: actions/upload-artifact@v4
@@ -53,3 +51,12 @@ jobs:
           name: primaya-ambulance-driver-apk
           path: mobile/build/app/outputs/flutter-apk/app-release.apk
           retention-days: 30
+
+      - name: Upload Build Log on Failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: flutter-build-log
+          path: mobile/build.log
+          retention-days: 7
+

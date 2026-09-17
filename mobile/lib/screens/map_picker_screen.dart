@@ -191,7 +191,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                     points: [_baseCoords, _selectedCoords],
                     strokeWidth: 3.5,
                     color: AppTheme.danger,
-                    pattern: const StrokePattern.dotted(spacing: 8),
+                    pattern: const StrokePattern.dotted(),
                   ),
                 ],
               ),
