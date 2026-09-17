@@ -334,7 +334,7 @@ class _ExpeditionFormScreenState extends State<ExpeditionFormScreen> {
                 ),
                 const SizedBox(width: 8),
                 IconButton.filled(
-                  style: IconButton.filled(backgroundColor: AppTheme.primary),
+                  style: IconButton.styleFrom(backgroundColor: AppTheme.primary),
                   onPressed: _openMapPicker,
                   tooltip: 'Pilih Lokasi dari Peta GPS',
                   icon: const Icon(Icons.map_rounded),

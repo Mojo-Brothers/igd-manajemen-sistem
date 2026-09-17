@@ -41,7 +41,7 @@ class FirestoreService {
   /// Stream daftar driver ambulans aktif
   static Stream<List<String>> getDriversStream() {
     return _db.collection(driversCollection).snapshots().map((snapshot) {
-      if (snapshot.empty) {
+      if (snapshot.docs.isEmpty) {
         return ['Acun', 'Aldy', 'Azis', 'Johari', 'Edy'];
       }
       final list = snapshot.docs
@@ -56,7 +56,7 @@ class FirestoreService {
   /// Stream daftar armada ambulans aktif
   static Stream<List<String>> getFleetsStream() {
     return _db.collection(fleetsCollection).snapshots().map((snapshot) {
-      if (snapshot.empty) {
+      if (snapshot.docs.isEmpty) {
         return [
           'Ambulance 1 (B 1234 PYA)',
           'Ambulance 2 (B 5678 PYA)',
