@@ -279,7 +279,13 @@ export const addAmbulanceDriver = async (name: string): Promise<string> => {
   const trimmed = name.trim();
   if (!trimmed) throw new Error('Nama driver tidak boleh kosong');
 
-  const docRef = doc(collection(db, DRIVERS_COLLECTION));
+  const colRef = collection(db, DRIVERS_COLLECTION);
+  const existingSnap = await getDocs(query(colRef, where('name', '==', trimmed)));
+  if (!existingSnap.empty) {
+    return existingSnap.docs[0].id;
+  }
+
+  const docRef = doc(colRef);
   await setDoc(docRef, {
     name: trimmed,
     createdAt: serverTimestamp(),
@@ -338,7 +344,7 @@ export const subscribeAmbulanceFleetDetails = (
         // Otomatis seeding armada default jika koleksi belum ada data
         try {
           for (const defaultName of DEFAULT_AMBULANCE_FLEETS) {
-            const docRef = doc(collection(db, FLEETS_COLLECTION));
+            const docRef = doc(db, FLEETS_COLLECTION, `default_${defaultName.toLowerCase()}`);
             await setDoc(docRef, {
               name: defaultName,
               plateNumber: '',
@@ -416,7 +422,13 @@ export const addAmbulanceFleet = async (
     throw new Error('Nama armada ambulance tidak boleh kosong');
   }
 
-  const docRef = doc(collection(db, FLEETS_COLLECTION));
+  const colRef = collection(db, FLEETS_COLLECTION);
+  const existingSnap = await getDocs(query(colRef, where('name', '==', payload.name)));
+  if (!existingSnap.empty) {
+    return existingSnap.docs[0].id;
+  }
+
+  const docRef = doc(colRef);
   await setDoc(docRef, {
     ...payload,
     createdAt: serverTimestamp(),
