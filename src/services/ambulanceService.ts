@@ -670,14 +670,68 @@ export const verifyAmbulancePin = async (inputPin: string): Promise<boolean> => 
   return inputPin.trim() === currentPin.trim();
 };
 
+const BASE_LOCATION_STORAGE_KEY = 'ambulance_hospital_base_location';
+
+/**
+ * Mengambil lokasi pangkalan rumah sakit dari localStorage (sinkron & instan tanpa jeda jaringan).
+ * Sangat penting agar modal peta langsung merender pangkalan yang benar sejak milidetik pertama.
+ */
+export const getCachedHospitalBaseLocation = (): HospitalBaseLocation => {
+  try {
+    const saved = localStorage.getItem(BASE_LOCATION_STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (
+        parsed &&
+        typeof parsed.lat === 'number' &&
+        typeof parsed.lng === 'number' &&
+        !isNaN(parsed.lat) &&
+        !isNaN(parsed.lng)
+      ) {
+        return {
+          name: parsed.name || HOSPITAL_BASE_COORDS.name,
+          address: parsed.address || '',
+          lat: Number(parsed.lat),
+          lng: Number(parsed.lng),
+          updatedAt: parsed.updatedAt,
+          updatedBy: parsed.updatedBy,
+        };
+      }
+    }
+  } catch (e) {
+    console.warn('Failed to read cached base location:', e);
+  }
+  return {
+    name: HOSPITAL_BASE_COORDS.name,
+    address: 'Jl. H. Noer Ali No.Kav. 17-18, RT.001/RW.023, Kayuringin Jaya, Kec. Bekasi Sel., Kota Bks, Jawa Barat 17144',
+    lat: HOSPITAL_BASE_COORDS.lat,
+    lng: HOSPITAL_BASE_COORDS.lng,
+  };
+};
+
+/**
+ * Menyimpan data lokasi pangkalan rumah sakit ke cache localStorage lokal
+ */
+export const setCachedHospitalBaseLocation = (base: HospitalBaseLocation): void => {
+  try {
+    localStorage.setItem(BASE_LOCATION_STORAGE_KEY, JSON.stringify(base));
+  } catch (e) {
+    console.warn('Failed to cache base location to localStorage:', e);
+  }
+};
+
 /**
  * Real-time listener untuk data lokasi pangkalan ambulance (Primaya Hospital Base)
- * Default fallback: HOSPITAL_BASE_COORDS
+ * Default fallback: getCachedHospitalBaseLocation()
  */
 export const subscribeHospitalBaseLocation = (
   callback: (base: HospitalBaseLocation) => void,
   onError?: (error: Error) => void
 ): (() => void) => {
+  // Langsung kirimkan versi cache lokal terlebih dahulu jika ada
+  const cached = getCachedHospitalBaseLocation();
+  callback(cached);
+
   const configRef = doc(db, SETTINGS_COLLECTION, AMBULANCE_CONFIG_DOC);
 
   return onSnapshot(
@@ -685,31 +739,25 @@ export const subscribeHospitalBaseLocation = (
     (snap) => {
       if (snap.exists() && snap.data()?.baseLocation) {
         const data = snap.data().baseLocation;
-        callback({
+        const result: HospitalBaseLocation = {
           name: data.name || HOSPITAL_BASE_COORDS.name,
           address: data.address || '',
           lat: typeof data.lat === 'number' ? data.lat : HOSPITAL_BASE_COORDS.lat,
           lng: typeof data.lng === 'number' ? data.lng : HOSPITAL_BASE_COORDS.lng,
           updatedAt: data.updatedAt,
           updatedBy: data.updatedBy,
-        });
+        };
+        setCachedHospitalBaseLocation(result);
+        callback(result);
       } else {
-        callback({
-          name: HOSPITAL_BASE_COORDS.name,
-          address: 'Jl. H. Noer Ali No.Kav. 17-18, RT.001/RW.023, Kayuringin Jaya, Kec. Bekasi Sel., Kota Bks, Jawa Barat 17144',
-          lat: HOSPITAL_BASE_COORDS.lat,
-          lng: HOSPITAL_BASE_COORDS.lng,
-        });
+        const fallback = getCachedHospitalBaseLocation();
+        callback(fallback);
       }
     },
     (err) => {
-      console.warn('Error subscribing to base location, using default:', err);
-      callback({
-        name: HOSPITAL_BASE_COORDS.name,
-        address: 'Jl. H. Noer Ali No.Kav. 17-18, RT.001/RW.023, Kayuringin Jaya, Kec. Bekasi Sel., Kota Bks, Jawa Barat 17144',
-        lat: HOSPITAL_BASE_COORDS.lat,
-        lng: HOSPITAL_BASE_COORDS.lng,
-      });
+      console.warn('Error subscribing to base location, using cached/default:', err);
+      const fallback = getCachedHospitalBaseLocation();
+      callback(fallback);
       if (onError) onError(err);
     }
   );
@@ -724,7 +772,7 @@ export const getHospitalBaseLocation = async (): Promise<HospitalBaseLocation> =
     const snap = await getDoc(configRef);
     if (snap.exists() && snap.data()?.baseLocation) {
       const data = snap.data().baseLocation;
-      return {
+      const result: HospitalBaseLocation = {
         name: data.name || HOSPITAL_BASE_COORDS.name,
         address: data.address || '',
         lat: typeof data.lat === 'number' ? data.lat : HOSPITAL_BASE_COORDS.lat,
@@ -732,16 +780,13 @@ export const getHospitalBaseLocation = async (): Promise<HospitalBaseLocation> =
         updatedAt: data.updatedAt,
         updatedBy: data.updatedBy,
       };
+      setCachedHospitalBaseLocation(result);
+      return result;
     }
   } catch (err) {
-    console.warn('Gagal memuat base location, menggunakan default:', err);
+    console.warn('Gagal memuat base location, menggunakan cache/default:', err);
   }
-  return {
-    name: HOSPITAL_BASE_COORDS.name,
-    address: 'Jl. H. Noer Ali No.Kav. 17-18, RT.001/RW.023, Kayuringin Jaya, Kec. Bekasi Sel., Kota Bks, Jawa Barat 17144',
-    lat: HOSPITAL_BASE_COORDS.lat,
-    lng: HOSPITAL_BASE_COORDS.lng,
-  };
+  return getCachedHospitalBaseLocation();
 };
 
 /**
@@ -757,6 +802,15 @@ export const setHospitalBaseLocation = async (
   if (isNaN(base.lat) || isNaN(base.lng)) {
     throw new Error('Koordinat Latitude dan Longitude harus berupa angka valid');
   }
+
+  // Update cache lokal langsung
+  setCachedHospitalBaseLocation({
+    name: base.name.trim(),
+    address: (base.address || '').trim(),
+    lat: Number(base.lat),
+    lng: Number(base.lng),
+    updatedBy,
+  });
 
   const configRef = doc(db, SETTINGS_COLLECTION, AMBULANCE_CONFIG_DOC);
   await setDoc(

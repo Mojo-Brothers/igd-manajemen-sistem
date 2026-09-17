@@ -12,12 +12,14 @@ import {
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import {
-  HOSPITAL_BASE_COORDS,
   POPULAR_DESTINATIONS,
 } from '../../utils/ambulanceConstants';
 import { calculateEstimatedDistance } from '../../utils/ambulanceUtils';
 import { HospitalBaseLocation } from '../../types/ambulance';
-import { subscribeHospitalBaseLocation } from '../../services/ambulanceService';
+import {
+  getCachedHospitalBaseLocation,
+  subscribeHospitalBaseLocation,
+} from '../../services/ambulanceService';
 
 export interface MapSelectedLocation {
   address: string;
@@ -33,6 +35,7 @@ interface AmbulanceMapPickerModalProps {
   initialLocationName?: string;
   initialLat?: number;
   initialLng?: number;
+  baseLocation?: HospitalBaseLocation;
 }
 
 // Custom Leaflet DivIcon for Destination Marker
@@ -74,15 +77,27 @@ export const AmbulanceMapPickerModal: React.FC<AmbulanceMapPickerModalProps> = (
   initialLocationName = '',
   initialLat,
   initialLng,
+  baseLocation: initialBaseProp,
 }) => {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
+  const baseMarkerRef = useRef<L.Marker | null>(null);
   const destinationMarkerRef = useRef<L.Marker | null>(null);
   const routeLineRef = useRef<L.Polyline | null>(null);
 
-  const [baseLocation, setBaseLocation] = useState<HospitalBaseLocation>(HOSPITAL_BASE_COORDS);
+  // Ambil data pangkalan dari prop atau cache lokal (seketika & instan)
+  const [baseLocation, setBaseLocation] = useState<HospitalBaseLocation>(() =>
+    initialBaseProp || getCachedHospitalBaseLocation()
+  );
 
-  // Subscribe to configured base hospital location
+  // Sinkronkan jika prop baseLocation berubah
+  useEffect(() => {
+    if (initialBaseProp) {
+      setBaseLocation(initialBaseProp);
+    }
+  }, [initialBaseProp]);
+
+  // Tetap berlangganan Firestore secara real-time
   useEffect(() => {
     const unsub = subscribeHospitalBaseLocation((base) => {
       setBaseLocation(base);
@@ -91,10 +106,10 @@ export const AmbulanceMapPickerModal: React.FC<AmbulanceMapPickerModalProps> = (
   }, []);
 
   const [selectedLat, setSelectedLat] = useState<number>(
-    initialLat || HOSPITAL_BASE_COORDS.lat + 0.015
+    initialLat || (initialBaseProp || getCachedHospitalBaseLocation()).lat + 0.015
   );
   const [selectedLng, setSelectedLng] = useState<number>(
-    initialLng || HOSPITAL_BASE_COORDS.lng + 0.012
+    initialLng || (initialBaseProp || getCachedHospitalBaseLocation()).lng + 0.012
   );
   const [addressInput, setAddressInput] = useState<string>(initialLocationName);
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -103,7 +118,7 @@ export const AmbulanceMapPickerModal: React.FC<AmbulanceMapPickerModalProps> = (
   const [isReverseGeocoding, setIsReverseGeocoding] = useState<boolean>(false);
   const [estimatedKm, setEstimatedKm] = useState<number>(0);
 
-  // Initialize or update location state
+  // Inisialisasi posisi tujuan saat modal dibuka
   useEffect(() => {
     if (isOpen) {
       const lat = initialLat || baseLocation.lat + 0.015;
@@ -121,21 +136,25 @@ export const AmbulanceMapPickerModal: React.FC<AmbulanceMapPickerModalProps> = (
       setSearchQuery('');
       setSearchResults([]);
     }
-  }, [isOpen, initialLat, initialLng, initialLocationName, baseLocation.lat, baseLocation.lng]);
+  }, [isOpen, initialLat, initialLng, initialLocationName]);
 
-  // Leaflet Map Initialization
+  // Leaflet Map Initialization (dieksekusi sekali saat modal dibuka)
   useEffect(() => {
     if (!isOpen || !mapContainerRef.current) return;
 
-    // Destroy existing instance if any
+    // Bersihkan instance lama jika ada
     if (mapInstanceRef.current) {
       mapInstanceRef.current.remove();
       mapInstanceRef.current = null;
     }
 
+    const currentBase = baseLocation;
+    const destLat = selectedLat;
+    const destLng = selectedLng;
+
     const map = L.map(mapContainerRef.current, {
       zoomControl: true,
-    }).setView([selectedLat, selectedLng], 13);
+    }).setView([destLat, destLng], 13);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution:
@@ -143,29 +162,29 @@ export const AmbulanceMapPickerModal: React.FC<AmbulanceMapPickerModalProps> = (
       maxZoom: 19,
     }).addTo(map);
 
-    // Hospital Base Marker
-    L.marker([baseLocation.lat, baseLocation.lng], {
-      icon: createHospitalBaseIcon(baseLocation.name),
+    // Marker Pangkalan Rumah Sakit
+    const baseMarker = L.marker([currentBase.lat, currentBase.lng], {
+      icon: createHospitalBaseIcon(currentBase.name),
       interactive: true,
     })
       .addTo(map)
       .bindPopup(
-        `<div style="font-size: 12px; font-weight: bold; text-align: center;">🏥 ${baseLocation.name}<br/><span style="font-weight: normal; color: #64748b; font-size: 10px;">${baseLocation.address || 'Pangkalan Asal IGD'}</span></div>`
+        `<div style="font-size: 12px; font-weight: bold; text-align: center;">🏥 ${currentBase.name}<br/><span style="font-weight: normal; color: #64748b; font-size: 10px;">${currentBase.address || 'Pangkalan Asal IGD'}</span></div>`
       );
+    baseMarkerRef.current = baseMarker;
 
-    // Destination Marker (Draggable)
-    const destMarker = L.marker([selectedLat, selectedLng], {
+    // Marker Tujuan (Dapat digeser)
+    const destMarker = L.marker([destLat, destLng], {
       icon: createDestinationIcon(),
       draggable: true,
     }).addTo(map);
-
     destinationMarkerRef.current = destMarker;
 
-    // Draw route line
+    // Garis Rute dari Pangkalan ke Tujuan
     const routeLine = L.polyline(
       [
-        [baseLocation.lat, baseLocation.lng],
-        [selectedLat, selectedLng],
+        [currentBase.lat, currentBase.lng],
+        [destLat, destLng],
       ],
       {
         color: '#dc2626',
@@ -174,17 +193,16 @@ export const AmbulanceMapPickerModal: React.FC<AmbulanceMapPickerModalProps> = (
         opacity: 0.8,
       }
     ).addTo(map);
-
     routeLineRef.current = routeLine;
 
-    // Handle marker drag
+    // Event drag marker tujuan
     destMarker.on('dragend', (e) => {
       const marker = e.target;
       const position = marker.getLatLng();
       updateSelectedPosition(position.lat, position.lng, true);
     });
 
-    // Handle click on map
+    // Event klik di peta untuk menentukan tujuan
     map.on('click', (e) => {
       const { lat, lng } = e.latlng;
       destMarker.setLatLng([lat, lng]);
@@ -193,7 +211,7 @@ export const AmbulanceMapPickerModal: React.FC<AmbulanceMapPickerModalProps> = (
 
     mapInstanceRef.current = map;
 
-    // Force map resize after modal opens
+    // Pastikan ukuran peta sesuai kontainer modal
     const resizeTimer = setTimeout(() => {
       map.invalidateSize();
     }, 250);
@@ -204,8 +222,39 @@ export const AmbulanceMapPickerModal: React.FC<AmbulanceMapPickerModalProps> = (
         mapInstanceRef.current.remove();
         mapInstanceRef.current = null;
       }
+      baseMarkerRef.current = null;
+      destinationMarkerRef.current = null;
+      routeLineRef.current = null;
     };
-  }, [isOpen, baseLocation.lat, baseLocation.lng]);
+  }, [isOpen]);
+
+  // Sinkronisasi dinamis posisi marker pangkalan & garis rute jika pangkalan terupdate
+  useEffect(() => {
+    if (!mapInstanceRef.current) return;
+
+    if (baseMarkerRef.current) {
+      baseMarkerRef.current.setLatLng([baseLocation.lat, baseLocation.lng]);
+      baseMarkerRef.current.setIcon(createHospitalBaseIcon(baseLocation.name));
+      baseMarkerRef.current.setPopupContent(
+        `<div style="font-size: 12px; font-weight: bold; text-align: center;">🏥 ${baseLocation.name}<br/><span style="font-weight: normal; color: #64748b; font-size: 10px;">${baseLocation.address || 'Pangkalan Asal IGD'}</span></div>`
+      );
+    }
+
+    if (routeLineRef.current) {
+      routeLineRef.current.setLatLngs([
+        [baseLocation.lat, baseLocation.lng],
+        [selectedLat, selectedLng],
+      ]);
+    }
+
+    const km = calculateEstimatedDistance(
+      baseLocation.lat,
+      baseLocation.lng,
+      selectedLat,
+      selectedLng
+    );
+    setEstimatedKm(km);
+  }, [baseLocation, selectedLat, selectedLng]);
 
   // Update selected position & trigger reverse geocoding
   const updateSelectedPosition = async (
@@ -367,8 +416,11 @@ export const AmbulanceMapPickerModal: React.FC<AmbulanceMapPickerModalProps> = (
               <h3 className="font-extrabold text-sm sm:text-base leading-tight">
                 Pilih Lokasi Tujuan dari Map
               </h3>
-              <p className="text-[11px] text-blue-100">
-                Geser pin pada peta atau cari rumah sakit / lokasi tujuan ambulance
+              <p className="text-[11px] text-blue-100 flex items-center gap-1.5 mt-0.5">
+                <span>Pangkalan Asal:</span>
+                <span className="bg-white/20 px-2 py-0.5 rounded font-bold text-white shadow-2xs">
+                  🏥 {baseLocation.name}
+                </span>
               </p>
             </div>
           </div>

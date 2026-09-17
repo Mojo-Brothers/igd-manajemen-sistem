@@ -15,6 +15,7 @@ import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
 import { HospitalBaseLocation } from '../../types/ambulance';
 import {
+  getCachedHospitalBaseLocation,
   subscribeHospitalBaseLocation,
   setHospitalBaseLocation,
 } from '../../services/ambulanceService';
@@ -53,10 +54,10 @@ export const AmbulanceBaseLocationModal: React.FC<AmbulanceBaseLocationModalProp
   const mapInstanceRef = useRef<L.Map | null>(null);
   const hospitalMarkerRef = useRef<L.Marker | null>(null);
 
-  const [baseName, setBaseName] = useState<string>(HOSPITAL_BASE_COORDS.name);
-  const [address, setAddress] = useState<string>('');
-  const [lat, setLat] = useState<number>(HOSPITAL_BASE_COORDS.lat);
-  const [lng, setLng] = useState<number>(HOSPITAL_BASE_COORDS.lng);
+  const [baseName, setBaseName] = useState<string>(() => getCachedHospitalBaseLocation().name);
+  const [address, setAddress] = useState<string>(() => getCachedHospitalBaseLocation().address || '');
+  const [lat, setLat] = useState<number>(() => getCachedHospitalBaseLocation().lat);
+  const [lng, setLng] = useState<number>(() => getCachedHospitalBaseLocation().lng);
 
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
@@ -73,6 +74,13 @@ export const AmbulanceBaseLocationModal: React.FC<AmbulanceBaseLocationModalProp
       setAddress(base.address || '');
       setLat(base.lat);
       setLng(base.lng);
+
+      if (hospitalMarkerRef.current) {
+        hospitalMarkerRef.current.setLatLng([base.lat, base.lng]);
+      }
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.setView([base.lat, base.lng], 15);
+      }
     });
 
     return () => unsubscribe();

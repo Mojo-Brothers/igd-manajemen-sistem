@@ -43,6 +43,11 @@ import {
   AmbulanceMapPickerModal,
   MapSelectedLocation,
 } from './AmbulanceMapPickerModal';
+import { HospitalBaseLocation } from '../../types/ambulance';
+import {
+  getCachedHospitalBaseLocation,
+  subscribeHospitalBaseLocation,
+} from '../../services/ambulanceService';
 
 interface AmbulanceFormModalProps {
   isOpen: boolean;
@@ -94,6 +99,17 @@ export const AmbulanceFormModal: React.FC<AmbulanceFormModalProps> = ({
   const [newAmbulanceName, setNewAmbulanceName] = useState('');
   const [isSavingAmbulance, setIsSavingAmbulance] = useState(false);
   const [isMapPickerOpen, setIsMapPickerOpen] = useState(false);
+  const [baseLocation, setBaseLocation] = useState<HospitalBaseLocation>(() =>
+    getCachedHospitalBaseLocation()
+  );
+
+  // Berlangganan lokasi pangkalan secara real-time
+  useEffect(() => {
+    const unsub = subscribeHospitalBaseLocation((base) => {
+      setBaseLocation(base);
+    });
+    return () => unsub();
+  }, []);
 
   // Manual custom status states (Tambahkan Lainnya)
   const [isCustomInitialStatus, setIsCustomInitialStatus] = useState(false);
@@ -1202,6 +1218,7 @@ export const AmbulanceFormModal: React.FC<AmbulanceFormModalProps> = ({
         initialLocationName={formData.destination}
         initialLat={formData.destinationLat}
         initialLng={formData.destinationLng}
+        baseLocation={baseLocation}
       />
     )}
   </div>
