@@ -5,9 +5,17 @@ allprojects {
     }
 }
 
+ext.flutter = [
+    compileSdkVersion: 34,
+    minSdkVersion    : 23,
+    targetSdkVersion : 34,
+    ndkVersion       : "26.1.10909125"
+]
+
 rootProject.buildDir = "../build"
 subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
+    ext.flutter = rootProject.ext.flutter
 }
 subprojects {
     project.evaluationDependsOn(":app")
@@ -30,4 +38,5 @@ subprojects {
 tasks.register("clean", Delete) {
     delete rootProject.buildDir
 }
+
 

@@ -43,28 +43,22 @@ jobs:
 
       - name: Build Android Release APK
         working-directory: ./mobile
-        run: flutter build apk --release --verbose 2>&1 | tee build.log
-
-      - name: Locate Built APK
         run: |
-          echo "=== SEARCHING FOR BUILT APK FILES ==="
-          find . -name "*.apk"
+          flutter build apk --release
+
+      - name: Verify and Copy Native APK to Public Downloads
+        run: |
+          echo "Verifying generated release APK..."
+          ls -lh mobile/build/app/outputs/flutter-apk/app-release.apk
+          mkdir -p public/downloads
+          cp mobile/build/app/outputs/flutter-apk/app-release.apk public/downloads/primaya-ambulans.apk
 
       - name: Upload Release APK
         uses: actions/upload-artifact@v4
         with:
           name: primaya-ambulance-driver-apk
-          path: |
-            mobile/build/**/*.apk
-            build/**/*.apk
-            **/*.apk
+          path: mobile/build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
           retention-days: 30
 
-      - name: Upload Build Log on Failure
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: flutter-build-log
-          path: mobile/build.log
-          retention-days: 7
 
