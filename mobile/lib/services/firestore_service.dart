@@ -10,6 +10,20 @@ class FirestoreService {
   static const String settingsCollection = 'settings';
   static const String ambulanceConfigDoc = 'ambulance_config';
 
+  static const List<String> defaultDrivers = [
+    'Acun',
+    'Aldy',
+    'Azis',
+    'Johari',
+    'Edy',
+  ];
+
+  static const List<String> defaultFleets = [
+    'EVALIA',
+    'BSI',
+    'PHC',
+  ];
+
   /// Stream daftar ekspedisi ambulans real-time
   static Stream<List<AmbulanceExpedition>> getExpeditionsStream() {
     return _db
@@ -38,38 +52,80 @@ class FirestoreService {
     });
   }
 
-  /// Stream daftar driver ambulans aktif
+  /// Stream daftar driver ambulans aktif (Sinkron dengan web)
   static Stream<List<String>> getDriversStream() {
     return _db.collection(driversCollection).snapshots().map((snapshot) {
-      if (snapshot.docs.isEmpty) {
-        return ['Acun', 'Aldy', 'Azis', 'Johari', 'Edy'];
+      final set = <String>{...defaultDrivers};
+      for (final doc in snapshot.docs) {
+        final name = doc.data()['name']?.toString().trim();
+        if (name != null && name.isNotEmpty) {
+          set.add(name);
+        }
       }
-      final list = snapshot.docs
-          .map((doc) => doc.data()['name']?.toString() ?? '')
-          .where((name) => name.isNotEmpty)
-          .toList();
+      final list = set.toList();
+      list.sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+      return list;
+    });
+  }
+
+  /// Stream daftar armada ambulans aktif (Sinkron dengan web)
+  static Stream<List<String>> getFleetsStream() {
+    return _db.collection(fleetsCollection).snapshots().map((snapshot) {
+      final set = <String>{...defaultFleets};
+      for (final doc in snapshot.docs) {
+        final name = doc.data()['name']?.toString().trim().toUpperCase();
+        if (name != null && name.isNotEmpty) {
+          set.add(name);
+        }
+      }
+      final list = set.toList();
       list.sort();
       return list;
     });
   }
 
-  /// Stream daftar armada ambulans aktif
-  static Stream<List<String>> getFleetsStream() {
-    return _db.collection(fleetsCollection).snapshots().map((snapshot) {
-      if (snapshot.docs.isEmpty) {
-        return [
-          'Ambulance 1 (B 1234 PYA)',
-          'Ambulance 2 (B 5678 PYA)',
-          'Ambulance Jenazah'
-        ];
-      }
-      final list = snapshot.docs
-          .map((doc) => doc.data()['name']?.toString() ?? '')
-          .where((name) => name.isNotEmpty)
-          .toList();
-      list.sort();
-      return list;
-    });
+  /// Menambahkan driver baru ke koleksi ambulance_drivers
+  static Future<void> addDriver(String name) async {
+    final cleanName = name.trim();
+    if (cleanName.isEmpty) return;
+
+    final query = await _db
+        .collection(driversCollection)
+        .where('name', isEqualTo: cleanName)
+        .get();
+
+    if (query.docs.isEmpty) {
+      await _db.collection(driversCollection).add({
+        'name': cleanName,
+        'phone': '',
+        'status': 'Aktif',
+        'notes': 'Driver Standby IGD (Mobile App)',
+        'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    }
+  }
+
+  /// Menambahkan armada ambulans baru ke koleksi ambulance_fleets
+  static Future<void> addFleet(String name) async {
+    final cleanName = name.trim().toUpperCase();
+    if (cleanName.isEmpty) return;
+
+    final query = await _db
+        .collection(fleetsCollection)
+        .where('name', isEqualTo: cleanName)
+        .get();
+
+    if (query.docs.isEmpty) {
+      await _db.collection(fleetsCollection).add({
+        'name': cleanName,
+        'plateNumber': '',
+        'status': 'Aktif',
+        'notes': 'Ditambahkan via Mobile App',
+        'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    }
   }
 
   /// Validasi PIN 6-digit dengan yang tersimpan di Firestore
@@ -79,9 +135,12 @@ class FirestoreService {
           .collection(settingsCollection)
           .doc(ambulanceConfigDoc)
           .get();
-      if (docSnap.exists && docSnap.data()?['pin'] != null) {
-        final serverPin = docSnap.data()!['pin'].toString().trim();
-        return inputPin.trim() == serverPin;
+      if (docSnap.exists) {
+        final data = docSnap.data();
+        final serverPin = data?['ambulancePin'] ?? data?['pin'];
+        if (serverPin != null) {
+          return inputPin.trim() == serverPin.toString().trim();
+        }
       }
     } catch (e) {
       // ignore
@@ -90,27 +149,50 @@ class FirestoreService {
     return inputPin.trim() == '123456';
   }
 
-  /// Generate nomor ekspedisi berikutnya (Format: EXP-YYYYMMDD-001)
+  /// Generate nomor ekspedisi unik berikutnya (Format identik dengan webview: AMB-YYYYMMDD-XXX)
   static Future<String> generateNextExpeditionNumber(String dateStr) async {
+    final cleanDate = dateStr.replaceAll('-', '');
+    final prefix = 'AMB-$cleanDate-';
+
     try {
       final query = await _db
           .collection(expeditionsCollection)
           .where('date', isEqualTo: dateStr)
           .get();
-      final count = query.docs.length + 1;
-      final cleanDate = dateStr.replaceAll('-', '');
-      final sequence = count.toString().padLeft(3, '0');
-      return 'EXP-$cleanDate-$sequence';
+
+      int maxSeq = 0;
+      for (final doc in query.docs) {
+        final expNum = doc.data()['expeditionNumber']?.toString() ?? '';
+        if (expNum.startsWith(prefix)) {
+          final seqStr = expNum.replaceFirst(prefix, '');
+          final seq = int.tryParse(seqStr);
+          if (seq != null && seq > maxSeq) {
+            maxSeq = seq;
+          }
+        }
+      }
+
+      final nextSeq = (maxSeq + 1).toString().padLeft(3, '0');
+      return '$prefix$nextSeq';
     } catch (e) {
-      final cleanDate = dateStr.replaceAll('-', '');
-      return 'EXP-$cleanDate-${DateTime.now().millisecondsSinceEpoch % 1000}';
+      final seq = (DateTime.now().millisecondsSinceEpoch % 900 + 100).toString();
+      return '$prefix$seq';
     }
   }
 
-  /// Simpan ekspedisi baru
+  /// Simpan ekspedisi baru ke Firestore
   static Future<void> createExpedition(Map<String, dynamic> data) async {
+    // Bersihkan nilai null
+    final cleanData = <String, dynamic>{};
+    data.forEach((key, value) {
+      if (value != null) {
+        cleanData[key] = value;
+      }
+    });
+
     await _db.collection(expeditionsCollection).add({
-      ...data,
+      ...cleanData,
+      'createdByName': cleanData['createdByName'] ?? 'Driver Mobile',
       'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
     });

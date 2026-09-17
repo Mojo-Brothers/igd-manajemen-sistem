@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../models/ambulance_models.dart';
 import '../services/firestore_service.dart';
 import '../theme/app_theme.dart';
+import '../utils/ambulance_utils.dart';
 import '../widgets/metric_card.dart';
 import '../widgets/status_badge.dart';
 import 'expedition_form_screen.dart';
@@ -93,7 +94,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             builder: (context, expSnapshot) {
               final expeditions = expSnapshot.data ?? [];
               final todayExpeditions = expeditions.where((e) => e.date == todayStr).toList();
-              final int todayKm = todayExpeditions.fold(0, (sum, item) => sum + item.distanceKm);
+              final double todayKm = todayExpeditions.fold(0.0, (sum, item) => sum + item.distanceKm);
 
               return ListView(
                 padding: const EdgeInsets.all(16),
@@ -200,7 +201,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       Expanded(
                         child: MetricCard(
                           title: 'TOTAL JARAK',
-                          value: '$todayKm KM',
+                          value: '${todayKm.toStringAsFixed(todayKm.truncateToDouble() == todayKm ? 0 : 1)} KM',
                           subtitle: 'Jarak Terakumulasi',
                           icon: Icons.speed_rounded,
                           color: AppTheme.accent,
@@ -274,6 +275,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildExpeditionCard(AmbulanceExpedition item) {
+    final distStr = item.distanceKm.toStringAsFixed(item.distanceKm.truncateToDouble() == item.distanceKm ? 0 : 1);
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -348,16 +351,31 @@ class _DashboardScreenState extends State<DashboardScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                '${item.date} • ${item.startTime} - ${item.endTime}',
+                '${formatDateIndo(item.date)} • ${item.startTime} - ${item.endTime}',
                 style: GoogleFonts.plusJakartaSans(fontSize: 11, color: AppTheme.textSecondary),
               ),
-              Text(
-                '🚗 ${item.distanceKm} KM',
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
-                  color: AppTheme.accent,
-                ),
+              Row(
+                children: [
+                  if (item.durationFormatted != '-' && item.durationFormatted.isNotEmpty) ...[
+                    Text(
+                      '⏱️ ${item.durationFormatted}',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.primary,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                  ],
+                  Text(
+                    '🚗 $distStr KM',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                      color: AppTheme.accent,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

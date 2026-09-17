@@ -42,16 +42,16 @@ class HospitalBaseLocation {
   }
 }
 
-/// Model Ekspedisi Perjalanan Ambulans
+/// Model Ekspedisi Perjalanan Ambulans (Identik dengan Webview AmbulanceExpedition)
 class AmbulanceExpedition {
   final String id;
   final String expeditionNumber;
   final String date;
   final String startTime;
   final String endTime;
-  final int odometerStart;
-  final int odometerEnd;
-  final int distanceKm;
+  final int durationMinutes;
+  final String durationFormatted;
+  final double distanceKm;
   final String activityType;
   final String driver;
   final String ambulance;
@@ -63,9 +63,13 @@ class AmbulanceExpedition {
   final double? destinationLat;
   final double? destinationLng;
   final String? notes;
+  final int? odometerStart;
+  final int? odometerEnd;
   final int? fuelCost;
   final int? tollCost;
   final DateTime? createdAt;
+  final DateTime? updatedAt;
+  final String? createdByName;
 
   AmbulanceExpedition({
     required this.id,
@@ -73,8 +77,8 @@ class AmbulanceExpedition {
     required this.date,
     required this.startTime,
     required this.endTime,
-    required this.odometerStart,
-    required this.odometerEnd,
+    this.durationMinutes = 0,
+    this.durationFormatted = '-',
     required this.distanceKm,
     required this.activityType,
     required this.driver,
@@ -87,9 +91,13 @@ class AmbulanceExpedition {
     this.destinationLat,
     this.destinationLng,
     this.notes,
+    this.odometerStart,
+    this.odometerEnd,
     this.fuelCost,
     this.tollCost,
     this.createdAt,
+    this.updatedAt,
+    this.createdByName,
   });
 
   factory AmbulanceExpedition.fromFirestore(DocumentSnapshot doc) {
@@ -98,6 +106,10 @@ class AmbulanceExpedition {
     if (data['createdAt'] is Timestamp) {
       created = (data['createdAt'] as Timestamp).toDate();
     }
+    DateTime? updated;
+    if (data['updatedAt'] is Timestamp) {
+      updated = (data['updatedAt'] as Timestamp).toDate();
+    }
 
     return AmbulanceExpedition(
       id: doc.id,
@@ -105,10 +117,10 @@ class AmbulanceExpedition {
       date: data['date'] ?? '',
       startTime: data['startTime'] ?? '',
       endTime: data['endTime'] ?? '',
-      odometerStart: (data['odometerStart'] as num?)?.toInt() ?? 0,
-      odometerEnd: (data['odometerEnd'] as num?)?.toInt() ?? 0,
-      distanceKm: (data['distanceKm'] as num?)?.toInt() ?? 0,
-      activityType: data['activityType'] ?? 'Rujukan',
+      durationMinutes: (data['durationMinutes'] as num?)?.toInt() ?? 0,
+      durationFormatted: data['durationFormatted'] ?? '-',
+      distanceKm: (data['distanceKm'] as num?)?.toDouble() ?? 0.0,
+      activityType: data['activityType'] ?? 'Jemput Pasien',
       driver: data['driver'] ?? '',
       ambulance: data['ambulance'] ?? '',
       patientName: data['patientName'],
@@ -119,35 +131,57 @@ class AmbulanceExpedition {
       destinationLat: (data['destinationLat'] as num?)?.toDouble(),
       destinationLng: (data['destinationLng'] as num?)?.toDouble(),
       notes: data['notes'],
+      odometerStart: (data['odometerStart'] as num?)?.toInt(),
+      odometerEnd: (data['odometerEnd'] as num?)?.toInt(),
       fuelCost: (data['fuelCost'] as num?)?.toInt(),
       tollCost: (data['tollCost'] as num?)?.toInt(),
       createdAt: created,
+      updatedAt: updated,
+      createdByName: data['createdByName'],
     );
   }
 
   Map<String, dynamic> toFirestore() {
-    return {
+    final map = <String, dynamic>{
       'expeditionNumber': expeditionNumber,
       'date': date,
       'startTime': startTime,
       'endTime': endTime,
-      'odometerStart': odometerStart,
-      'odometerEnd': odometerEnd,
+      'durationMinutes': durationMinutes,
+      'durationFormatted': durationFormatted,
       'distanceKm': distanceKm,
       'activityType': activityType,
       'driver': driver,
       'ambulance': ambulance,
-      'patientName': patientName,
-      'medicalRecordNumber': medicalRecordNumber,
-      'initialStatus': initialStatus,
-      'finalStatus': finalStatus,
       'destination': destination,
-      'destinationLat': destinationLat,
-      'destinationLng': destinationLng,
-      'notes': notes,
-      'fuelCost': fuelCost,
-      'tollCost': tollCost,
       'updatedAt': FieldValue.serverTimestamp(),
     };
+
+    if (patientName != null && patientName!.isNotEmpty) {
+      map['patientName'] = patientName;
+    }
+    if (medicalRecordNumber != null && medicalRecordNumber!.isNotEmpty) {
+      map['medicalRecordNumber'] = medicalRecordNumber;
+    }
+    if (initialStatus != null && initialStatus!.isNotEmpty) {
+      map['initialStatus'] = initialStatus;
+    }
+    if (finalStatus != null && finalStatus!.isNotEmpty) {
+      map['finalStatus'] = finalStatus;
+    }
+    if (destinationLat != null) {
+      map['destinationLat'] = destinationLat;
+    }
+    if (destinationLng != null) {
+      map['destinationLng'] = destinationLng;
+    }
+    if (notes != null && notes!.isNotEmpty) {
+      map['notes'] = notes;
+    }
+    if (createdByName != null && createdByName!.isNotEmpty) {
+      map['createdByName'] = createdByName;
+    }
+
+    return map;
   }
 }
