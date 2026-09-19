@@ -1,5 +1,6 @@
 {
   "name": "igd-manajemen-sistem",
+  "description": "Sistem Informasi & Manajemen Terpadu IGD Primaya Hospital: Jadwal Dokter Jaga, Operasional & Live Tracking Ambulans, dan LinenFlow",
   "private": true,
   "version": "0.0.0",
   "type": "module",
