@@ -148,7 +148,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
               style: GoogleFonts.plusJakartaSans(
                 fontSize: 11,
                 fontWeight: FontWeight.w500,
-                color: Colors.white.withOpacity(0.9),
+                color: Colors.white.withValues(alpha: 0.9),
               ),
             ),
           ],
@@ -214,7 +214,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                             border: Border.all(color: Colors.white, width: 2),
                             boxShadow: [
                               BoxShadow(
-                                color: AppTheme.primary.withOpacity(0.4),
+                                color: AppTheme.primary.withValues(alpha: 0.4),
                                 blurRadius: 6,
                               ),
                             ],
@@ -248,7 +248,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                             border: Border.all(color: Colors.white, width: 2),
                             boxShadow: [
                               BoxShadow(
-                                color: AppTheme.danger.withOpacity(0.4),
+                                color: AppTheme.danger.withValues(alpha: 0.4),
                                 blurRadius: 6,
                               ),
                             ],
@@ -288,7 +288,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.08),
+                        color: Colors.black.withValues(alpha: 0.08),
                         blurRadius: 10,
                         offset: const Offset(0, 3),
                       ),
@@ -326,7 +326,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.08),
+                          color: Colors.black.withValues(alpha: 0.08),
                           blurRadius: 8,
                         ),
                       ],
@@ -367,7 +367,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.12),
+                    color: Colors.black.withValues(alpha: 0.12),
                     blurRadius: 14,
                     offset: const Offset(0, 4),
                   ),
@@ -409,7 +409,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                         decoration: BoxDecoration(
-                          color: AppTheme.primary.withOpacity(0.1),
+                          color: AppTheme.primary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Row(

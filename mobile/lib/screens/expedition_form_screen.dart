@@ -446,9 +446,9 @@ class _ExpeditionFormScreenState extends State<ExpeditionFormScreen> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppTheme.primary.withOpacity(0.08),
+              color: AppTheme.primary.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AppTheme.primary.withOpacity(0.2)),
+              border: Border.all(color: AppTheme.primary.withValues(alpha: 0.2)),
             ),
             child: Row(
               children: [
@@ -531,7 +531,7 @@ class _ExpeditionFormScreenState extends State<ExpeditionFormScreen> {
               ),
               const SizedBox(height: 6),
               DropdownButtonFormField<String>(
-                value: _activityType,
+                initialValue: _activityType,
                 items: AmbulanceConstants.activityTypes
                     .map((t) => DropdownMenuItem(value: t, child: Text(t, style: const TextStyle(fontSize: 13))))
                     .toList(),
@@ -577,7 +577,7 @@ class _ExpeditionFormScreenState extends State<ExpeditionFormScreen> {
                     _selectedFleet = fleets.first;
                   }
                   return DropdownButtonFormField<String>(
-                    value: fleets.contains(_selectedFleet) ? _selectedFleet : null,
+                    initialValue: fleets.contains(_selectedFleet) ? _selectedFleet : null,
                     hint: const Text('Pilih unit ambulans', style: TextStyle(fontSize: 13)),
                     items: fleets
                         .map((f) => DropdownMenuItem(value: f, child: Text(f, style: const TextStyle(fontSize: 13))))
@@ -624,7 +624,7 @@ class _ExpeditionFormScreenState extends State<ExpeditionFormScreen> {
                     _selectedDriver = drivers.first;
                   }
                   return DropdownButtonFormField<String>(
-                    value: drivers.contains(_selectedDriver) ? _selectedDriver : null,
+                    initialValue: drivers.contains(_selectedDriver) ? _selectedDriver : null,
                     hint: const Text('Pilih nama driver', style: TextStyle(fontSize: 13)),
                     items: drivers
                         .map((d) => DropdownMenuItem(value: d, child: Text(d, style: const TextStyle(fontSize: 13))))
@@ -702,7 +702,7 @@ class _ExpeditionFormScreenState extends State<ExpeditionFormScreen> {
               ),
               const SizedBox(height: 6),
               DropdownButtonFormField<String>(
-                value: _isCustomInitialStatus ? '__CUSTOM__' : _initialStatus,
+                initialValue: _isCustomInitialStatus ? '__CUSTOM__' : _initialStatus,
                 items: [
                   ...AmbulanceConstants.initialStatusOptions.map(
                     (s) => DropdownMenuItem(value: s, child: Text(s, style: const TextStyle(fontSize: 13))),
@@ -775,7 +775,7 @@ class _ExpeditionFormScreenState extends State<ExpeditionFormScreen> {
               ),
               const SizedBox(height: 6),
               DropdownButtonFormField<String>(
-                value: _isCustomFinalStatus ? '__CUSTOM__' : _finalStatus,
+                initialValue: _isCustomFinalStatus ? '__CUSTOM__' : _finalStatus,
                 items: [
                   ...AmbulanceConstants.finalStatusOptions.map(
                     (s) => DropdownMenuItem(value: s, child: Text(s, style: const TextStyle(fontSize: 13))),

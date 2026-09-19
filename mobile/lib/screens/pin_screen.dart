@@ -76,7 +76,7 @@ class _PinScreenState extends State<PinScreen> {
                   width: 72,
                   height: 72,
                   decoration: BoxDecoration(
-                    color: AppTheme.primary.withOpacity(0.1),
+                    color: AppTheme.primary.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: const Center(
